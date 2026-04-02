@@ -1,12 +1,12 @@
 pub struct SystemInfo {
     pub arch: String,
-    pub os: String,
+    pub _os: String,
     pub endian: u8,
 }
 
 pub fn get_system_info() -> SystemInfo {
     let arch = std::env::consts::ARCH.to_string();
-    let os = std::env::consts::OS.to_string();
+    let _os = std::env::consts::OS.to_string();
 
     let endian = if cfg!(target_endian = "little") {
         1 // ELFDATA2LSB
@@ -14,7 +14,7 @@ pub fn get_system_info() -> SystemInfo {
         2 // ELFDATA2MSB
     };
 
-    SystemInfo { arch, os, endian }
+    SystemInfo { arch, _os, endian }
 }
 
 pub fn get_machine(arch: &str) -> u16 {

@@ -1,34 +1,38 @@
-use crate::elf::traits::Writable;
+
 
 use super::ehdr;
 use super::phdr;
 use super::shdr;
-use super::traits;
+use super::traits::RawWritable;
+
 
 #[derive(Default)]
-pub struct ElfFile<Ehdr, Shdr, Phdr> {
-    pub ehdr: Ehdr,
-    pub shdrs: Vec<Shdr>,
-    pub phdrs: Vec<Phdr>,
+pub struct ElfFile32 {
+    pub ehdr: ehdr::Elf32Ehdr,
+    pub shdrs: Vec<shdr::Elf32Shdr>,
+    pub phdrs: Vec<phdr::Elf32Phdr>,
 }
 
-pub type ElfFile64 = ElfFile<
-    ehdr::Elf64Ehdr,
-    shdr::Elf64Shdr,
-    phdr::Elf64Phdr,
->;
+impl ElfFile32 {
 
-pub type ElfFile32 = ElfFile<
-    ehdr::Elf32Ehdr,
-    shdr::Elf32Shdr,
-    phdr::Elf32Phdr,
->;
+    pub fn prepare_writing(&mut self) -> &Self
+    {
+        self.ehdr.e_phnum = self.phdrs.len() as u16;
+        self.ehdr.e_shnum = self.shdrs.len() as u16;
 
-impl<Ehdr, Shdr, Phdr> Writable for ElfFile<Ehdr, Shdr, Phdr>
-where Ehdr: Writable, Shdr: Writable, Phdr: Writable
-{
-    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
-        self.ehdr.write(file)?;
+        for (idx, shdr) in self.shdrs.iter().enumerate() {
+            let cur_type = shdr.sh_type;
+            if cur_type == shdr::ShType::StrTab {
+                self.ehdr.e_shstrndx = idx as u16;
+                break;
+            }
+        }
+        return self;
+    }
+
+    pub fn write(&self, file: &mut std::fs::File) -> std::io::Result<()>
+    {
+        self.ehdr.write_raw(file)?;
         Ok(())
     }
 }

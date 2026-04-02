@@ -1,38 +1,65 @@
-use std::io::Write;
-use super::traits::*;
-
 #[repr(C, packed)]
-#[derive(Debug, Default)]
-pub struct ElfShdr<T> {
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Elf64Shdr {
     pub sh_name: u32,
-    pub sh_type: u32,
-    pub sh_flags: T,
-    pub sh_addr: T,
-    pub sh_offset: T,
-    pub sh_size: T,
+    pub sh_type: ShType,
+    pub sh_flags: ShFlags,
+    pub sh_addr: u64,
+    pub sh_offset: u64,
+    pub sh_size: u64,
     pub sh_link: u32,
     pub sh_info: u32,
-    pub sh_addralign: T,
-    pub sh_entsize: T,
+    pub sh_addralign: u64,
+    pub sh_entsize: u64,
+}
+#[repr(C, packed)]
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Elf32Shdr {
+    pub sh_name: u32,
+    pub sh_type: ShType,
+    pub sh_flags: ShFlags,
+    pub sh_addr: u32,
+    pub sh_offset: u32,
+    pub sh_size: u32,
+    pub sh_link: u32,
+    pub sh_info: u32,
+    pub sh_addralign: u32,
+    pub sh_entsize: u32,
 }
 
-impl <T> Writable for ElfShdr<T>
-where T: Copy + WriteBytes,
-{
-    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
-        let sh_name = self.sh_name; sh_name.write_le(file)?;
-        let sh_type = self.sh_type; sh_type.write_le(file)?;
-        let sh_flags = self.sh_flags; sh_flags.write_le(file)?;
-        let sh_addr = self.sh_addr; sh_addr.write_le(file)?;
-        let sh_offset = self.sh_offset; sh_offset.write_le(file)?;
-        let sh_size = self.sh_size; sh_size.write_le(file)?;
-        let sh_link = self.sh_link; sh_link.write_le(file)?;
-        let sh_info = self.sh_info; sh_info.write_le(file)?;
-        let sh_addralign = self.sh_addralign; sh_addralign.write_le(file)?;
-        let sh_entsize = self.sh_entsize; sh_entsize.write_le(file)?;
-        Ok(())
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+#[allow(dead_code)]
+pub enum ShType {
+    #[default]
+    Null     = 0,  // Section inactive
+    ProgBits = 1,  // Données programmables (.text, .data)
+    SymTab   = 2,  // Table des symboles
+    StrTab   = 3,  // Table de chaînes
+    Rela     = 4,  // Relocations avec addend
+    Hash     = 5,  // Table de hash
+    Dynamic  = 6,  // Infos dynamiques
+    Note     = 7,  // Notes
+    NoBits   = 8,  // Pas de données (ex: .bss)
+    Rel      = 9,  // Relocations sans addend
+    ShLib    = 10, // Réservé
+    DynSym   = 11, // Symboles dynamiques
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ShFlags(pub u64);
+
+#[allow(dead_code)]
+impl ShFlags {
+    pub const WRITE: Self = Self(0x1);
+    pub const ALLOC: Self = Self(0x2);
+    pub const EXECINSTR: Self = Self(0x4);
+
+    pub const fn empty() -> Self {
+        Self(0)
+    }
+
+    pub fn bits(self) -> u64 {
+        self.0
     }
 }
-
-pub type Elf32Shdr = ElfShdr<u32>;
-pub type Elf64Shdr = ElfShdr<u64>;

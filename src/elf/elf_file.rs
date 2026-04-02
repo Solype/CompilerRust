@@ -1,15 +1,34 @@
-use super::ehdr;
-use super::chdr;
-use super::shdr;
+use crate::elf::traits::Writable;
 
-pub struct elf_file_64 {
-    pub ehdr : ehdr::Elf64Ehdr,
-    pub shdrs : Vec<shdr::Elf64Shdr>,
-    pub chdrs : Vec<chdr::Elf64Chdr>
+use super::ehdr;
+use super::phdr;
+use super::shdr;
+use super::traits;
+
+#[derive(Default)]
+pub struct ElfFile<Ehdr, Shdr, Phdr> {
+    pub ehdr: Ehdr,
+    pub shdrs: Vec<Shdr>,
+    pub phdrs: Vec<Phdr>,
 }
 
-pub struct elf_file_32 {
-    pub ehdr : ehdr::Elf32Ehdr,
-    pub shdrs : Vec<shdr::Elf32Shdr>,
-    pub chdrs : Vec<chdr::Elf32Chdr>
+pub type ElfFile64 = ElfFile<
+    ehdr::Elf64Ehdr,
+    shdr::Elf64Shdr,
+    phdr::Elf64Phdr,
+>;
+
+pub type ElfFile32 = ElfFile<
+    ehdr::Elf32Ehdr,
+    shdr::Elf32Shdr,
+    phdr::Elf32Phdr,
+>;
+
+impl<Ehdr, Shdr, Phdr> Writable for ElfFile<Ehdr, Shdr, Phdr>
+where Ehdr: Writable, Shdr: Writable, Phdr: Writable
+{
+    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
+        self.ehdr.write(file)?;
+        Ok(())
+    }
 }

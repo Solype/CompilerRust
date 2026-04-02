@@ -1,7 +1,7 @@
 pub mod ehdr;
 pub mod shdr;
-pub mod chdr;
-pub mod enums;
+pub mod phdr;
+//pub mod chdr;
 pub mod traits;
 pub mod elf_file;
 

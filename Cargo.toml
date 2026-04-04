@@ -1,6 +1,13 @@
+[workspace]
+members = [
+    ".",
+    "elf_derive"
+]
+
 [package]
 name = "aacompiler"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+elf_derive = { path = "elf_derive" }

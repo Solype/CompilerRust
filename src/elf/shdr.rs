@@ -1,5 +1,10 @@
-#[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+use std::io::Write;
+
+use crate::ElfWritable;
+use elf_derive::ElfWrite;
+
+#[repr(C)]
+#[derive(Debug, Default, Clone, Copy, ElfWrite)]
 pub struct Elf64Shdr {
     pub sh_name: u32,
     pub sh_type: ShType,
@@ -12,8 +17,8 @@ pub struct Elf64Shdr {
     pub sh_addralign: u64,
     pub sh_entsize: u64,
 }
-#[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+#[repr(C)]
+#[derive(Debug, Default, Clone, Copy, ElfWrite)]
 pub struct Elf32Shdr {
     pub sh_name: u32,
     pub sh_type: ShType,
@@ -46,6 +51,7 @@ pub enum ShType {
     DynSym   = 11, // Symboles dynamiques
 }
 
+
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ShFlags(pub u64);
 
@@ -61,5 +67,21 @@ impl ShFlags {
 
     pub fn bits(self) -> u64 {
         self.0
+    }
+}
+
+
+
+impl ElfWritable for ShType {
+    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
+        file.write(&(*self as u32).to_le_bytes())?;
+        Ok(())
+    }
+}
+
+impl ElfWritable for ShFlags {
+    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
+        file.write_all(&self.0.to_le_bytes())?;
+        Ok(())
     }
 }

@@ -1,4 +1,6 @@
-// Énumération pour les types de segments
+use crate::ElfWritable;
+use elf_derive::ElfWrite;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum _SegmentType {
@@ -22,8 +24,8 @@ pub enum _SegmentFlags {
 }
 
 // Structure pour l'en-tête de programme ELF 32 bits
-#[repr(C, packed)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, ElfWrite)]
 pub struct Elf32Phdr {
     pub p_type:   u32,  // Type de segment
     pub p_offset: u32,  // Offset dans le fichier
@@ -36,8 +38,8 @@ pub struct Elf32Phdr {
 }
 
 // Structure pour l'en-tête de programme ELF 64 bits
-#[repr(C, packed)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, ElfWrite)]
 pub struct Elf64Phdr {
     pub p_type:   u32,  // Type de segment
     pub p_flags:  u32,  // Flags de segment

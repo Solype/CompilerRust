@@ -1,10 +1,14 @@
+use crate::ElfWritable;
+use elf_derive::ElfWrite;
+
 use std::mem::size_of;
+
 use super::sys_info_getter::*;
 use super::phdr;
 use super::shdr;
 
 /// ELF File Header (generic over 32-bit / 64-bit)
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, ElfWrite)]
 #[allow(dead_code)]
 pub struct Elf64Ehdr {
     pub e_ident: [u8; 16],
@@ -34,7 +38,7 @@ impl Default for Elf64Ehdr {
 
         Self {
             e_ident: build_ident(ElfClass::Bit64 as u8, sys.endian),
-            e_type: ElfType::Dyn as u16,
+            e_type: ElfType::Rel as u16,
             e_machine: get_machine(&sys.arch),
             e_version: 1,
 
@@ -55,7 +59,7 @@ impl Default for Elf64Ehdr {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, ElfWrite)]
 #[allow(dead_code)]
 pub struct Elf32Ehdr {
     pub e_ident: [u8; 16],
@@ -85,7 +89,7 @@ impl Default for Elf32Ehdr {
 
         Self {
             e_ident: build_ident(ElfClass::Bit32 as u8, sys.endian),
-            e_type: ElfType::Exec as u16,
+            e_type: ElfType::Rel as u16,
             e_machine: get_machine(&sys.arch),
             e_version: 1,
 

@@ -1,18 +1,39 @@
 use std::fs::File;
-use std::io::Write;
-use std::slice;
+use std::io::{Write, Result};
 
-pub trait RawWritable {
-    fn write_raw(&self, file: &mut File) -> std::io::Result<()>;
+pub trait ElfWritable {
+    fn write(&self, file: &mut File) -> std::io::Result<()>;
 }
 
-impl<T> RawWritable for T where T: Copy,
-{
-    fn write_raw(&self, file: &mut File) -> std::io::Result<()> {
-        unsafe {
-            let ptr = self as *const _ as *const u8;
-            let bytes = slice::from_raw_parts(ptr, size_of::<Self>());
-            file.write_all(bytes)
+impl ElfWritable for u8 {
+    fn write(&self, f: &mut File) -> Result<()> {
+        f.write_all(&[*self])
+    }
+}
+
+impl ElfWritable for u16 {
+    fn write(&self, f: &mut File) -> Result<()> {
+        f.write_all(&self.to_le_bytes())
+    }
+}
+
+impl ElfWritable for u32 {
+    fn write(&self, f: &mut File) -> Result<()> {
+        f.write_all(&self.to_le_bytes())
+    }
+}
+
+impl ElfWritable for u64 {
+    fn write(&self, f: &mut File) -> Result<()> {
+        f.write_all(&self.to_le_bytes())
+    }
+}
+
+impl<T: ElfWritable, const N: usize> ElfWritable for [T; N] {
+    fn write(&self, file: &mut File) -> Result<()> {
+        for item in self {
+            item.write(file)?;
         }
+        Ok(())
     }
 }

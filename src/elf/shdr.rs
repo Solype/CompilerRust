@@ -1,87 +1,45 @@
-use std::io::Write;
+use elf_derive::BinaryLogicSize;
 
-use crate::ElfWritable;
-use elf_derive::ElfWrite;
+use super::traits::ElfWritable;
+use std::{fmt::Debug, io::Write};
 
 #[repr(C)]
-#[derive(Debug, Default, Clone, Copy, ElfWrite)]
-pub struct Elf64Shdr {
+#[derive(Debug, Default, Clone, Copy, BinaryLogicSize)]
+pub struct ElfShdr<T>
+where
+    T: Debug + Copy,
+{
     pub sh_name: u32,
-    pub sh_type: ShType,
-    pub sh_flags: ShFlags,
-    pub sh_addr: u64,
-    pub sh_offset: u64,
-    pub sh_size: u64,
+    pub sh_type: u32,     // ✅ corrigé
+    pub sh_flags: T,
+    pub sh_addr: T,
+    pub sh_offset: T,
+    pub sh_size: T,
     pub sh_link: u32,
     pub sh_info: u32,
-    pub sh_addralign: u64,
-    pub sh_entsize: u64,
-}
-#[repr(C)]
-#[derive(Debug, Default, Clone, Copy, ElfWrite)]
-pub struct Elf32Shdr {
-    pub sh_name: u32,
-    pub sh_type: ShType,
-    pub sh_flags: ShFlags,
-    pub sh_addr: u32,
-    pub sh_offset: u32,
-    pub sh_size: u32,
-    pub sh_link: u32,
-    pub sh_info: u32,
-    pub sh_addralign: u32,
-    pub sh_entsize: u32,
+    pub sh_addralign: T,
+    pub sh_entsize: T,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
-#[allow(dead_code)]
-pub enum ShType {
-    #[default]
-    Null     = 0,  // Section inactive
-    ProgBits = 1,  // Données programmables (.text, .data)
-    SymTab   = 2,  // Table des symboles
-    StrTab   = 3,  // Table de chaînes
-    Rela     = 4,  // Relocations avec addend
-    Hash     = 5,  // Table de hash
-    Dynamic  = 6,  // Infos dynamiques
-    Note     = 7,  // Notes
-    NoBits   = 8,  // Pas de données (ex: .bss)
-    Rel      = 9,  // Relocations sans addend
-    ShLib    = 10, // Réservé
-    DynSym   = 11, // Symboles dynamiques
-}
-
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct ShFlags(pub u64);
-
-#[allow(dead_code)]
-impl ShFlags {
-    pub const WRITE: Self = Self(0x1);
-    pub const ALLOC: Self = Self(0x2);
-    pub const EXECINSTR: Self = Self(0x4);
-
-    pub const fn empty() -> Self {
-        Self(0)
-    }
-
-    pub fn bits(self) -> u64 {
-        self.0
-    }
-}
-
-
-
-impl ElfWritable for ShType {
+impl<T> ElfWritable for ElfShdr<T>
+where
+    T: ElfWritable + Copy + Debug,
+{
     fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
-        file.write(&(*self as u32).to_le_bytes())?;
-        Ok(())
-    }
-}
+        file.write_all(&self.sh_name.to_le_bytes())?;
+        file.write_all(&self.sh_type.to_le_bytes())?;
 
-impl ElfWritable for ShFlags {
-    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
-        file.write_all(&self.0.to_le_bytes())?;
+        self.sh_flags.write(file)?;
+        self.sh_addr.write(file)?;
+        self.sh_offset.write(file)?;
+        self.sh_size.write(file)?;
+
+        file.write_all(&self.sh_link.to_le_bytes())?;
+        file.write_all(&self.sh_info.to_le_bytes())?;
+
+        self.sh_addralign.write(file)?;
+        self.sh_entsize.write(file)?;
+
         Ok(())
     }
 }

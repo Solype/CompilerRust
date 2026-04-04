@@ -3,7 +3,6 @@ pub mod shdr;
 pub mod phdr;
 //pub mod chdr;
 pub mod traits;
-pub mod elf_headers;
 pub mod elf_file;
 pub mod instructions;
 pub mod symbol;

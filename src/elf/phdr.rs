@@ -1,6 +1,5 @@
 use elf_derive::BinaryLogicSize;
 use super::traits::ElfWritable;
-use std::io::Write;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
@@ -26,45 +25,58 @@ pub enum _SegmentFlags {
 
 #[derive(Debug, Default, Clone, Copy, BinaryLogicSize)]
 pub struct ElfPhdr<T> {
-    pub p_type: u32,
-    pub p_flags: u32,
-    pub p_offset: T,
-    pub p_vaddr: T,
-    pub p_paddr: T,
-    pub p_filesz: T,
-    pub p_memsz: T,
-    pub p_align: T,
+    pub p_type: u32,         // Segment type (PT_LOAD, PT_DYNAMIC, PT_INTERP, etc.)
+    pub p_flags: u32,        // Segment flags (PF_X, PF_W, PF_R)
+
+    pub p_offset: T,         // Offset of segment in file (in bytes)
+    pub p_vaddr: T,          // Virtual address in memory
+    pub p_paddr: T,          // Physical address (unused on most systems)
+
+    pub p_filesz: T,         // Size of segment in file (in bytes)
+    pub p_memsz: T,          // Size of segment in memory (can be larger than filesz)
+
+    pub p_align: T,          // Alignment (must be power of 2, e.g., 0x1000)
 }
 
 
-impl ElfWritable for ElfPhdr<u32>
+impl<T> ElfWritable for ElfPhdr<T>
+where
+    T: Copy + ElfWritable,
 {
-    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
-        // ELF32
-        file.write_all(&self.p_type.to_le_bytes())?;
-        self.p_offset.write(file)?;
-        self.p_vaddr.write(file)?;
-        self.p_paddr.write(file)?;
-        self.p_filesz.write(file)?;
-        self.p_memsz.write(file)?;
-        file.write_all(&self.p_flags.to_le_bytes())?;
-        self.p_align.write(file)?;
-        Ok(())
-    }
-}
+    fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        match std::mem::size_of::<T>() {
+            4 => {
+                // ELF32 layout
+                writer.write_all(&self.p_type.to_le_bytes())?;
+                self.p_offset.write(writer)?;
+                self.p_vaddr.write(writer)?;
+                self.p_paddr.write(writer)?;
+                self.p_filesz.write(writer)?;
+                self.p_memsz.write(writer)?;
+                writer.write_all(&self.p_flags.to_le_bytes())?;
+                self.p_align.write(writer)?;
+            }
 
-impl ElfWritable for ElfPhdr<u64>
-{
-    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
-        // ELF64
-        file.write_all(&self.p_type.to_le_bytes())?;
-        file.write_all(&self.p_flags.to_le_bytes())?;
-        self.p_offset.write(file)?;
-        self.p_vaddr.write(file)?;
-        self.p_paddr.write(file)?;
-        self.p_filesz.write(file)?;
-        self.p_memsz.write(file)?;
-        self.p_align.write(file)?;
+            8 => {
+                // ELF64 layout
+                writer.write_all(&self.p_type.to_le_bytes())?;
+                writer.write_all(&self.p_flags.to_le_bytes())?;
+                self.p_offset.write(writer)?;
+                self.p_vaddr.write(writer)?;
+                self.p_paddr.write(writer)?;
+                self.p_filesz.write(writer)?;
+                self.p_memsz.write(writer)?;
+                self.p_align.write(writer)?;
+            }
+
+            _ => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "ElfPhdr<T>: T must be u32 or u64",
+                ));
+            }
+        }
+
         Ok(())
     }
 }

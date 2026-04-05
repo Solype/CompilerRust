@@ -2,66 +2,64 @@ use super::traits::ElfWritable;
 use elf_derive::BinaryLogicSize;
 
 use std::fmt::Debug;
-use std::io::Write;
 
 
 use super::sys_info_getter::*;
 use super::phdr;
 use super::shdr;
 
-#[derive(Debug, Clone, Copy, BinaryLogicSize)]
-#[allow(dead_code)]
+#[derive(BinaryLogicSize, Debug, Clone, Copy)]
 pub struct ElfEhdr<T>
 where T: Copy + ElfWritable + Debug + Default
 {
-    pub e_ident: [u8; 16],
+    pub e_ident: [u8; 16],   // ELF identification (magic, class, endianness, version, ABI)
 
-    pub e_type: u16,
-    pub e_machine: u16,
-    pub e_version: u32,
+    pub e_type: u16,         // Object file type (ET_REL, ET_EXEC, ET_DYN, etc.)
+    pub e_machine: u16,      // Target architecture (e.g., EM_X86_64)
+    pub e_version: u32,      // ELF version (usually 1)
 
-    pub e_entry: T,
-    pub e_phoff: T,
-    pub e_shoff: T,
+    pub e_entry: T,          // Entry point virtual address (0 for relocatable files)
+    pub e_phoff: T,          // Offset to program header table (in bytes)
+    pub e_shoff: T,          // Offset to section header table (in bytes)
 
-    pub e_flags: u32,
+    pub e_flags: u32,        // Processor-specific flags
 
-    pub e_ehsize: u16,
-    pub e_phentsize: u16,
-    pub e_phnum: u16,
+    pub e_ehsize: u16,       // ELF header size (sizeof ElfEhdr)
+    pub e_phentsize: u16,    // Size of one program header entry
+    pub e_phnum: u16,        // Number of program header entries
 
-    pub e_shentsize: u16,
-    pub e_shnum: u16,
-    pub e_shstrndx: u16,
+    pub e_shentsize: u16,    // Size of one section header entry
+    pub e_shnum: u16,        // Number of section header entries
+    pub e_shstrndx: u16,     // Index of the section name string table (.shstrtab)
 }
 
 impl<T> ElfWritable for ElfEhdr<T>
 where
     T: Copy + ElfWritable + Debug + Default,
 {
-    fn write(&self, file: &mut std::fs::File) -> std::io::Result<()> {
+    fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         // e_ident (16 bytes brut)
-        file.write_all(&self.e_ident)?;
+        writer.write_all(&self.e_ident)?;
 
         // champs scalaires
-        file.write_all(&self.e_type.to_le_bytes())?;
-        file.write_all(&self.e_machine.to_le_bytes())?;
-        file.write_all(&self.e_version.to_le_bytes())?;
+        writer.write_all(&self.e_type.to_le_bytes())?;
+        writer.write_all(&self.e_machine.to_le_bytes())?;
+        writer.write_all(&self.e_version.to_le_bytes())?;
 
         // champs génériques (32/64)
-        self.e_entry.write(file)?;
-        self.e_phoff.write(file)?;
-        self.e_shoff.write(file)?;
+        self.e_entry.write(writer)?;
+        self.e_phoff.write(writer)?;
+        self.e_shoff.write(writer)?;
 
-        file.write_all(&self.e_flags.to_le_bytes())?;
+        writer.write_all(&self.e_flags.to_le_bytes())?;
 
-        file.write_all(&self.e_ehsize.to_le_bytes())?;
-        file.write_all(&self.e_phentsize.to_le_bytes())?;
-        file.write_all(&self.e_phnum.to_le_bytes())?;
+        writer.write_all(&self.e_ehsize.to_le_bytes())?;
+        writer.write_all(&self.e_phentsize.to_le_bytes())?;
+        writer.write_all(&self.e_phnum.to_le_bytes())?;
 
-        file.write_all(&self.e_shentsize.to_le_bytes())?;
-        file.write_all(&self.e_shnum.to_le_bytes())?;
-        file.write_all(&self.e_shstrndx.to_le_bytes())?;
+        writer.write_all(&self.e_shentsize.to_le_bytes())?;
+        writer.write_all(&self.e_shnum.to_le_bytes())?;
+        writer.write_all(&self.e_shstrndx.to_le_bytes())?;
 
         Ok(())
     }

@@ -18,7 +18,7 @@ fn main() -> std::io::Result<()> {
     }
 
     let mut elf_file = elf::elf_file::ElfFile64::default();
-    elf_file.add_section();
+    // elf_file.add_section(vec![]);
     elf_file.write(&mut file)?;
     println!("Fichier ELF généré : output.elf");
     Ok(())

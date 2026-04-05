@@ -37,18 +37,25 @@ impl<T: ElfWritable, const N: usize> ElfWritable for [T; N] {
     }
 }
 
-pub trait FromUsize {
+pub trait UsizeCompatible {
     fn from_usize(v: usize) -> Self;
+    fn to_usize(&self) -> usize;
 }
 
-impl FromUsize for u32 {
+impl UsizeCompatible for u32 {
     fn from_usize(v: usize) -> Self {
         v as u32
     }
+    fn to_usize(&self) -> usize {
+        *self as usize
+    }
 }
 
-impl FromUsize for u64 {
+impl UsizeCompatible for u64 {
     fn from_usize(v: usize) -> Self {
         v as u64
+    }
+    fn to_usize(&self) -> usize {
+        *self as usize
     }
 }

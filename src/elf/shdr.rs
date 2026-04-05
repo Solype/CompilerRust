@@ -25,32 +25,12 @@ impl<T> ElfShdr<T>
 where
     T: Debug + Copy + Default,
 {
-    pub fn new_section(
-        sh_name: u32,
-        sh_type: u32,
-        sh_flags: T,    // flags : SHF_ALLOC, SHF_WRITE, etc.
-    ) -> Self {
-        Self {
-            sh_name,
-            sh_type,
-            sh_flags,
-            sh_addr: T::default(),       // pas chargé en mémoire
-            sh_offset: T::default(),     // offset dans le fichier (sera mis à jour plus tard)
-            sh_size: T::default(),       // taille (sera calculée après remplissage)
-            sh_link: 0,                  // lien vers section associée (0 si non utilisé)
-            sh_info: 0,                  // info supplémentaire (0 par défaut)
-            sh_addralign: T::default(),  // alignement (peut être 1 ou 4 pour strtab)
-            sh_entsize: T::default(),    // taille d’entrée (utile pour symtab)
-        }
-    }
-
-    pub fn shstrtab(sh_name: u32) -> Self {
-        Self::new_section(sh_name, ShType::StrTab as u32, T::default())
-    }
-
-    /// Exemple constructeur pour .strtab
     pub fn strtab(sh_name: u32) -> Self {
-        Self::new_section(sh_name, ShType::StrTab as u32, T::default())
+        Self {
+            sh_name: sh_name,
+            sh_type: ShType::StrTab as u32,
+            ..Default::default()
+        }
     }
 }
 

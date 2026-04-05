@@ -1,15 +1,16 @@
 use std::fmt::Debug;
 use std::vec;
 
-use crate::elf::file::section::Section;
+use crate::elf::rel::{ElfRel, ElfRela};
 
-use super::super::ehdr;
-use super::super::phdr;
-use super::super::shdr;
-use super::super::traits::ElfWritable;
-use super::super::traits::UsizeCompatible;
-use super::super::symbol;
-use super::strtab::Strtab;
+use super::{
+    section::Section,
+    strtab::Strtab,
+};
+use super::super::{
+    ehdr, phdr, shdr, symbol,
+    traits::{ElfWritable, UsizeCompatible},
+};
 
 #[allow(dead_code)]
 pub struct ElfFile <T>
@@ -23,6 +24,8 @@ where T: Copy + ElfWritable + Debug + Default,
     pub strtab: Strtab,
     pub shstrtab: Strtab,
     pub symtab: Vec<symbol::ElfSym<T>>,
+    pub rel: Vec<ElfRel<T>>,
+    pub rela: Vec<ElfRela<T>>
 }
 
 #[allow(dead_code)]
@@ -34,8 +37,6 @@ where
     T: Copy + ElfWritable + Debug + Default + From<u8> + From<u32>,
 {
     fn default() -> Self {
-        // Contenu de .shstrta
-
         Self {
             ehdr: ehdr::ElfEhdr::default(),
             shdrs: vec![ shdr::ElfShdr::<T>::default() ],
@@ -44,6 +45,8 @@ where
             symtab: vec![],
             strtab: Strtab::default(),
             shstrtab: Strtab::default(),
+            rel: vec![],
+            rela: vec![],
         }
     }
 }

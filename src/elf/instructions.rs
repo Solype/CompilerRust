@@ -13,21 +13,21 @@ pub enum Register {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[repr(u8)]
 #[allow(dead_code)]
-pub enum Register64 {
-    Rax = 0,
-    Rdi = 7, // seulement pour exit
+pub enum RegisterArch {
+    X32(Register),
+    X64(Register)
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum Operand {
-    Reg(Register),
+    Reg(RegisterArch),
     Imm(u32),
+    Symbol(String)
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum Instruction {
     Mov {
@@ -44,39 +44,33 @@ pub enum Instruction {
     },
     Push(Operand),
     Int(u8), // ex: int 0x80
+    Syscall,
+    Ret,
+    Call(Operand),
+    Jmp(Operand),
+    Cmp((Operand, Operand))
 }
 
 #[allow(dead_code)]
 impl Instruction {
-    pub fn encode(&self) -> Vec<u8> {
-        match self {
-            Instruction::Mov { dst, src } => {
-                match (dst, src) {
-                    (Operand::Reg(reg), Operand::Imm(val)) => {
-                        let mut v = vec![0xB8 + *reg as u8];
-                        v.extend(&val.to_le_bytes());
-                        return v;
-                    }
-                    _ => unimplemented!(),
-                }
+    fn encode_move(&self, op1: &Operand, op2: &Operand) -> Vec<u8>
+    {
+        match (op1, op2) {
+            (Operand::Reg(RegisterArch::X32(reg)), Operand::Imm(val)) => {
+                let mut v = vec![0xB8 + *reg as u8];
+                v.extend(&val.to_le_bytes());
+                return v;
             }
-            Instruction::Int(n) => vec![0xCD, *n],
             _ => unimplemented!(),
         }
     }
 
-    pub fn encode_x86_64(&self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         match self {
-            Instruction::Mov { dst, src } => match (dst, src) {
-                (Operand::Reg(Register::Eax), Operand::Imm(val)) => {
-                    // 32-bit mov eax, imm32 → opcode 0xB8
-                    let mut v = vec![0xB8];
-                    v.extend(&val.to_le_bytes());
-                    v
-                }
-                _ => unimplemented!(),
-            },
-            Instruction::Int(n) => vec![0xCD, *n], // encore utile pour compat 32-bit
+            Instruction::Mov { dst, src } => {
+                self.encode_move(dst, src)
+            }
+            Instruction::Int(n) => vec![0xCD, *n],
             _ => unimplemented!(),
         }
     }

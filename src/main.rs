@@ -11,8 +11,8 @@ fn main() -> std::io::Result<()> {
     let mut file = File::create("output.elf")?;
 
     let instr: Vec<Instruction> = vec![
-        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1) },
-        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(84) },
+        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Eax)), src: Operand::Imm(1) },
+        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Ebx)), src: Operand::Imm(84) },
         Instruction::Int(0x80)
     ];
 

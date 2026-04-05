@@ -5,3 +5,4 @@ pub mod section;
 pub use file::*;
 
 mod packing;
+mod symbol;

@@ -67,9 +67,7 @@ impl Instruction {
 
     pub fn encode(&self) -> Vec<u8> {
         match self {
-            Instruction::Mov { dst, src } => {
-                self.encode_move(dst, src)
-            }
+            Instruction::Mov { dst, src } => self.encode_move(dst, src),
             Instruction::Int(n) => vec![0xCD, *n],
             _ => unimplemented!(),
         }

@@ -26,6 +26,18 @@ impl Section {
     {
         &self.data
     }
+
+    pub fn add_data(&mut self, other: &Vec<u8>) -> &mut Self
+    {
+        self.data.extend(other);
+        self
+    }
+
+    pub fn set_data(&mut self, other: Vec<u8>) -> &mut Self
+    {
+        self.data = other;
+        self
+    }
 }
 
 impl ElfWritable for Section

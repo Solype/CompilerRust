@@ -2,7 +2,7 @@ use std::fs::File;
 mod elf;
 use elf::instructions::*;
 
-use crate::elf::symbol::make_st_info;
+use crate::elf::elfsym::make_st_info;
 // mod lexical_analisys;
 
 
@@ -22,8 +22,8 @@ fn main() -> std::io::Result<()> {
     let len_txt = text_binary.len();
 
     let mut elf_file = elf::file::ElfFile64::default();
-    elf_file.add_section(elf::shdr::SectionName::Text, text_binary, 
-        elf::shdr::ElfShdr {
+    let section = elf_file.add_section(elf::shdr::SectionName::Text, 
+    elf::shdr::ElfShdr {
                     sh_type: elf::shdr::ShType::ProgBits as u32,
                     sh_flags: (elf::shdr::ShFlags::Alloc as u64 | elf::shdr::ShFlags::ExecInstr as u64),
                     sh_addralign: 16,
@@ -31,12 +31,14 @@ fn main() -> std::io::Result<()> {
                 }
             );
 
+    
+
     let start_name = elf_file.strtab.name("_start".to_string());
     elf_file.symtab.push(
-        elf::symbol::ElfSym::<u64> {
+        elf::elfsym::ElfSym::<u64> {
             st_name: start_name as u32,
-            st_info: make_st_info(elf::symbol::StBind::Global, elf::symbol::StType::Func),
-            st_other: elf::symbol::StVis::Default as u8,
+            st_info: make_st_info(elf::elfsym::StBind::Global, elf::elfsym::StType::Func),
+            st_other: elf::elfsym::StVis::Default as u8,
             st_shndx: 1,
             st_size: len_txt as u64,
             st_value: 0,

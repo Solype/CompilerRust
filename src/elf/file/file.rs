@@ -8,7 +8,7 @@ use super::{
     strtab::Strtab,
 };
 use super::super::{
-    ehdr, phdr, shdr, symbol,
+    ehdr, phdr, shdr, elfsym,
     traits::{ElfWritable, UsizeCompatible},
 };
 
@@ -23,7 +23,7 @@ where T: Copy + ElfWritable + Debug + Default,
 
     pub strtab: Strtab,
     pub shstrtab: Strtab,
-    pub symtab: Vec<symbol::ElfSym<T>>,
+    pub symtab: Vec<elfsym::ElfSym<T>>,
     pub rel: Vec<ElfRel<T>>,
     pub rela: Vec<ElfRela<T>>
 }
@@ -55,13 +55,16 @@ where
 impl <T> ElfFile <T>
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
-    pub fn add_section( &mut self, name: shdr::SectionName, binary: Vec<u8>, mut header: shdr::ElfShdr<T>) -> &mut Self
+    pub fn add_section( &mut self, name: shdr::SectionName, mut header: shdr::ElfShdr<T>) -> usize
     {
+        let section_ndx = self.shdrs.len();
         header.sh_name = self.shstrtab.name(name.as_str().to_string()) as u32;
         self.shdrs.push(header);
-        self.sections.push(Section::new(binary));
-        self
+        self.sections.push(Section::default());
+        section_ndx
     }
+
+    // pub fn add_symbol(&mut self, name: &String, );
 
     pub fn write(&mut self, file : &mut std::fs::File) -> std::io::Result<()>
     {

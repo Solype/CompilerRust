@@ -2,7 +2,7 @@ pub mod ehdr;
 pub mod shdr;
 pub mod phdr;
 
-pub mod symbol;
+pub mod elfsym;
 pub mod file;
 pub mod rel;
 

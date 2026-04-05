@@ -11,7 +11,7 @@ use super::{
 use super::super::shdr;
 use super::super::ehdr;
 use super::super::phdr;
-use super::super::symbol;
+use super::super::elfsym;
 
 fn align_up(offset: usize, align: usize) -> usize {
     if align == 0 { return offset; } // safe fallback
@@ -40,17 +40,17 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             sym_binary.extend(sym.to_bytes().expect("ElfSym to_bytes failed"));
         }
 
-        self.add_section(
+        let section_id = self.add_section(
             shdr::SectionName::Symtab,
-            sym_binary,
             shdr::ElfShdr { 
                 sh_type: shdr::ShType::SymTab as u32,
                 sh_link: strtab_idx as u32,
-                sh_addralign: T::from_usize(symbol::ElfSym::<T>::mem_len()),
-                sh_entsize: T::from_usize(symbol::ElfSym::<T>::mem_len()),
+                sh_addralign: T::from_usize(elfsym::ElfSym::<T>::mem_len()),
+                sh_entsize: T::from_usize(elfsym::ElfSym::<T>::mem_len()),
                 ..Default::default()
             }
         );
+        self.sections[section_id].set_data(sym_binary);
     }
 
     fn pack_shstrtab(&mut self)

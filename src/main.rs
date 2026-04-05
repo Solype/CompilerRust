@@ -10,10 +10,11 @@ use crate::elf::symbol::make_st_info;
 fn main() -> std::io::Result<()> {
     let mut file = File::create("output.elf")?;
 
-    let mut instr: Vec<Instruction> = vec![];
-    instr.push(Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1) });
-    instr.push(Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(84) });
-    instr.push(Instruction::Int(0x80));
+    let instr: Vec<Instruction> = vec![
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(84) },
+        Instruction::Int(0x80)
+    ];
 
     let text_binary: Vec<u8> = instr.iter()
         .flat_map(|ins| ins.encode())

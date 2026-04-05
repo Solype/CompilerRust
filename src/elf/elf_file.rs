@@ -56,13 +56,53 @@ fn align_up(offset: usize, align: usize) -> usize {
 impl <T> ElfFile <T>
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
-    pub fn add_section( &mut self, name: shdr::SectionName, binary: Vec<u8>, mut header: shdr::ElfShdr<T>)
-    -> &mut Self
+    pub fn add_section( &mut self, name: shdr::SectionName, binary: Vec<u8>, mut header: shdr::ElfShdr<T>) -> &mut Self
     {
         header.sh_name = self.shstrtab.name(name.as_str().to_string()) as u32;
         self.shdrs.push(header);
         self.sections.push(binary);
         self
+    }
+
+    fn pack_strtab(&mut self) -> usize
+    {
+        let strtab_idx = self.shdrs.len();
+        let strtab_name = self.shstrtab.name(shdr::SectionName::Strtab.as_str().to_string());
+        self.sections.push(self.strtab.to_vec());
+        self.shdrs.push(shdr::ElfShdr::strtab(strtab_name as u32));
+
+        return  strtab_idx;
+    }
+
+    fn pack_symtab(&mut self, strtab_idx: usize)
+    {
+        if self.symtab.is_empty() { return; }
+        let mut sym_binary: Vec<u8> = vec![];
+
+        for sym in self.symtab.iter() {
+            sym_binary.extend(sym.to_bytes().expect("ElfSym to_bytes failed"));
+        }
+
+        self.add_section(
+            shdr::SectionName::Symtab,
+            sym_binary,
+            shdr::ElfShdr { 
+                sh_type: shdr::ShType::SymTab as u32,
+                sh_link: strtab_idx as u32,
+                sh_addralign: T::from_usize(symbol::ElfSym::<T>::mem_len()),
+                sh_entsize: T::from_usize(symbol::ElfSym::<T>::mem_len()),
+                ..Default::default()
+            }
+        );
+    }
+
+    fn pack_shstrtab(&mut self)
+    {
+        self.ehdr.e_shstrndx = self.shdrs.len() as u16;
+        let shstrtab_name = self.shstrtab.name(shdr::SectionName::ShStrtab.as_str().to_string());
+        self.sections.push(self.shstrtab.to_vec());
+        self.shdrs.push(shdr::ElfShdr::strtab(shstrtab_name as u32));
+
     }
 
     fn prepare_writing(&mut self) -> std::io::Result<()>
@@ -74,40 +114,14 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                 ));
         }
 
-        let strtab_idx = self.shdrs.len();
-        let strtab_name = self.shstrtab.name(shdr::SectionName::Strtab.as_str().to_string());
-        self.sections.push(self.strtab.to_vec());
-        self.shdrs.push(shdr::ElfShdr::strtab(strtab_name as u32));
-
-        if !self.symtab.is_empty() {
-            let mut sym_binary: Vec<u8> = vec![];
-
-            for sym in self.symtab.iter() {
-                sym_binary.extend(sym.to_bytes().expect("ElfSym to_bytes failed"));
-            }
-
-            self.add_section(
-                shdr::SectionName::Symtab,
-                sym_binary,
-                shdr::ElfShdr { 
-                    sh_type: shdr::ShType::SymTab as u32,
-                    sh_link: strtab_idx as u32,
-                    // sh_addralign: T::from_usize(symbol::ElfSym::<T>::mem_len()),
-                    sh_entsize: T::from_usize(symbol::ElfSym::<T>::mem_len()),
-                    ..Default::default()
-                }
-            );
-        }
-
-
-        self.ehdr.e_shstrndx = self.shdrs.len() as u16;
-        let shstrtab_name = self.shstrtab.name(shdr::SectionName::ShStrtab.as_str().to_string());
-        self.sections.push(self.shstrtab.to_vec());
-        self.shdrs.push(shdr::ElfShdr::strtab(shstrtab_name as u32));
-
         if self.phdrs.len() != 0 {
             self.ehdr.e_phoff = T::from_usize(ehdr::ElfEhdr::<T>::mem_len());
         }
+
+        let strtab_ndx = self.pack_strtab();
+        self.pack_symtab(strtab_ndx);
+        self.pack_shstrtab();
+
         self.ehdr.e_shnum = self.shdrs.len() as u16;
         self.update_section_headers();
         Ok(())

@@ -4,6 +4,7 @@ pub mod phdr;
 
 pub mod symbol;
 pub mod strtab;
+pub mod rel;
 
 pub mod traits;
 pub mod elf_file;

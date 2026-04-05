@@ -80,10 +80,11 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         self.shdrs.push(shdr::ElfShdr::strtab(strtab_name as u32));
 
         if !self.symtab.is_empty() {
-            let sym_binary: Vec<u8> = self.symtab
-                .iter()
-                .flat_map(|s| s.to_bytes().expect("ElfSym to_bytes failed"))
-                .collect();
+            let mut sym_binary: Vec<u8> = vec![];
+
+            for sym in self.symtab.iter() {
+                sym_binary.extend(sym.to_bytes().expect("ElfSym to_bytes failed"));
+            }
 
             self.add_section(
                 shdr::SectionName::Symtab,
@@ -91,7 +92,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                 shdr::ElfShdr { 
                     sh_type: shdr::ShType::SymTab as u32,
                     sh_link: strtab_idx as u32,
-                    sh_addralign: T::from_usize(std::mem::size_of::<T>()),
+                    // sh_addralign: T::from_usize(symbol::ElfSym::<T>::mem_len()),
                     sh_entsize: T::from_usize(symbol::ElfSym::<T>::mem_len()),
                     ..Default::default()
                 }
@@ -108,18 +109,30 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             self.ehdr.e_phoff = T::from_usize(ehdr::ElfEhdr::<T>::mem_len());
         }
         self.ehdr.e_shnum = self.shdrs.len() as u16;
+        self.update_section_headers();
         Ok(())
     }
+
+    fn update_section_headers(&mut self)
+    {
+        let mut section_offset = ehdr::ElfEhdr::<T>::mem_len() 
+            + phdr::ElfPhdr::<T>::mem_len() * self.phdrs.len();
+
+        for (sh, section) in self.shdrs.iter_mut().zip(self.sections.iter()) {
+            sh.sh_size = T::from_usize(section.len());
+            let new_off = align_up(section_offset, sh.sh_addralign.to_usize());
+            sh.sh_offset = T::from_usize(new_off);
+            section_offset = new_off + section.len();
+        }
+        self.ehdr.e_shoff = T::from_usize(section_offset);
+    }
+
 
     pub fn write(&mut self, file : &mut std::fs::File) -> std::io::Result<()>
     {
         self.prepare_writing()?;
 
         let post_ehdr_phdr_offset = ehdr::ElfEhdr::<T>::mem_len() + phdr::ElfPhdr::<T>::mem_len() * self.phdrs.len();
-        let sections_size_sum : usize = self.sections.iter().map(Vec::len).sum();
-        let section_header_offset = post_ehdr_phdr_offset + symbol::ElfSym::<T>::mem_len() * self.symtab.len() + sections_size_sum;
-        
-        self.ehdr.e_shoff = T::from_usize(section_header_offset);
 
         self.ehdr.write(file)?;
         for prog_header in &self.phdrs {

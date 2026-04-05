@@ -1,6 +1,8 @@
 use std::fs::File;
 mod elf;
 use elf::instructions::*;
+
+use crate::elf::symbol::make_st_info;
 // mod lexical_analisys;
 
 
@@ -11,11 +13,12 @@ fn main() -> std::io::Result<()> {
     let mut instr: Vec<Instruction> = vec![];
     instr.push(Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1) });
     instr.push(Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(84) });
-    instr.push(Instruction::Int(80));
+    instr.push(Instruction::Int(0x80));
 
     let text_binary: Vec<u8> = instr.iter()
         .flat_map(|ins| ins.encode())
         .collect();
+    let len_txt = text_binary.len();
 
     let mut elf_file = elf::elf_file::ElfFile64::default();
     elf_file.add_section(elf::shdr::SectionName::Text, text_binary, 
@@ -26,6 +29,19 @@ fn main() -> std::io::Result<()> {
                     ..Default::default()
                 }
             );
+
+    let start_name = elf_file.strtab.name("_start".to_string());
+    elf_file.symtab.push(
+        elf::symbol::ElfSym::<u64> {
+            st_name: start_name as u32,
+            st_info: make_st_info(elf::symbol::StBind::Global, elf::symbol::StType::Func),
+            st_other: elf::symbol::StVis::Default as u8,
+            st_shndx: 1,
+            st_size: len_txt as u64,
+            st_value: 0,
+            ..Default::default()
+        }
+    );
     elf_file.write(&mut file)?;
     println!("Fichier ELF généré : output.elf");
     Ok(())

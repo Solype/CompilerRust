@@ -21,7 +21,7 @@ fn main() -> std::io::Result<()> {
         .collect();
     let len_txt = text_binary.len();
 
-    let mut elf_file = elf::elf_file::ElfFile64::default();
+    let mut elf_file = elf::file::ElfFile64::default();
     elf_file.add_section(elf::shdr::SectionName::Text, text_binary, 
         elf::shdr::ElfShdr {
                     sh_type: elf::shdr::ShType::ProgBits as u32,

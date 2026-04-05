@@ -1,14 +1,15 @@
 use std::fmt::Debug;
-use std::io::Write;
 use std::vec;
 
-use crate::elf::ehdr;
-use crate::elf::phdr;
-use crate::elf::shdr;
+use crate::elf::file::section::Section;
+
+use super::super::ehdr;
+use super::super::phdr;
+use super::super::shdr;
+use super::super::traits::ElfWritable;
+use super::super::traits::UsizeCompatible;
+use super::super::symbol;
 use super::strtab::Strtab;
-use super::traits::ElfWritable;
-use super::traits::UsizeCompatible;
-use super::symbol;
 
 #[allow(dead_code)]
 pub struct ElfFile <T>
@@ -17,7 +18,7 @@ where T: Copy + ElfWritable + Debug + Default,
     pub ehdr: ehdr::ElfEhdr<T>,
     pub shdrs: Vec<shdr::ElfShdr<T>>,
     pub phdrs: Vec<phdr::ElfPhdr<T>>,
-    pub sections: Vec<Vec<u8>>,
+    pub sections: Vec<Section>,
 
     pub strtab: Strtab,
     pub shstrtab: Strtab,
@@ -39,7 +40,7 @@ where
             ehdr: ehdr::ElfEhdr::default(),
             shdrs: vec![ shdr::ElfShdr::<T>::default() ],
             phdrs: vec![],
-            sections: vec![ vec![] ],
+            sections: vec![ Section::default() ],
             symtab: vec![],
             strtab: Strtab::default(),
             shstrtab: Strtab::default(),
@@ -60,7 +61,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     {
         header.sh_name = self.shstrtab.name(name.as_str().to_string()) as u32;
         self.shdrs.push(header);
-        self.sections.push(binary);
+        self.sections.push(Section::new(binary));
         self
     }
 
@@ -68,7 +69,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     {
         let strtab_idx = self.shdrs.len();
         let strtab_name = self.shstrtab.name(shdr::SectionName::Strtab.as_str().to_string());
-        self.sections.push(self.strtab.to_vec());
+        self.sections.push(Section::new(self.strtab.to_vec()));
         self.shdrs.push(shdr::ElfShdr::strtab(strtab_name as u32));
 
         return  strtab_idx;
@@ -100,7 +101,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     {
         self.ehdr.e_shstrndx = self.shdrs.len() as u16;
         let shstrtab_name = self.shstrtab.name(shdr::SectionName::ShStrtab.as_str().to_string());
-        self.sections.push(self.shstrtab.to_vec());
+        self.sections.push(Section::new(self.shstrtab.to_vec()));
         self.shdrs.push(shdr::ElfShdr::strtab(shstrtab_name as u32));
 
     }
@@ -132,11 +133,16 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         let mut section_offset = ehdr::ElfEhdr::<T>::mem_len() 
             + phdr::ElfPhdr::<T>::mem_len() * self.phdrs.len();
 
-        for (sh, section) in self.shdrs.iter_mut().zip(self.sections.iter()) {
-            sh.sh_size = T::from_usize(section.len());
+        let iter_sh = self.shdrs.iter_mut();
+        let iter_section = self.sections.iter_mut();
+        for (sh, section) in iter_sh.zip(iter_section) {
+            sh.sh_size = T::from_usize(section.get_data().len());
             let new_off = align_up(section_offset, sh.sh_addralign.to_usize());
+            if new_off > section_offset {
+                section.set_padding(new_off - section_offset);
+            }
             sh.sh_offset = T::from_usize(new_off);
-            section_offset = new_off + section.len();
+            section_offset = new_off + section.get_data().len();
         }
         self.ehdr.e_shoff = T::from_usize(section_offset);
     }
@@ -146,30 +152,13 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     {
         self.prepare_writing()?;
 
-        let post_ehdr_phdr_offset = ehdr::ElfEhdr::<T>::mem_len() + phdr::ElfPhdr::<T>::mem_len() * self.phdrs.len();
-
         self.ehdr.write(file)?;
         for prog_header in &self.phdrs {
             prog_header.write(file)?;
         }
 
-        let mut section_offset = post_ehdr_phdr_offset;
-
-        for (i, sh) in self.shdrs.iter_mut().enumerate() {
-            let align = sh.sh_addralign; // convertir T en usize
-            let new_off = align_up(section_offset, align.to_usize());
-
-            if new_off > section_offset {
-                file.write_all(&vec![0u8; new_off - section_offset])?;
-                section_offset = new_off;
-            }
-
-            sh.sh_offset = T::from_usize(section_offset);
-            sh.sh_size = T::from_usize(self.sections[i].len());
-
-            file.write_all(&self.sections[i])?;
-
-            section_offset += self.sections[i].len();
+        for sh in self.sections.iter() {
+            sh.write(file)?;
         }
 
         for sh in self.shdrs.iter() {

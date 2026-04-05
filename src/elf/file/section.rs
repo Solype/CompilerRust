@@ -1,0 +1,39 @@
+use crate::elf::traits::ElfWritable;
+
+#[derive(Default)]
+pub struct Section {
+    data: Vec<u8>,
+    padding : usize,
+}
+
+impl Section {
+    pub fn new(data : Vec<u8>) -> Self
+    {
+        Self {
+            data: data,
+            padding : 0,
+        }
+    }
+
+    pub fn set_padding(&mut self, padding : usize) -> &mut Self
+    {
+        println!("SETTING PADDING TO : {}", padding);
+        self.padding = padding;
+        self
+    }
+
+    pub fn get_data(&self) -> &Vec<u8>
+    {
+        &self.data
+    }
+}
+
+impl ElfWritable for Section
+{
+    fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        println!("writing a padding of : {}", self.padding);
+        writer.write_all(&vec![0u8; self.padding as usize])?;
+        writer.write_all(&self.data)?;
+        Ok(())
+    }
+}

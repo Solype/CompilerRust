@@ -5,8 +5,9 @@ use std::vec;
 use crate::elf::ehdr;
 use crate::elf::phdr;
 use crate::elf::shdr;
-use crate::elf::traits::ElfWritable;
-use crate::elf::traits::FromUsize;
+use super::strtab::Strtab;
+use super::traits::ElfWritable;
+use super::traits::FromUsize;
 use super::symbol;
 
 #[allow(dead_code)]
@@ -17,8 +18,10 @@ where T: Copy + ElfWritable + Debug + Default,
     pub shdrs: Vec<shdr::ElfShdr<T>>,
     pub phdrs: Vec<phdr::ElfPhdr<T>>,
     pub sections: Vec<Vec<u8>>,
+
+    pub strtab: Strtab,
+    pub shstrtab: Strtab,
     pub symtab: Vec<symbol::ElfSym<T>>,
-    pub strtab_idx : u32,
 }
 
 #[allow(dead_code)]
@@ -30,42 +33,16 @@ where
     T: Copy + ElfWritable + Debug + Default + From<u8> + From<u32>,
 {
     fn default() -> Self {
-        // Contenu de .shstrtab
-        let mut shstrtab_data: Vec<u8> = vec![0];
-        shstrtab_data.extend_from_slice(shdr::SectionName::ShStrtab.as_str().as_bytes());
-        shstrtab_data.push(0);
-
-
-        // Header de .shstrtab
-        let shstrtab_hdr = shdr::ElfShdr::<T> {
-            sh_name: 1,     // offset de ".shstrtab"
-            sh_type: shdr::ShType::StrTab as u32,
-            sh_addralign: T::from(1_u8),       // alignement classique pour string table
-            sh_flags: T::from(shdr::ShFlags::NoFlag.bits()),
-            ..Default::default()
-        };
-
-        let name_strstb_hdr = shstrtab_data.len();
-        shstrtab_data.extend_from_slice(shdr::SectionName::Strtab.as_str().as_bytes());
-        shstrtab_data.push(0);
-        let strtab_hdr = shdr::ElfShdr::<T> {
-            sh_name : name_strstb_hdr as u32,
-            sh_type: shdr::ShType::StrTab as u32,
-            sh_flags: T::from(shdr::ShFlags::NoFlag.bits()),
-            ..Default::default()
-        };
+        // Contenu de .shstrta
 
         Self {
-            ehdr: ehdr::ElfEhdr {
-                e_shnum: 2,        // NULL + .shstrtab
-                e_shstrndx: 1,     // index de .shstrtab
-                ..Default::default()
-            },
-            shdrs: vec![ shdr::ElfShdr::<T>::default(), shstrtab_hdr, strtab_hdr ],
-            strtab_idx: 2,
+            ehdr: ehdr::ElfEhdr::default(),
+            shdrs: vec![ shdr::ElfShdr::<T>::default() ],
             phdrs: vec![],
-            sections: vec![ vec![], shstrtab_data, vec![0] ],
+            sections: vec![ vec![] ],
             symtab: vec![],
+            strtab: Strtab::default(),
+            shstrtab: Strtab::default(),
         }
     }
 }
@@ -74,33 +51,42 @@ where
 impl <T> ElfFile <T>
 where T: Copy + ElfWritable + Debug + Default + FromUsize,
 {
-    pub fn add_section(&mut self, name: shdr::SectionName, binary: Vec<u8>) -> &mut Self {
-        // 1. Ajouter le nom dans .shstrtab
-        let shstrtab = &mut self.sections[self.ehdr.e_shstrndx as usize];
+    pub fn add_section(
+        &mut self,
+        name: shdr::SectionName,
+        binary: Vec<u8>,
+        ty: Option<shdr::ShType>,
+        flags: Option<u32>,
+        align: Option<usize>,
+        entsize: Option<usize>,
+    ) -> &mut Self {
+        // 1. add name in .shstrtab
+        let name_offset = self.shstrtab.name(name.as_str().to_string());
 
-        let name_offset = shstrtab.len(); // offset AVANT push
-        shstrtab.extend_from_slice(name.as_str().as_bytes());
-        shstrtab.push(0); // null-terminated
+        // 2. add default_value
+        let ty = ty.unwrap_or(shdr::ShType::ProgBits);
+        let flags = flags.unwrap_or(shdr::ShFlags::NoFlag as u32);
+        let align = align.unwrap_or(1);
+        let entsize = entsize.unwrap_or(0);
 
-        // 2. Créer le header
+        // 3. Header
         let shdr = shdr::ElfShdr {
-            sh_name: name_offset as u32, // ⚠️ offset dans .shstrtab
-            sh_type: 1, // SHT_PROGBITS (par défaut)
-            sh_flags: T::default(),
+            sh_name: name_offset as u32,
+            sh_type: ty as u32,
+            sh_flags: T::from_usize(flags as usize),
             sh_addr: T::default(),
-            sh_offset: T::default(), // sera rempli dans write()
+            sh_offset: T::default(),
             sh_size: T::from_usize(binary.len()),
             sh_link: 0,
             sh_info: 0,
-            sh_addralign: T::from_usize(1),
-            sh_entsize: T::default(),
+            sh_addralign: T::from_usize(align),
+            sh_entsize: T::from_usize(entsize),
         };
 
-        // 3. Push
+        // 4. Push
         self.shdrs.push(shdr);
         self.sections.push(binary);
 
-        // 4. Update header
         self.ehdr.e_shnum = self.shdrs.len() as u16;
 
         self
@@ -115,16 +101,36 @@ where T: Copy + ElfWritable + Debug + Default + FromUsize,
                 ));
         }
 
-        if self.symtab.len() > 0 {
-            self.add_section(shdr::SectionName::ShStrtab,  self.symtab.iter().flat_map(
-                |s| { 
-                    s.to_bytes().unwrap()
-                }).collect());
+        if !self.symtab.is_empty() {
+            let sym_binary: Vec<u8> = self.symtab
+                .iter()
+                .flat_map(|s| s.to_bytes().expect("ElfSym to_bytes failed"))
+                .collect();
+
+            self.add_section(
+                shdr::SectionName::Symtab,
+                sym_binary,
+                Some(shdr::ShType::SymTab),
+                None,
+                Some(std::mem::size_of::<T>()),
+                Some(symbol::ElfSym::<T>::mem_len()),
+            );
         }
+
+
+        let shstrtab_name = self.shstrtab.name(shdr::SectionName::ShStrtab.as_str().to_string());
+        let strtab_name = self.shstrtab.name(shdr::SectionName::Strtab.as_str().to_string());
+
+        self.sections.push(self.shstrtab.to_vec());
+        self.sections.push(self.strtab.to_vec());
+        self.ehdr.e_shstrndx = self.shdrs.len() as u16;
+        self.shdrs.push(shdr::ElfShdr::shstrtab(shstrtab_name as u32));
+        self.shdrs.push(shdr::ElfShdr::strtab(strtab_name as u32));
 
         if self.phdrs.len() != 0 {
             self.ehdr.e_phoff = T::from_usize(ehdr::ElfEhdr::<T>::mem_len());
         }
+        self.ehdr.e_shnum = self.shdrs.len() as u16;
         Ok(())
     }
 

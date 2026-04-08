@@ -13,6 +13,7 @@ fn main() -> std::io::Result<()> {
     let instr: Vec<Instruction> = vec![
         Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Eax)), src: Operand::Imm(1) },
         Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Ebx)), src: Operand::Sym("my_func".to_string()) },
+        Instruction::Jmp(Operand::Sym("my_func".to_string())),
         Instruction::Int(0x80)
     ];
 

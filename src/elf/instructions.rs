@@ -24,7 +24,7 @@ pub enum RegisterArch {
 pub enum Operand {
     Reg(RegisterArch),
     Imm(u32),
-    Symbol(String)
+    Sym(String)
 }
 
 #[derive(Debug, Clone)]
@@ -51,24 +51,59 @@ pub enum Instruction {
     Cmp((Operand, Operand))
 }
 
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct Relocation {
+    pub symbol: String,
+    pub offset: usize,   // offset dans data
+    pub size: u8,        // en bytes (1, 2, 4, 8)
+    pub kind: RelocKind,
+}
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub enum RelocKind {
+    Absolute,
+    Relative,
+}
+
+#[derive(Default)]
+#[allow(dead_code)]
+pub struct EncodeInformation {
+    pub data: Vec<u8>,
+    pub relocations: Vec<Relocation>,
+}
+
 #[allow(dead_code)]
 impl Instruction {
-    fn encode_move(&self, op1: &Operand, op2: &Operand) -> Vec<u8>
+    fn encode_move(&self, op1: &Operand, op2: &Operand) -> EncodeInformation
     {
         match (op1, op2) {
             (Operand::Reg(RegisterArch::X32(reg)), Operand::Imm(val)) => {
                 let mut v = vec![0xB8 + *reg as u8];
                 v.extend(&val.to_le_bytes());
-                return v;
+                return EncodeInformation { data: v, ..Default::default() };
+            }
+
+            (Operand::Reg(RegisterArch::X32(reg)), Operand::Sym(sym)) => {
+                let mut v = vec![0xB8 + *reg as u8];
+
+                let offset = v.len();
+                v.extend(&0u32.to_le_bytes());
+
+                EncodeInformation { data: v, relocations: vec![ Relocation {
+                            symbol: sym.clone(), offset, size: 4, kind: RelocKind::Absolute,
+                    }],
+                }
             }
             _ => unimplemented!(),
         }
     }
 
-    pub fn encode(&self) -> Vec<u8> {
+    pub fn encode(&self) -> EncodeInformation {
         match self {
             Instruction::Mov { dst, src } => self.encode_move(dst, src),
-            Instruction::Int(n) => vec![0xCD, *n],
+            Instruction::Int(n) => EncodeInformation { data: vec![0xCD, *n], ..Default::default() },
             _ => unimplemented!(),
         }
     }

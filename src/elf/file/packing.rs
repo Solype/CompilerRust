@@ -4,14 +4,15 @@ use super::{
     file::ElfFile,
     section::Section,
     super::{
-        traits::{ElfWritable, UsizeCompatible}
+        traits::{ElfWritable, UsizeCompatible},
+        shdr,
+        ehdr,
+        phdr,
+        elfsym,
+        rel::*,
     }
 };
 
-use super::super::shdr;
-use super::super::ehdr;
-use super::super::phdr;
-use super::super::elfsym;
 
 fn align_up(offset: usize, align: usize) -> usize {
     if align == 0 { return offset; } // safe fallback
@@ -31,17 +32,17 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         return  strtab_idx;
     }
 
-    fn pack_symtab(&mut self, strtab_idx: usize)
+    fn pack_symtab(&mut self, strtab_idx: usize) -> usize
     {
-        if self.symtab.is_empty() { return; }
+        if self.symtab.symbols.is_empty() { return 0; }
         let mut sym_binary: Vec<u8> = vec![];
 
-        for sym in self.symtab.iter() {
+        for sym in self.symtab.symbols.iter() {
             sym_binary.extend(sym.to_bytes().expect("ElfSym to_bytes failed"));
         }
 
         let section_id = self.add_section(
-            shdr::SectionName::Symtab,
+            shdr::SectionName::Symtab.as_str().to_string(),
             shdr::ElfShdr { 
                 sh_type: shdr::ShType::SymTab as u32,
                 sh_link: strtab_idx as u32,
@@ -51,6 +52,51 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             }
         );
         self.sections[section_id].set_data(sym_binary);
+        section_id
+    }
+
+    fn pack_rel(&mut self, symtab_idx: usize)
+    {
+        if self.rels.is_empty() {
+            return;
+        }
+
+        let entsize = ElfRel::<T>::mem_len();
+        let rels = std::mem::take(&mut self.rels);
+
+        for (target_sec_idx, relocs) in rels {
+            let mut rel_binary: Vec<u8> = vec![];
+
+            for rel in relocs {
+                rel_binary.extend(
+                    rel.to_bytes().expect("ElfRel to_bytes failed")
+                );
+            }
+
+            // 🔥 nom dynamique (.rel.text, .rel.data, etc.)
+            let target_name_idx = self.shdrs[target_sec_idx].sh_name;
+            
+            let rel_section_name_opt = self.shstrtab.from_usize(target_name_idx as usize);
+    
+            if let Some(section_name) = rel_section_name_opt {
+
+                let new_name = format!(".rel{}", section_name);
+    
+                let section_id = self.add_section(
+                    new_name,
+                    shdr::ElfShdr {
+                        sh_type: shdr::ShType::Rel as u32,
+                        sh_link: symtab_idx as u32,
+                        sh_info: target_sec_idx as u32, // ⭐ clé ici
+                        sh_addralign: T::from_usize(entsize),
+                        sh_entsize: T::from_usize(entsize),
+                        ..Default::default()
+                    }
+                );
+    
+                self.sections[section_id].set_data(rel_binary);
+            }
+        }
     }
 
     fn pack_shstrtab(&mut self)
@@ -95,7 +141,8 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         }
 
         let strtab_ndx = self.pack_strtab();
-        self.pack_symtab(strtab_ndx);
+        let sym_ndx = self.pack_symtab(strtab_ndx);
+        self.pack_rel(sym_ndx);
         self.pack_shstrtab();
 
         self.ehdr.e_shnum = self.shdrs.len() as u16;

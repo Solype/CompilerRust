@@ -12,17 +12,19 @@ fn main() -> std::io::Result<()> {
 
     let instr: Vec<Instruction> = vec![
         Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Eax)), src: Operand::Imm(1) },
+        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Ebx)), src: Operand::Sym("my_func".to_string()) },
+        Instruction::Int(0x80)
+    ];
+
+    let instr2 : Vec<Instruction> = vec![
+        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Eax)), src: Operand::Imm(1)},
+        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Eax)), src: Operand::Imm(1) },
         Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Ebx)), src: Operand::Imm(84) },
         Instruction::Int(0x80)
     ];
 
-    let text_binary: Vec<u8> = instr.iter()
-        .flat_map(|ins| ins.encode())
-        .collect();
-    let len_txt = text_binary.len();
-
     let mut elf_file = elf::file::ElfFile64::default();
-    let section = elf_file.add_section(elf::shdr::SectionName::Text, 
+    let section = elf_file.add_section(elf::shdr::SectionName::Text.as_str().to_string(), 
     elf::shdr::ElfShdr {
                     sh_type: elf::shdr::ShType::ProgBits as u32,
                     sh_flags: (elf::shdr::ShFlags::Alloc as u64 | elf::shdr::ShFlags::ExecInstr as u64),
@@ -31,20 +33,30 @@ fn main() -> std::io::Result<()> {
                 }
             );
 
-    
+    elf_file.add_symbol_to_section(
+        section,
+        "my_func".to_string(),
+        &instr2,
+        // &text_binary2,
+        make_st_info(
+            elf::elfsym::StBind::Global,
+            elf::elfsym::StType::Func
+        ),
+        elf::elfsym::StVis::Default as u8,
+    ).expect("Error while encoding");
 
-    let start_name = elf_file.strtab.name("_start".to_string());
-    elf_file.symtab.push(
-        elf::elfsym::ElfSym::<u64> {
-            st_name: start_name as u32,
-            st_info: make_st_info(elf::elfsym::StBind::Global, elf::elfsym::StType::Func),
-            st_other: elf::elfsym::StVis::Default as u8,
-            st_shndx: 1,
-            st_size: len_txt as u64,
-            st_value: 0,
-            ..Default::default()
-        }
-    );
+    elf_file.add_symbol_to_section(
+        section,
+        "_start".to_string(),
+        &instr, 
+        // &text_binary2, 
+        make_st_info(
+            elf::elfsym::StBind::Global,
+            elf::elfsym::StType::Func
+        ), 
+        elf::elfsym::StVis::Default as u8,
+    ).expect("Error while encoding");
+
     elf_file.write(&mut file)?;
     println!("Fichier ELF généré : output.elf");
     Ok(())

@@ -28,6 +28,16 @@ impl Strtab {
         }
     }
 
+    pub fn from_usize(&self, name_ndx: usize) -> Option<String>
+    {
+        for (name, &offset) in &self.map_of_names {
+            if offset == name_ndx {
+                return Some(name.clone());
+            }
+        }
+        None
+    }
+
     pub fn to_vec(&self) -> Vec<u8>
     {
         let mut v = vec![0u8; self.size + 1];

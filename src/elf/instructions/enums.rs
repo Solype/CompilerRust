@@ -12,11 +12,61 @@ pub enum Register {
     Edi = 7,
 }
 
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum Scale {
+    One = 0,   // ×1
+    Two = 1,   // ×2
+    Four = 2,  // ×4
+    Eight = 3, // ×8
+}
+
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub enum MemDisplacement {
-    Imm(i32),
-    Sym(String)
+pub enum MemAddress {
+    /// [disp32] (ex: [0x12345678] ou [symbol])
+    Direct {
+        disp: i32,
+    },
+
+    /// [base]
+    Base {
+        base: Register,
+    },
+
+    /// [base + disp]
+    BaseDisp {
+        base: Register,
+        disp: i32,
+    },
+
+    /// [index * scale + disp]
+    /// (pas de base → nécessite disp32 en x86)
+    IndexScaleDisp {
+        index: Register,
+        scale: Scale,
+        disp: i32,
+    },
+
+    /// [base + index]
+    BaseIndex {
+        base: Register,
+        index: Register,
+    },
+
+    /// [base + index * scale]
+    BaseIndexScale {
+        base: Register,
+        index: Register,
+        scale: Scale,
+    },
+
+    /// [base + index * scale + disp]
+    BaseIndexScaleDisp {
+        base: Register,
+        index: Register,
+        scale: Scale,
+        disp: i32,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -26,9 +76,7 @@ pub enum Operand {
     Reg(Register),
     Imm(u32),
     Sym(String),
-    RegMemory(Register),
-    RegMemDisp(Register, i32),
-    ComplexMemDisp(Vec<Operand>),
+    MemoryAddress(MemAddress),
 }
 
 #[derive(Debug, Clone)]
@@ -55,7 +103,7 @@ pub enum Instruction {
     Cmp((Operand, Operand))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 #[allow(dead_code)]
 pub struct Relocation {
     pub sym: String,
@@ -65,9 +113,10 @@ pub struct Relocation {
     pub addend: i32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum RelocKind {
     Relative,
+    #[default]
     Absolute
 }
 

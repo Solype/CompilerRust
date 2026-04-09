@@ -10,39 +10,46 @@ use crate::elf::elfsym::make_st_info;
 fn main() -> std::io::Result<()> {
     let mut file = File::create("output.elf")?;
     let instr: Vec<Instruction> = vec![
-        Instruction::Mov { 
-            dst: Operand::Reg(Register::Eax), 
-            src: Operand::Imm(1) 
-        },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(0x11111111) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Sym("my_data".to_string()) },
 
-        // initialiser EBX avec une adresse valide (important)
-        Instruction::Mov {
-            dst: Operand::Reg(Register::Ebx),
-            src: Operand::Sym("my_data".to_string()),
-        },
+        // ===== base =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::Base { base: Register::Ebx }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::MemoryAddress(MemAddress::Base { base: Register::Ebx }) },
 
-        // // écrire en mémoire
-        Instruction::Mov {
-            dst: Operand::RegMemDisp(Register::Ebx, 1), // [ebx]
-            src: Operand::Reg(Register::Eax),
-        },
-        Instruction::Mov {
-            dst: Operand::RegMemDisp(Register::Ebx, 4), // [ebx + 4]
-            src: Operand::Reg(Register::Eax),
-        },
+        // ===== base + disp =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: 4 }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Edx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: 4 }) },
 
-        // lire depuis la mémoire
-        Instruction::Mov {
-            dst: Operand::Reg(Register::Ecx),
-            src: Operand::RegMemDisp(Register::Ebx, 0),
-        },
-        Instruction::Mov {
-            dst: Operand::Reg(Register::Edx),
-            src: Operand::RegMemDisp(Register::Ebx, 4),
-        },
+        // ===== base + disp (negatif) =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: -4 }), src: Operand::Reg(Register::Eax) },
+
+        // ===== base + index =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseIndex { base: Register::Ebx, index: Register::Ecx }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Esi), src: Operand::MemoryAddress(MemAddress::BaseIndex { base: Register::Ebx, index: Register::Ecx }) },
+
+        // ===== base + index * scale =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseIndexScale { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Edi), src: Operand::MemoryAddress(MemAddress::BaseIndexScale { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four }) },
+
+        // ===== base + index * scale + disp =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four, disp: 8 }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebp), src: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four, disp: 8 }) },
+
+        // ===== index * scale + disp =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::IndexScaleDisp { index: Register::Ecx, scale: Scale::Two, disp: 16 }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::MemoryAddress(MemAddress::IndexScaleDisp { index: Register::Ecx, scale: Scale::Two, disp: 16 }) },
+
+        // ===== direct (absolute) =====
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::MemoryAddress(MemAddress::Direct { disp: 0x12345678 }) },
+
+        // ===== ESP (force SIB) =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::Base { base: Register::Esp }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Esp, disp: 4 }) },
 
         Instruction::Int(0x80),
     ];
+
 
     let instr2 : Vec<Instruction> = vec![
         Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(75) },
@@ -65,7 +72,7 @@ fn main() -> std::io::Result<()> {
     );
 
     elf_file.add_symbol_to_section_raw(section_data, "my_data".to_string(),
-        &vec!['a' as u8, 'b' as u8, 'c' as u8, 'd' as u8, 0u8],
+        &vec!['a' as u8, 'b' as u8, 'c' as u8, 'd' as u8, 'e' as u8, 'f' as u8, 'g' as u8, 0u8],
             make_st_info(
             elf::elfsym::StBind::Global,
             elf::elfsym::StType::Func

@@ -30,8 +30,8 @@ impl Instruction {
             }
 
             (
-                Operand::Reg(_) | Operand::RegMemory(_) | Operand::RegMemDisp(_, _),
-                Operand::Reg(_) | Operand::RegMemory(_) | Operand::RegMemDisp(_, _),
+                Operand::Reg(_) | Operand::MemoryAddress(_),
+                Operand::Reg(_) | Operand::MemoryAddress(_),
             ) => {
                 let opcode = match (op1, op2) {
                     (Operand::Reg(_), _) => 0x8B,

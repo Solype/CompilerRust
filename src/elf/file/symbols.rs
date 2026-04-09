@@ -4,7 +4,9 @@ use super::super::elfsym::ElfSym;
 
 
 #[derive(Default)]
-pub struct Symbols<T> {
+pub struct Symbols<T>
+where T:Default
+{
     pub symbols: Vec<ElfSym<T>>,
     pub sym_map: HashMap<usize, usize>, // map the name idx to the idx in the symbol list
 }
@@ -16,12 +18,16 @@ pub enum SymbolError {
 }
 
 #[allow(dead_code)]
-impl<T> Symbols<T> {
+impl<T> Symbols<T>
+where T: Default
+{
     pub fn new() -> Self {
-        Self {
+        let mut tmp = Self {
             symbols: Vec::new(),
             sym_map: HashMap::new(),
-        }
+        };
+        let _ = tmp.add(ElfSym::<T>::default());
+        tmp
     }
 
     pub fn add(&mut self, sym: ElfSym<T>) -> Result<usize, SymbolError> {

@@ -12,7 +12,7 @@ where T: Copy ,
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, BinaryLogicSize)]
 pub struct ElfRela<T>
 where T: Copy ,
 {

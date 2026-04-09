@@ -3,7 +3,9 @@ use elf_derive::BinaryLogicSize;
 use super::traits::ElfWritable;
 
 #[derive(Debug, Clone, Copy, Default, BinaryLogicSize)]
-pub struct ElfSym<T> {
+pub struct ElfSym<T>
+where T: Default
+{
     pub st_name: u32,   // Index into the string table (.strtab) for the symbol's name
     pub st_info: u8,    // Symbol type and binding attributes (STB_*, STT_*)
     pub st_other: u8,   // Symbol visibility (STV_*) and other info
@@ -54,7 +56,7 @@ pub fn make_st_info(bind: StBind, typ: StType) -> u8 {
 
 impl<T> ElfWritable for ElfSym<T>
 where
-    T: Copy + ElfWritable,
+    T: Copy + ElfWritable + Default,
 {
     fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         match std::mem::size_of::<T>() {
@@ -92,7 +94,7 @@ where
 
 impl<T> ElfSym<T>
 where
-    T: Copy + ElfWritable,
+    T: Copy + ElfWritable + Default,
 {
     pub fn to_bytes(&self) -> std::io::Result<Vec<u8>> {
         let mut buffer = Vec::new();

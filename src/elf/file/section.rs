@@ -1,5 +1,4 @@
 use super::super::traits::ElfWritable;
-use super::super::rel;
 
 #[derive(Default)]
 pub struct Section {

@@ -58,13 +58,13 @@ pub struct Relocation {
     pub offset: usize,   // offset dans data
     pub size: u8,        // en bytes (1, 2, 4, 8)
     pub kind: RelocKind,
+    pub addend: i32,
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub enum RelocKind {
-    Absolute,
     Relative,
+    Absolute
 }
 
 #[derive(Default)]
@@ -92,7 +92,7 @@ impl Instruction {
                 v.extend(&0u32.to_le_bytes());
 
                 EncodeInformation { data: v, relocations: vec![ Relocation {
-                            symbol: sym.clone(), offset, size: 4, kind: RelocKind::Absolute,
+                            symbol: sym.clone(), offset, size: 4, kind: RelocKind::Absolute, addend: 0
                     }],
                 }
             }
@@ -105,8 +105,8 @@ impl Instruction {
             Operand::Sym(sym) => {
                 let mut v = vec![0xE9];
 
-                let offset = v.len(); // position du rel32
-                v.extend(&0u32.to_le_bytes());
+                let offset = v.len();
+                v.extend(&(0u32).to_le_bytes());
 
                 EncodeInformation {
                     data: v,
@@ -114,7 +114,8 @@ impl Instruction {
                         symbol: sym.clone(),
                         offset,
                         size: 4,
-                        kind: RelocKind::Relative, // ⭐ IMPORTANT
+                        kind: RelocKind::Relative,
+                        addend: -4
                     }],
                 }
             }

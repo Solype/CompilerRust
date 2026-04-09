@@ -37,6 +37,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         if self.symtab.symbols.is_empty() { return 0; }
         let mut sym_binary: Vec<u8> = vec![];
 
+        println!("Number of symbols : {}", self.symtab.len());
         for sym in self.symtab.symbols.iter() {
             sym_binary.extend(sym.to_bytes().expect("ElfSym to_bytes failed"));
         }
@@ -48,6 +49,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                 sh_link: strtab_idx as u32,
                 sh_addralign: T::from_usize(elfsym::ElfSym::<T>::mem_len()),
                 sh_entsize: T::from_usize(elfsym::ElfSym::<T>::mem_len()),
+                sh_info: 1,
                 ..Default::default()
             }
         );
@@ -86,6 +88,48 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                     new_name,
                     shdr::ElfShdr {
                         sh_type: shdr::ShType::Rel as u32,
+                        sh_link: symtab_idx as u32,
+                        sh_info: target_sec_idx as u32, // ⭐ clé ici
+                        sh_addralign: T::from_usize(entsize),
+                        sh_entsize: T::from_usize(entsize),
+                        ..Default::default()
+                    }
+                );
+    
+                self.sections[section_id].set_data(rel_binary);
+            }
+        }
+    }
+
+    fn pack_rela(&mut self, symtab_idx: usize)
+    {
+        if self.relas.is_empty() {
+            return;
+        }
+
+        let entsize = ElfRela::<T>::mem_len();
+        let rels = std::mem::take(&mut self.relas);
+
+        for (target_sec_idx, relocs) in rels {
+            let mut rel_binary: Vec<u8> = vec![];
+
+            for rel in relocs {
+                rel_binary.extend(
+                    rel.to_bytes().expect("ElfRel to_bytes failed")
+                );
+            }
+
+            let target_name_idx = self.shdrs[target_sec_idx].sh_name;
+            let rel_section_name_opt = self.shstrtab.from_usize(target_name_idx as usize);
+
+            if let Some(section_name) = rel_section_name_opt {
+
+                let new_name = format!(".rela{}", section_name);
+    
+                let section_id = self.add_section(
+                    new_name,
+                    shdr::ElfShdr {
+                        sh_type: shdr::ShType::Rela as u32,
                         sh_link: symtab_idx as u32,
                         sh_info: target_sec_idx as u32, // ⭐ clé ici
                         sh_addralign: T::from_usize(entsize),
@@ -143,6 +187,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         let strtab_ndx = self.pack_strtab();
         let sym_ndx = self.pack_symtab(strtab_ndx);
         self.pack_rel(sym_ndx);
+        self.pack_rela(sym_ndx);
         self.pack_shstrtab();
 
         self.ehdr.e_shnum = self.shdrs.len() as u16;

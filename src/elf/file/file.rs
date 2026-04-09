@@ -44,7 +44,7 @@ where
             shdrs: vec![ shdr::ElfShdr::<T>::default() ],
             phdrs: vec![],
             sections: vec![ Section::default() ],
-            symtab: symbols::Symbols::default(),
+            symtab: symbols::Symbols::new(),
             strtab: Strtab::default(),
             shstrtab: Strtab::default(),
             rels: HashMap::<usize, Vec<ElfRel<T>>>::default(),

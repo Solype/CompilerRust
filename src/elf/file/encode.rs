@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use super::file::ElfFile;
 use super::super::{
-    rel::ElfRel,
+    rel::{ElfRel, ElfRela},
     traits::{ElfWritable, UsizeCompatible},
     instructions,
     elfsym,
@@ -22,7 +22,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     fn get_abs_reloc_type(&self) -> u32 {
         match size_of::<T>() {
             4 => 1,       // R_386_32
-            8 => 10,   // R_X86_64_32
+            8 => 1,   // R_X86_64_32
             _ => 0
         }
     }
@@ -42,13 +42,13 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     ) -> Result<(), EncodeError> {
         let encode = instr.encode();
 
-        let section = self.sections.get(sec_ndx).ok_or(EncodeError::InvalidSection)?;
-
-        let base_offset = section.get_data().len();
+        let base_offset = self.sections[sec_ndx].get_data().len();
 
         if encode.relocations.len() != 0 {
             println!("identified {} relocation !", encode.relocations.len());
         }
+
+        self.sections[sec_ndx].add_data(&encode.data);
 
         for info in encode.relocations {
             let r_offset = base_offset + info.offset;
@@ -67,12 +67,19 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             };
 
             let r_info = ElfRel::pack_info(*sym_idx as u32, r_type);
-            self.rels.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRel {
-                r_offset: T::from_usize(r_offset),
-                r_info,
-            });
+            if info.addend != 0 {
+                self.relas.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRela {
+                    r_offset: T::from_usize(r_offset),
+                    r_info,
+                    r_addend: T::from_usize(info.addend as usize),
+                });
+            } else {
+                self.rels.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRel {
+                    r_offset: T::from_usize(r_offset),
+                    r_info,
+                });
+            }
         }
-        self.sections[sec_ndx].add_data(&encode.data);
         Ok(())
     }
 

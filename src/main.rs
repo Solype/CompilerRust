@@ -14,38 +14,45 @@ fn main() -> std::io::Result<()> {
         Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Sym("my_data".to_string()) },
 
         // ===== base =====
-        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::Base { base: Register::Ebx }), src: Operand::Reg(Register::Eax) },
         Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::MemoryAddress(MemAddress::Base { base: Register::Ebx }) },
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::Base { base: Register::Ebx }), src: Operand::Reg(Register::Eax) },
 
         // ===== base + disp =====
-        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: 4 }), src: Operand::Reg(Register::Eax) },
-        Instruction::Mov { dst: Operand::Reg(Register::Edx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: 4 }) },
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(4) }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Edx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(4) }) },
+
+        // ===== base + symbol =====
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Sym("my_data".to_string()) }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Esi), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Sym("my_data".to_string()) }) },
 
         // ===== base + disp (negatif) =====
-        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: -4 }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(-4) }), src: Operand::Reg(Register::Eax) },
 
         // ===== base + index =====
         Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseIndex { base: Register::Ebx, index: Register::Ecx }), src: Operand::Reg(Register::Eax) },
-        Instruction::Mov { dst: Operand::Reg(Register::Esi), src: Operand::MemoryAddress(MemAddress::BaseIndex { base: Register::Ebx, index: Register::Ecx }) },
+        Instruction::Mov { dst: Operand::Reg(Register::Edi), src: Operand::MemoryAddress(MemAddress::BaseIndex { base: Register::Ebx, index: Register::Ecx }) },
 
         // ===== base + index * scale =====
         Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseIndexScale { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four }), src: Operand::Reg(Register::Eax) },
-        Instruction::Mov { dst: Operand::Reg(Register::Edi), src: Operand::MemoryAddress(MemAddress::BaseIndexScale { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four }) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebp), src: Operand::MemoryAddress(MemAddress::BaseIndexScale { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four }) },
 
         // ===== base + index * scale + disp =====
-        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four, disp: 8 }), src: Operand::Reg(Register::Eax) },
-        Instruction::Mov { dst: Operand::Reg(Register::Ebp), src: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four, disp: 8 }) },
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four, disp: MemDisplacement::Imm(8) }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp { base: Register::Ebx, index: Register::Ecx, scale: Scale::Four, disp: MemDisplacement::Imm(8) }) },
 
         // ===== index * scale + disp =====
-        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::IndexScaleDisp { index: Register::Ecx, scale: Scale::Two, disp: 16 }), src: Operand::Reg(Register::Eax) },
-        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::MemoryAddress(MemAddress::IndexScaleDisp { index: Register::Ecx, scale: Scale::Two, disp: 16 }) },
+        Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::IndexScaleDisp { index: Register::Ecx, scale: Scale::Two, disp: MemDisplacement::Imm(16) }), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::MemoryAddress(MemAddress::IndexScaleDisp { index: Register::Ecx, scale: Scale::Two, disp: MemDisplacement::Imm(16) }) },
 
         // ===== direct (absolute) =====
-        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::MemoryAddress(MemAddress::Direct { disp: 0x12345678 }) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Imm(0x12345678) }) },
+
+        // ===== direct symbol (IMPORTANT) =====
+        Instruction::Mov { dst: Operand::Reg(Register::Edx), src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()) }) },
 
         // ===== ESP (force SIB) =====
         Instruction::Mov { dst: Operand::MemoryAddress(MemAddress::Base { base: Register::Esp }), src: Operand::Reg(Register::Eax) },
-        Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Esp, disp: 4 }) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Esp, disp: MemDisplacement::Imm(4) }) },
 
         Instruction::Int(0x80),
     ];

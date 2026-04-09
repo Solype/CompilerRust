@@ -22,50 +22,47 @@ pub enum Scale {
 }
 
 #[derive(Debug, Clone)]
+pub enum MemDisplacement {
+    Imm(i32),
+    Sym(String),
+}#[derive(Debug, Clone)]
+
 pub enum MemAddress {
-    /// [disp32] (ex: [0x12345678] ou [symbol])
     Direct {
-        disp: i32,
+        disp: MemDisplacement,
     },
 
-    /// [base]
     Base {
         base: Register,
     },
 
-    /// [base + disp]
     BaseDisp {
         base: Register,
-        disp: i32,
+        disp: MemDisplacement,
     },
 
-    /// [index * scale + disp]
-    /// (pas de base → nécessite disp32 en x86)
     IndexScaleDisp {
         index: Register,
         scale: Scale,
-        disp: i32,
+        disp: MemDisplacement,
     },
 
-    /// [base + index]
     BaseIndex {
         base: Register,
         index: Register,
     },
 
-    /// [base + index * scale]
     BaseIndexScale {
         base: Register,
         index: Register,
         scale: Scale,
     },
 
-    /// [base + index * scale + disp]
     BaseIndexScaleDisp {
         base: Register,
         index: Register,
         scale: Scale,
-        disp: i32,
+        disp: MemDisplacement,
     },
 }
 

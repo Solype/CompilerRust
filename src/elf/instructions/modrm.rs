@@ -29,7 +29,10 @@ fn encode_sib(scale: Scale, index: Option<Register>, base: Option<Register>) -> 
     (scale_bits << 6) | (index_bits << 3) | base_bits
 }
 
-fn encode_disp(disp: i32) -> (u8, Vec<u8>) {
+fn encode_disp(disp: i32, is_placeholder : bool) -> (u8, Vec<u8>) {
+    if (is_placeholder) {
+        return (0b10, disp.to_le_bytes().to_vec());
+    }
     if disp == 0 {
         (0b00, vec![])
     } else if (-128..=127).contains(&disp) {
@@ -63,24 +66,21 @@ pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
                 // -------------------------
                 MemAddress::Direct { disp } => {
                     data[0] = (0b00 << 6) | 0b101;
-                    data.extend(&(*disp as u32).to_le_bytes());
+                    let disp_value : i32 = match disp {
+                        MemDisplacement::Imm(val) => *val,
+                        MemDisplacement::Sym(sym) => {
+                            relocs.push(Relocation { sym: sym.clone(), offset: data.len(), size: 4, ..Default::default() });
+                            0
+                        }
+                    };
+                    data.extend(&(disp_value as u32).to_le_bytes());
                 }
 
-                // -------------------------
-                // [symbol]
-                // -------------------------
-                // MemAddress::Direct { disp: _ } => {} // déjà géré au-dessus
-
-                // -------------------------
-                // [base]
-                // -------------------------
                 MemAddress::Base { base } => {
                     if *base == Register::Esp {
-                        // SIB obligatoire
                         data[0] = (0b00 << 6) | 0b100;
                         data.push(encode_sib(Scale::One, None, Some(*base)));
                     } else if *base == Register::Ebp {
-                        // EBP → disp8 obligatoire
                         data[0] = (0b01 << 6) | (*base as u8);
                         data.push(0);
                     } else {
@@ -88,11 +88,15 @@ pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
                     }
                 }
 
-                // -------------------------
-                // [base + disp]
-                // -------------------------
                 MemAddress::BaseDisp { base, disp } => {
-                    let (mod_bits, disp_bytes) = encode_disp(*disp);
+                    let disp_value : i32 = match disp {
+                        MemDisplacement::Imm(val) => *val,
+                        MemDisplacement::Sym(sym) => {
+                            relocs.push(Relocation { sym: sym.clone(), offset: data.len(), size: 4, ..Default::default() });
+                            0
+                        }
+                    };
+                    let (mod_bits, disp_bytes) = encode_disp(disp_value, relocs.len() == 1);
 
                     if *base == Register::Esp {
                         data[0] = (mod_bits << 6) | 0b100;
@@ -104,47 +108,41 @@ pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
                     data.extend(disp_bytes);
                 }
 
-                // -------------------------
-                // [index*scale + disp]
-                // -------------------------
                 MemAddress::IndexScaleDisp { index, scale, disp } => {
-                    let (mod_bits, disp_bytes) = encode_disp(*disp);
-
+                    let disp_value : i32 = match disp {
+                        MemDisplacement::Imm(val) => *val,
+                        MemDisplacement::Sym(sym) => {
+                            relocs.push(Relocation { sym: sym.clone(), offset: data.len(), size: 4, ..Default::default() });
+                            0
+                        }
+                    };
+                    let (mod_bits, disp_bytes) = encode_disp(disp_value, relocs.len() == 1);
                     data[0] = (mod_bits << 6) | 0b100;
-
                     data.push(encode_sib(*scale, Some(*index), None));
-
                     data.extend(disp_bytes);
                 }
 
-                // -------------------------
-                // [base + index]
-                // -------------------------
                 MemAddress::BaseIndex { base, index } => {
                     data[0] = (0b00 << 6) | 0b100;
-
                     data.push(encode_sib(Scale::One, Some(*index), Some(*base)));
                 }
 
-                // -------------------------
-                // [base + index * scale]
-                // -------------------------
                 MemAddress::BaseIndexScale { base, index, scale } => {
                     data[0] = (0b00 << 6) | 0b100;
-
                     data.push(encode_sib(*scale, Some(*index), Some(*base)));
                 }
 
-                // -------------------------
-                // [base + index * scale + disp]
-                // -------------------------
                 MemAddress::BaseIndexScaleDisp { base, index, scale, disp } => {
-                    let (mod_bits, disp_bytes) = encode_disp(*disp);
-
+                    let disp_value : i32 = match disp {
+                        MemDisplacement::Imm(val) => *val,
+                        MemDisplacement::Sym(sym) => {
+                            relocs.push(Relocation { sym: sym.clone(), offset: data.len(), size: 4, ..Default::default() });
+                            0
+                        }
+                    };
+                    let (mod_bits, disp_bytes) = encode_disp(disp_value, relocs.len() == 1);
                     data[0] = (mod_bits << 6) | 0b100;
-
                     data.push(encode_sib(*scale, Some(*index), Some(*base)));
-
                     data.extend(disp_bytes);
                 }
             }

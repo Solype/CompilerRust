@@ -38,21 +38,33 @@ impl Instruction {
                     (_, Operand::Reg(_)) => 0x89,
                     _ => panic!("x86 cannot move memory to memory directly"),
                 };
+
                 let modrm_info = match (op1, op2) {
                     (Operand::Reg(_), _) => mod_rm_encode(op2, op1),
-                    _ => mod_rm_encode(op1, op2)
+                    _ => mod_rm_encode(op1, op2),
                 };
 
                 let mut v = vec![opcode];
+                let base_offset = v.len();
+
                 v.extend(modrm_info.data);
-                println!("data : {:?}", v);
+
+                let relocations = modrm_info
+                    .relocations
+                    .into_iter()
+                    .map(|mut reloc| {
+                        reloc.offset += base_offset;
+                        reloc.kind = RelocKind::Absolute;
+                        reloc.addend = 0;
+                        reloc
+                    })
+                    .collect();
 
                 EncodeInformation {
                     data: v,
-                    relocations: modrm_info.relocations,
+                    relocations,
                 }
             }
-
             _ => unimplemented!(),
         }
     }

@@ -11,16 +11,22 @@ fn main() -> std::io::Result<()> {
     let mut file = File::create("output.elf")?;
 
     let instr: Vec<Instruction> = vec![
-        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Eax)), src: Operand::Imm(1) },
-        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Ebx)), src: Operand::Imm(42) },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Edx), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Esi), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Edi), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebp), src: Operand::Reg(Register::Eax) },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(42) },
         Instruction::Call(Operand::Sym("my_func".to_string())),
         Instruction::Int(0x80)
     ];
 
     let instr2 : Vec<Instruction> = vec![
-        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Eax)), src: Operand::Imm(75) },
-        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Eax)), src: Operand::Imm(1)},
-        Instruction::Mov { dst: Operand::Reg(RegisterArch::X32(Register::Ebx)), src: Operand::Imm(84) },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(75) },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1)},
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(84) },
         Instruction::Ret,
         Instruction::Int(0x80)
     ];

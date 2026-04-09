@@ -37,7 +37,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 
     fn encode_single_instruction(
         &mut self,
-        instr: &instructions::Instruction,
+        instr: &instructions::enums::Instruction,
         sec_ndx: usize,
     ) -> Result<(), EncodeError> {
         let encode = instr.encode();
@@ -53,7 +53,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         for info in encode.relocations {
             let r_offset = base_offset + info.offset;
 
-            let name_idx = self.strtab.name(info.symbol);
+            let name_idx = self.strtab.name(info.sym);
 
             let sym_idx = if let Some(idx) = self.symtab.get_ndx(name_idx) {
                 idx
@@ -62,8 +62,8 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             };
 
             let r_type = match info.kind {
-                instructions::RelocKind::Absolute => self.get_abs_reloc_type(),
-                instructions::RelocKind::Relative => self.get_rel_reloc_type(),
+                instructions::enums::RelocKind::Absolute => self.get_abs_reloc_type(),
+                instructions::enums::RelocKind::Relative => self.get_rel_reloc_type(),
             };
 
             let r_info = ElfRel::pack_info(*sym_idx as u32, r_type);
@@ -83,7 +83,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         Ok(())
     }
 
-    pub fn add_symbol_to_section(&mut self, section_ndx: usize, name: String, data: &Vec<instructions::Instruction>, info: u8, other: u8)
+    pub fn add_symbol_to_section(&mut self, section_ndx: usize, name: String, data: &Vec<instructions::enums::Instruction>, info: u8, other: u8)
     -> Result<(), EncodeError>
     {
         if self.sections.len() <= section_ndx {

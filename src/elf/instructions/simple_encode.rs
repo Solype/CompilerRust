@@ -5,66 +5,54 @@ use super::modrm::*;
 impl Instruction {
     fn encode_move(&self, op1: &Operand, op2: &Operand) -> EncodeInformation {
         match (op1, op2) {
+            // mov reg, imm
             (Operand::Reg(reg), Operand::Imm(val)) => {
                 let mut v = vec![0xB8 + *reg as u8];
                 v.extend(&val.to_le_bytes());
-                EncodeInformation { data: v, ..Default::default() }
+                return EncodeInformation { data: v, ..Default::default() };
             }
 
+            // mov reg, symbol
             (Operand::Reg(reg), Operand::Sym(sym)) => {
                 let mut v = vec![0xB8 + *reg as u8];
-                let offset = v.len();
                 v.extend(&0u32.to_le_bytes());
+
+                return EncodeInformation {
+                    data: v,
+                    relocations: vec![Relocation {
+                        sym: sym.clone(),
+                        offset: 1,
+                        size: 4,
+                        kind: RelocKind::Absolute,
+                        addend: 0,
+                    }],
+                };
+            }
+
+            (
+                Operand::Reg(_) | Operand::RegMemory(_) | Operand::RegMemDisp(_, _),
+                Operand::Reg(_) | Operand::RegMemory(_) | Operand::RegMemDisp(_, _),
+            ) => {
+                let opcode = match (op1, op2) {
+                    (Operand::Reg(_), _) => 0x8B,
+                    (_, Operand::Reg(_)) => 0x89,
+                    _ => panic!("x86 cannot move memory to memory directly"),
+                };
+                let modrm_info = match (op1, op2) {
+                    (Operand::Reg(_), _) => mod_rm_encode(op2, op1),
+                    _ => mod_rm_encode(op1, op2)
+                };
+
+                let mut v = vec![opcode];
+                v.extend(modrm_info.data);
+                println!("data : {:?}", v);
 
                 EncodeInformation {
                     data: v,
-                    relocations: vec![Relocation {
-                        sym: sym.clone(), offset, size: 4, kind: RelocKind::Absolute, addend: 0,
-                    }],
+                    relocations: modrm_info.relocations,
                 }
             }
 
-            // mov reg, mem ou mem, reg → nécessite ModRM
-            (Operand::Reg(_), Operand::RegMemory(_))
-            | (Operand::Reg(_), Operand::Reg(_))
-            | (Operand::RegMemory(_), Operand::Reg(_))
-            | (Operand::RegMemory(_), Operand::RegMemory(_)) => {
-                match (op1, op2) {
-                    // Reg <- Reg
-                    (Operand::Reg(_), Operand::Reg(_)) => {
-                        let opcode = 0x89; // mov r/m32, r32
-                        let modrm_info = mod_rm_encode(op1, op2);
-                        let mut v = vec![opcode];
-                        v.extend(modrm_info.data);
-                        EncodeInformation { data: v, relocations: modrm_info.relocations }
-                    }
-
-                    // Reg <- Mem
-                    (Operand::Reg(_), Operand::RegMemory(_)) => {
-                        let opcode = 0x8B;
-                        let modrm_info = mod_rm_encode(op1, op2);
-                        let mut v = vec![opcode];
-                        v.extend(modrm_info.data);
-                        EncodeInformation { data: v, relocations: modrm_info.relocations }
-                    }
-
-                    // Mem <- Reg
-                    (Operand::RegMemory(_), Operand::Reg(_)) => {
-                        let opcode = 0x89;
-                        let modrm_info = mod_rm_encode(op1, op2);
-                        let mut v = vec![opcode];
-                        v.extend(modrm_info.data);
-                        EncodeInformation { data: v, relocations: modrm_info.relocations }
-                    }
-
-                    // Mem <- Mem (rare, nécessite un registre temporaire)
-                    (Operand::RegMemory(_), Operand::RegMemory(_)) => {
-                        panic!("x86 cannot move memory to memory directly");
-                    }
-
-                    _ => unimplemented!(),
-                }
-            }
             _ => unimplemented!(),
         }
     }

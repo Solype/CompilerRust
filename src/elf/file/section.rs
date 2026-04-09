@@ -17,7 +17,6 @@ impl Section {
 
     pub fn set_padding(&mut self, padding : usize) -> &mut Self
     {
-        println!("SETTING PADDING TO : {}", padding);
         self.padding = padding;
         self
     }
@@ -43,7 +42,6 @@ impl Section {
 impl ElfWritable for Section
 {
     fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        println!("writing a padding of : {}", self.padding);
         writer.write_all(&vec![0u8; self.padding as usize])?;
         writer.write_all(&self.data)?;
         Ok(())

@@ -4,7 +4,7 @@ fn encode_modrm_field_reg(reg_op: &Operand) -> u8 {
     match reg_op {
         Operand::Reg(r) | Operand::RegMemory(r) => *r as u8,
         Operand::NoOperand => 0, // si instruction utilise /digit au lieu de reg
-        _ => panic!("ModRM reg field must be a register or noop!"),
+        _ => panic!("ModRM register field must be a register or noop!"),
     }
 }
 
@@ -40,7 +40,6 @@ pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
 
         _ => panic!("Error in the OP1 of mod rm encode function"),
     }
-
     data[0] = (data[0] & 0b11000111) | ((reg_field & 0b111) << 3);
 
     EncodeInformation {

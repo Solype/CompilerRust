@@ -42,12 +42,12 @@ where T: Default
         let idx = self.symbols.len();
         self.symbols.push(sym);
         self.sym_map.insert(sym_name, idx);
-
         Ok(idx)
     }
 
     pub fn get_ndx(&self, name_idx: usize) -> Option<&usize>
     {
+        println!("{:?}", self.sym_map);
         return self.sym_map.get(&name_idx);
     }
 

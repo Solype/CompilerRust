@@ -19,19 +19,29 @@ pub enum EncodeError {
 impl <T> ElfFile<T>
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
-    fn get_abs_reloc_type(&self) -> u32 {
-        match size_of::<T>() {
-            4 => 1,       // R_386_32
-            8 => 1,   // R_X86_64_32
-            _ => 0
+    fn get_abs_reloc_type(&self, reloc_size: usize) -> u32 {
+        match (size_of::<T>(), reloc_size) {
+            // ===== x86 =====
+            (4, 4) => 1,   // R_386_32
+
+            // ===== x86_64 =====
+            (8, 4) => 10,  // R_X86_64_32
+            (8, 8) => 1,   // R_X86_64_64
+
+            _ => panic!("Unsupported absolute relocation size"),
         }
     }
 
-    fn get_rel_reloc_type(&self) -> u32 {
-        match size_of::<T>() {
-            4 => 2,       // R_386_PC32
-            8 => 2,    // R_X86_64_PC32
-            _ => 0 
+    fn get_rel_reloc_type(&self, reloc_size: usize) -> u32 {
+        match (size_of::<T>(), reloc_size) {
+            // ===== x86 =====
+            (4, 4) => 2,   // R_386_PC32
+
+            // ===== x86_64 =====
+            (8, 4) => 2,   // R_X86_64_PC32
+            (8, 8) => 24,  // R_X86_64_PC64
+
+            _ => panic!("Unsupported relative relocation size"),
         }
     }
 
@@ -58,12 +68,13 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             let sym_idx = if let Some(idx) = self.symtab.get_ndx(name_idx) {
                 idx
             } else {
+                println!("Symbol not found !");
                 return Result::Err(EncodeError::SymbolError);
             };
 
             let r_type = match info.kind {
-                instructions::enums::RelocKind::Absolute => self.get_abs_reloc_type(),
-                instructions::enums::RelocKind::Relative => self.get_rel_reloc_type(),
+                instructions::enums::RelocKind::Absolute => self.get_abs_reloc_type(info.size as usize),
+                instructions::enums::RelocKind::Relative => self.get_rel_reloc_type(info.size as usize),
             };
 
             let r_info = ElfRel::pack_info(*sym_idx as u32, r_type);

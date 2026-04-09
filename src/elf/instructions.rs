@@ -22,6 +22,7 @@ pub enum RegisterArch {
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum Operand {
+    NoOperand,
     Reg(RegisterArch),
     Imm(u32),
     Sym(String)
@@ -124,11 +125,43 @@ impl Instruction {
         }
     }
 
+    fn encode_ret(&self) -> EncodeInformation {
+        EncodeInformation {
+            data: vec![0xC3],
+            relocations: vec![],
+        }
+    }
+
+    fn encode_call(&self, op: &Operand) -> EncodeInformation {
+        match op {
+            Operand::Sym(sym) => {
+                let mut v = vec![0xE8]; // opcode CALL
+
+                let offset = v.len();
+                v.extend(&(0u32).to_le_bytes());
+
+                EncodeInformation {
+                    data: v,
+                    relocations: vec![Relocation {
+                        symbol: sym.clone(),
+                        offset,
+                        size: 4,
+                        kind: RelocKind::Relative,
+                        addend: -4, // IDENTIQUE à jmp
+                    }],
+                }
+            }
+            _ => unimplemented!(),
+        }
+    }
+
     pub fn encode(&self) -> EncodeInformation {
         match self {
             Instruction::Mov { dst, src } => self.encode_move(dst, src),
             Instruction::Int(n) => EncodeInformation { data: vec![0xCD, *n], ..Default::default() },
             Instruction::Jmp(op) => self.encode_jmp(op),
+            Instruction::Call(op) => self.encode_call(op),
+            Instruction::Ret => self.encode_ret(),
             _ => unimplemented!(),
         }
     }

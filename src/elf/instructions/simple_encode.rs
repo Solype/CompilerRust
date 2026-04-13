@@ -29,13 +29,9 @@ impl Instruction {
                 };
             }
 
-            (
-                Operand::Reg(_) | Operand::MemoryAddress(_),
-                Operand::Reg(_) | Operand::MemoryAddress(_),
-            ) => {
+            ( Operand::Reg(_) | Operand::MemoryAddress(_), Operand::Reg(_) | Operand::MemoryAddress(_),) => {
                 let opcode = match (op1, op2) {
-                    (Operand::Reg(_), _) => 0x8B,
-                    (_, Operand::Reg(_)) => 0x89,
+                    (Operand::Reg(_), _) => 0x8B, (_, Operand::Reg(_)) => 0x89,
                     _ => panic!("x86 cannot move memory to memory directly"),
                 };
 
@@ -49,15 +45,8 @@ impl Instruction {
 
                 v.extend(modrm_info.data);
 
-                let relocations = modrm_info
-                    .relocations
-                    .into_iter()
-                    .map(|mut reloc| {
-                        reloc.offset += base_offset;
-                        reloc.kind = RelocKind::Absolute;
-                        reloc.addend = 0;
-                        reloc
-                    })
+                let relocations = modrm_info.relocations.into_iter()
+                    .map(|mut reloc| { reloc.offset += base_offset; reloc.kind = RelocKind::Absolute; reloc.addend = 0; reloc })
                     .collect();
 
                 EncodeInformation {

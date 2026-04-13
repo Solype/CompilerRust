@@ -30,7 +30,7 @@ fn encode_sib(scale: Scale, index: Option<Register>, base: Option<Register>) -> 
 }
 
 fn encode_disp(disp: i32, is_placeholder : bool) -> (u8, Vec<u8>) {
-    if (is_placeholder) {
+    if is_placeholder {
         return (0b10, disp.to_le_bytes().to_vec());
     }
     if disp == 0 {
@@ -53,7 +53,7 @@ pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
         // REG → mod = 11
         // =========================
         Operand::Reg(rm) => {
-            data[0] = (0b11 << 6) | (*rm as u8);
+            data[0] = ((ModRMModField::Reg as u8) << 6) | (*rm as u8);
         }
 
         // =========================
@@ -65,7 +65,7 @@ pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
                 // [disp32]
                 // -------------------------
                 MemAddress::Direct { disp } => {
-                    data[0] = (0b00 << 6) | 0b101;
+                    data[0] = ((ModRMModField::MemNoDisp as u8) << 6) | 0b101;
                     let disp_value : i32 = match disp {
                         MemDisplacement::Imm(val) => *val,
                         MemDisplacement::Sym(sym) => {

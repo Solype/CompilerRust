@@ -4,7 +4,6 @@ use elf_derive::BinaryLogicSize;
 use std::fmt::Debug;
 
 
-use super::sys_info_getter::*;
 use super::phdr;
 use super::shdr;
 
@@ -69,12 +68,15 @@ impl <T> Default for ElfEhdr<T>
 where T: Copy + ElfWritable + Debug + Default
 {
     fn default() -> Self {
-        let sys = get_system_info();
-
+        let (bit, machine): (u8, u16) = match size_of::<T>() {
+            4 => (ElfClass::Bit32 as u8, 0x03),
+            8 => (ElfClass::Bit64 as u8, 0x3E),
+            _ => panic!("Doe not match a recognisable size u32 or u64"),
+        };
         Self {
-            e_ident: build_ident(ElfClass::Bit64 as u8, sys.endian),
+            e_ident: build_ident(bit, 1),
             e_type: ElfType::Rel as u16,
-            e_machine: get_machine(&sys.arch),
+            e_machine: machine,
             e_version: 1,
 
             e_entry: T::default(),

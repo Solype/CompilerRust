@@ -50,7 +50,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         instr: &instructions::enums::Instruction,
         sec_ndx: usize,
     ) -> Result<(), EncodeError> {
-        let encode = instr.encode();
+        let mut encode = instr.encode();
 
         let base_offset = self.sections[sec_ndx].get_data().len();
 
@@ -58,7 +58,6 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             println!("identified {} relocation !", encode.relocations.len());
         }
 
-        self.sections[sec_ndx].add_data(&encode.data);
 
         for info in encode.relocations {
             let r_offset = base_offset + info.offset;
@@ -78,19 +77,27 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             };
 
             let r_info = ElfRel::pack_info(*sym_idx as u32, r_type);
-            if info.addend != 0 {
-                self.relas.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRela {
-                    r_offset: T::from_usize(r_offset),
-                    r_info,
-                    r_addend: T::from_usize(info.addend as usize),
-                });
-            } else {
-                self.rels.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRel {
-                    r_offset: T::from_usize(r_offset),
-                    r_info,
-                });
+            match size_of::<T>() {
+                4 => {
+                    let bytes = (info.addend as i32).to_le_bytes();
+
+                    encode.data[info.offset..info.offset + 4].copy_from_slice(&bytes);
+                    self.rels.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRel {
+                        r_offset: T::from_usize(r_offset),
+                        r_info,
+                    });
+                },
+                8 => {
+                    self.relas.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRela {
+                        r_offset: T::from_usize(r_offset),
+                        r_info,
+                        r_addend: T::from_usize(info.addend as usize),
+                    });
+                },
+                _ => panic!("Invalid template")
             }
         }
+        self.sections[sec_ndx].add_data(&encode.data);
         Ok(())
     }
 

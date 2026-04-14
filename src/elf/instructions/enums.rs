@@ -77,7 +77,6 @@ pub enum Operand {
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub enum Instruction {
     Mov {
         dst: Operand,
@@ -101,11 +100,10 @@ pub enum Instruction {
 }
 
 #[derive(Debug, Clone, Default)]
-#[allow(dead_code)]
 pub struct Relocation {
     pub sym: String,
-    pub offset: usize,   // offset dans data
-    pub size: u8,        // en bytes (1, 2, 4, 8)
+    pub offset: usize,
+    pub size: u8, // en bytes (1, 2, 4, 8)
     pub kind: RelocKind,
     pub addend: i32,
 }
@@ -117,14 +115,11 @@ pub enum RelocKind {
     Absolute
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum ModRMModField {
-    MemNoDisp = 0b00,
-    MemDisp8 = 0b01,
-    MemDisp32 = 0b10,
-    Reg = 0b11,
-}
+pub const MEMNODISP : u8 = 0b00;
+pub const MEMDISP8 : u8 = 0b01;
+pub const MEMDISP32 : u8 = 0b10;
+pub const REG : u8 = 0b11;
+
 
 #[derive(Default)]
 #[allow(dead_code)]

@@ -1,5 +1,7 @@
 use super::enums::*;
 
+///////////////////////////////////////////////////////////////////
+
 fn encode_modrm_field_reg(reg_op: &Operand) -> u8 {
     match reg_op {
         Operand::Reg(r) => *r as u8,
@@ -29,6 +31,133 @@ fn encode_sib(scale: Scale, index: Option<Register>, base: Option<Register>) -> 
     (scale_bits << 6) | (index_bits << 3) | base_bits
 }
 
+///////////////////////////////////////////////////////////////////
+/// 
+/// 
+/// 
+///////////////////////////////////////////////////////////////////
+
+fn get_disp(
+    disp: &MemDisplacement,
+    data_len: usize,
+    relocs: &mut Vec<Relocation>
+) -> i32 {
+    match disp {
+        MemDisplacement::Imm(val) => *val,
+        MemDisplacement::Sym(sym) => {
+            relocs.push(Relocation {
+                sym: sym.clone(),
+                offset: data_len,
+                size: 4,
+                ..Default::default()
+            });
+            0
+        }
+    }
+}
+
+fn encode_direct(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
+    data[0] = (MEMNODISP << 6) | 0b101;
+
+    let val = get_disp(disp, data.len(), relocs);
+    data.extend(&(val as u32).to_le_bytes());
+}
+
+fn encode_base(base: Register, data: &mut Vec<u8>) {
+    if base == Register::Esp {
+        data[0] = (MEMNODISP << 6) | 0b100;
+        data.push(encode_sib(Scale::One, None, Some(base)));
+    } else if base == Register::Ebp {
+        data[0] = (MEMDISP8 << 6) | (base as u8);
+        data.push(0);
+    } else {
+        data[0] = (MEMNODISP << 6) | (base as u8);
+    }
+}
+
+fn encode_base_disp(
+    base: Register,
+    disp: &MemDisplacement,
+    data: &mut Vec<u8>,
+    relocs: &mut Vec<Relocation>,
+) {
+    let val = get_disp(disp, data.len(), relocs);
+    let (mod_bits, disp_bytes) = encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
+
+    if base == Register::Esp {
+        data[0] = (mod_bits << 6) | 0b100;
+        data.push(encode_sib(Scale::One, None, Some(base)));
+    } else {
+        data[0] = (mod_bits << 6) | (base as u8);
+    }
+
+    data.extend(disp_bytes);
+}
+
+fn encode_base_index(base: Register, index: Register, data: &mut Vec<u8>) {
+    data[0] = (MEMNODISP << 6) | 0b100;
+    data.push(encode_sib(Scale::One, Some(index), Some(base)));
+}
+
+fn encode_index_disp(
+    index: Register,
+    scale: Scale,
+    disp: &MemDisplacement,
+    data: &mut Vec<u8>,
+    relocs: &mut Vec<Relocation>,
+) {
+    assert!(index != Register::Esp); // interdit
+
+    let val = get_disp(disp, data.len(), relocs);
+    let (mod_bits, disp_bytes) = encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
+
+    data[0] = (mod_bits << 6) | 0b100; // rm = 100 → SIB
+
+    // base = none → 101
+    data.push(encode_sib(scale, Some(index), None));
+
+    data.extend(disp_bytes);
+}
+
+fn encode_base_index_scale(
+    base: Register,
+    index: Register,
+    scale: Scale,
+    data: &mut Vec<u8>,
+) {
+    assert!(index != Register::Esp);
+
+    data[0] = (MEMNODISP << 6) | 0b100;
+
+    data.push(encode_sib(scale, Some(index), Some(base)));
+}
+
+fn encode_base_index_scale_disp(
+    base: Register,
+    index: Register,
+    scale: Scale,
+    disp: &MemDisplacement,
+    data: &mut Vec<u8>,
+    relocs: &mut Vec<Relocation>,
+) {
+    assert!(index != Register::Esp);
+
+    let val = get_disp(disp, data.len(), relocs);
+    let (mod_bits, disp_bytes) = encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
+
+    data[0] = (mod_bits << 6) | 0b100;
+
+    data.push(encode_sib(scale, Some(index), Some(base)));
+
+    data.extend(disp_bytes);
+}
+
+///////////////////////////////////////////////////////////////////
+/// 
+/// 
+/// 
+///////////////////////////////////////////////////////////////////
+
 fn encode_disp(disp: i32, is_placeholder : bool) -> (u8, Vec<u8>) {
     if is_placeholder {
         return (0b10, disp.to_le_bytes().to_vec());
@@ -42,136 +171,75 @@ fn encode_disp(disp: i32, is_placeholder : bool) -> (u8, Vec<u8>) {
     }
 }
 
+fn encode_reg(data: &mut Vec<u8>, rm: Register) {
+    data[0] = (REG << 6) | (rm as u8);
+}
+
+fn encode_symbol(sym: &String, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
+    data[0] = (MEMNODISP << 6) | 0b101;
+
+    relocs.push(Relocation {
+        sym: sym.clone(),
+        offset: 1,
+        size: 4,
+        ..Default::default()
+    });
+
+    data.extend(&0u32.to_le_bytes());
+}
+
+
+fn encode_memory(mem: &MemAddress, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
+    match mem {
+        MemAddress::Direct { disp } => encode_direct(disp, data, relocs),
+
+        MemAddress::Base { base } => encode_base(*base, data),
+
+        MemAddress::BaseDisp { base, disp } =>
+            encode_base_disp(*base, disp, data, relocs),
+
+        MemAddress::IndexScaleDisp { index, scale, disp } =>
+            encode_index_disp(*index, *scale, disp, data, relocs),
+
+        MemAddress::BaseIndex { base, index } =>
+            encode_base_index(*base, *index, data),
+
+        MemAddress::BaseIndexScale { base, index, scale } =>
+            encode_base_index_scale(*base, *index, *scale, data),
+
+        MemAddress::BaseIndexScaleDisp { base, index, scale, disp } =>
+            encode_base_index_scale_disp(*base, *index, *scale, disp, data, relocs),
+    }
+}
+
+///////////////////////////////////////////////////////////////////
+/// 
+/// 
+/// 
+///////////////////////////////////////////////////////////////////
+
 pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
     let mut data = vec![0u8];
-    let mut relocs: Vec<Relocation> = vec![];
+    let mut relocs = vec![];
 
     let reg_field = encode_modrm_field_reg(op2);
 
     match op1 {
-        // =========================
-        // REG → mod = 11
-        // =========================
-        Operand::Reg(rm) => {
-            data[0] = ((ModRMModField::Reg as u8) << 6) | (*rm as u8);
-        }
+        Operand::Reg(rm) => encode_reg(&mut data, *rm),
 
-        // =========================
-        // MEMORY
-        // =========================
         Operand::MemoryAddress(mem) => {
-            match mem {
-                // -------------------------
-                // [disp32]
-                // -------------------------
-                MemAddress::Direct { disp } => {
-                    data[0] = ((ModRMModField::MemNoDisp as u8) << 6) | 0b101;
-                    let disp_value : i32 = match disp {
-                        MemDisplacement::Imm(val) => *val,
-                        MemDisplacement::Sym(sym) => {
-                            relocs.push(Relocation { sym: sym.clone(), offset: data.len(), size: 4, ..Default::default() });
-                            0
-                        }
-                    };
-                    data.extend(&(disp_value as u32).to_le_bytes());
-                }
-
-                MemAddress::Base { base } => {
-                    if *base == Register::Esp {
-                        data[0] = (0b00 << 6) | 0b100;
-                        data.push(encode_sib(Scale::One, None, Some(*base)));
-                    } else if *base == Register::Ebp {
-                        data[0] = (0b01 << 6) | (*base as u8);
-                        data.push(0);
-                    } else {
-                        data[0] = (0b00 << 6) | (*base as u8);
-                    }
-                }
-
-                MemAddress::BaseDisp { base, disp } => {
-                    let disp_value : i32 = match disp {
-                        MemDisplacement::Imm(val) => *val,
-                        MemDisplacement::Sym(sym) => {
-                            relocs.push(Relocation { sym: sym.clone(), offset: data.len(), size: 4, ..Default::default() });
-                            0
-                        }
-                    };
-                    let (mod_bits, disp_bytes) = encode_disp(disp_value, relocs.len() == 1);
-
-                    if *base == Register::Esp {
-                        data[0] = (mod_bits << 6) | 0b100;
-                        data.push(encode_sib(Scale::One, None, Some(*base)));
-                    } else {
-                        data[0] = (mod_bits << 6) | (*base as u8);
-                    }
-
-                    data.extend(disp_bytes);
-                }
-
-                MemAddress::IndexScaleDisp { index, scale, disp } => {
-                    let disp_value : i32 = match disp {
-                        MemDisplacement::Imm(val) => *val,
-                        MemDisplacement::Sym(sym) => {
-                            relocs.push(Relocation { sym: sym.clone(), offset: data.len(), size: 4, ..Default::default() });
-                            0
-                        }
-                    };
-                    let (mod_bits, disp_bytes) = encode_disp(disp_value, relocs.len() == 1);
-                    data[0] = (mod_bits << 6) | 0b100;
-                    data.push(encode_sib(*scale, Some(*index), None));
-                    data.extend(disp_bytes);
-                }
-
-                MemAddress::BaseIndex { base, index } => {
-                    data[0] = (0b00 << 6) | 0b100;
-                    data.push(encode_sib(Scale::One, Some(*index), Some(*base)));
-                }
-
-                MemAddress::BaseIndexScale { base, index, scale } => {
-                    data[0] = (0b00 << 6) | 0b100;
-                    data.push(encode_sib(*scale, Some(*index), Some(*base)));
-                }
-
-                MemAddress::BaseIndexScaleDisp { base, index, scale, disp } => {
-                    let disp_value : i32 = match disp {
-                        MemDisplacement::Imm(val) => *val,
-                        MemDisplacement::Sym(sym) => {
-                            relocs.push(Relocation { sym: sym.clone(), offset: data.len(), size: 4, ..Default::default() });
-                            0
-                        }
-                    };
-                    let (mod_bits, disp_bytes) = encode_disp(disp_value, relocs.len() == 1);
-                    data[0] = (mod_bits << 6) | 0b100;
-                    data.push(encode_sib(*scale, Some(*index), Some(*base)));
-                    data.extend(disp_bytes);
-                }
-            }
+            encode_memory(mem, &mut data, &mut relocs);
         }
 
-        // =========================
-        // SYMBOL (mov reg, sym)
-        // =========================
         Operand::Sym(sym) => {
-            data[0] = (0b00 << 6) | 0b101;
-
-            relocs.push(Relocation {
-                sym: sym.clone(),
-                offset: 1,
-                size: 4,
-                ..Default::default()
-            });
-
-            data.extend(&0u32.to_le_bytes());
+            encode_symbol(sym, &mut data, &mut relocs);
         }
 
         _ => panic!("Invalid operand for ModRM"),
     }
 
-    // Inject reg field
+    // inject reg field
     data[0] = (data[0] & 0b11000111) | ((reg_field & 0b111) << 3);
 
-    EncodeInformation {
-        data,
-        relocations: relocs,
-    }
+    EncodeInformation { data, relocations: relocs }
 }

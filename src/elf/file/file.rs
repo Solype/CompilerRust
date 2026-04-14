@@ -32,6 +32,7 @@ where T: Copy + ElfWritable + Debug + Default,
 
 #[allow(dead_code)]
 pub type ElfFile32 = ElfFile<u32>;
+#[allow(dead_code)]
 pub type ElfFile64 = ElfFile<u64>;
 
 impl<T> Default for ElfFile<T>
@@ -60,7 +61,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     pub fn add_section( &mut self, name: String, mut header: shdr::ElfShdr<T>) -> usize
     {
         let section_ndx = self.shdrs.len();
-        header.sh_name = self.shstrtab.name(name) as u32;
+        header.sh_name = self.shstrtab.name(&name) as u32;
         self.shdrs.push(header);
         self.sections.push(Section::default());
         section_ndx
@@ -68,7 +69,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 
     pub fn add_symbol_to_section_raw(&mut self, section_ndx: usize, name: String, data: &Vec<u8>, info: u8, other: u8)
     {
-        let name_ndx = self.strtab.name(name.clone());
+        let name_ndx = self.strtab.name(&name);
         println!("adding symbol : {}, ndx in strtab: {}", name, name_ndx);
 
         self.symtab.add(elfsym::ElfSym {

@@ -25,7 +25,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     fn pack_strtab(&mut self) -> usize
     {
         let strtab_idx = self.shdrs.len();
-        let strtab_name = self.shstrtab.name(shdr::SectionName::Strtab.as_str().to_string());
+        let strtab_name = self.shstrtab.name(&shdr::SectionName::Strtab.as_str().to_string());
         self.sections.push(Section::new(self.strtab.to_vec()));
         self.shdrs.push(shdr::ElfShdr::strtab(strtab_name as u32));
 
@@ -146,7 +146,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     fn pack_shstrtab(&mut self)
     {
         self.ehdr.e_shstrndx = self.shdrs.len() as u16;
-        let shstrtab_name = self.shstrtab.name(shdr::SectionName::ShStrtab.as_str().to_string());
+        let shstrtab_name = self.shstrtab.name(&shdr::SectionName::ShStrtab.as_str().to_string());
         self.sections.push(Section::new(self.shstrtab.to_vec()));
         self.shdrs.push(shdr::ElfShdr::strtab(shstrtab_name as u32));
     }

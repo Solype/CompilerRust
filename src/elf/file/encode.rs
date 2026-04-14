@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use crate::elf::instructions::{EncodeInformation, Relocation};
+
 use super::file::ElfFile;
 use super::super::{
     rel::{ElfRel, ElfRela},
@@ -45,6 +47,41 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         }
     }
 
+    fn add_relocation(
+        &mut self,
+        encode : &mut EncodeInformation,
+        info : &Relocation,
+        sym_ndx : usize,
+        sec_ndx: usize,
+        r_offset : usize
+    ) {
+        let r_type = match info.kind {
+            instructions::enums::RelocKind::Absolute => self.get_abs_reloc_type(info.size as usize),
+            instructions::enums::RelocKind::Relative => self.get_rel_reloc_type(info.size as usize),
+        };
+
+        let r_info = ElfRel::pack_info(sym_ndx as u32, r_type);
+        match size_of::<T>() {
+            4 => {
+                let bytes = (info.addend as i32).to_le_bytes();
+
+                encode.data[info.offset..info.offset + 4].copy_from_slice(&bytes);
+                self.rels.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRel {
+                    r_offset: T::from_usize(r_offset),
+                    r_info,
+                });
+            },
+            8 => {
+                self.relas.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRela {
+                    r_offset: T::from_usize(r_offset),
+                    r_info,
+                    r_addend: T::from_usize(info.addend as usize),
+                });
+            },
+            _ => panic!("Invalid template")
+        }
+    }
+
     fn encode_single_instruction(
         &mut self,
         instr: &instructions::enums::Instruction,
@@ -58,44 +95,17 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             println!("identified {} relocation !", encode.relocations.len());
         }
 
-
-        for info in encode.relocations {
+        for info in &encode.relocations.clone() {
             let r_offset = base_offset + info.offset;
+            let name_idx = self.strtab.name(&info.sym);
 
-            let name_idx = self.strtab.name(info.sym);
-
-            let sym_idx = if let Some(idx) = self.symtab.get_ndx(name_idx) {
+            let sym_ndx = if let Some(idx) = self.symtab.get_ndx(name_idx) {
                 idx
             } else {
                 println!("Symbol not found !");
                 return Result::Err(EncodeError::SymbolError);
             };
-
-            let r_type = match info.kind {
-                instructions::enums::RelocKind::Absolute => self.get_abs_reloc_type(info.size as usize),
-                instructions::enums::RelocKind::Relative => self.get_rel_reloc_type(info.size as usize),
-            };
-
-            let r_info = ElfRel::pack_info(*sym_idx as u32, r_type);
-            match size_of::<T>() {
-                4 => {
-                    let bytes = (info.addend as i32).to_le_bytes();
-
-                    encode.data[info.offset..info.offset + 4].copy_from_slice(&bytes);
-                    self.rels.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRel {
-                        r_offset: T::from_usize(r_offset),
-                        r_info,
-                    });
-                },
-                8 => {
-                    self.relas.entry(sec_ndx).or_insert_with(Vec::new).push(ElfRela {
-                        r_offset: T::from_usize(r_offset),
-                        r_info,
-                        r_addend: T::from_usize(info.addend as usize),
-                    });
-                },
-                _ => panic!("Invalid template")
-            }
+            self.add_relocation(&mut encode, info, *sym_ndx, sec_ndx, r_offset);
         }
         self.sections[sec_ndx].add_data(&encode.data);
         Ok(())
@@ -109,7 +119,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             return Result::Err(EncodeError::WrongSection);
         }
 
-        let name_ndx = self.strtab.name(name);
+        let name_ndx = self.strtab.name(&name);
         let size_before = self.sections[section_ndx].get_data().len();
 
         for ins in data {

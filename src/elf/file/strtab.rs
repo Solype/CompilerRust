@@ -16,9 +16,9 @@ impl Default for Strtab {
 }
 
 impl Strtab {
-    pub fn name(&mut self, name: String) -> usize
+    pub fn name(&mut self, name: &String) -> usize
     {
-        if let Some(idx) = self.map_of_names.get(&name) {
+        if let Some(idx) = self.map_of_names.get(name) {
             *idx
         } else {
             let offset = self.size;

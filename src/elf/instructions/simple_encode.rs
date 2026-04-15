@@ -48,9 +48,10 @@ impl Instruction {
         }
     }
 
-    pub fn encode(&self, size: Size) -> EncodeInformation {
+    pub fn encode(&self, defaultsize: Size) -> EncodeInformation {
         match self {
-            Instruction::Mov { dst, src } => encode_move(dst, src, size),
+            Instruction::Mov { dst, src, size } =>
+                encode_move(dst, src,if let Some(sze) = size {*sze} else {defaultsize}),
             Instruction::Int(n) => EncodeInformation { data: vec![0xCD, *n], ..Default::default() },
             Instruction::Jmp(op) => self.encode_jmp(op),
             Instruction::Call(op) => self.encode_call(op),

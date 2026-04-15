@@ -222,13 +222,29 @@ fn encode_memory(mem: &MemAddress, data: &mut Vec<u8>, relocs: &mut Vec<Relocati
 /// 
 ///////////////////////////////////////////////////////////////////
 
-pub struct ModRMResult {
-    pub data: Vec<u8>,
-    pub relocations: Vec<Relocation>,
-    pub rex_r: bool,
-    pub rex_x: bool,
-    pub rex_b: bool,
-}
+pub(super) fn emit_rex(v: &mut Vec<u8>, size: Size, reg: Option<u8>, rm: Option<u8>) {
+        let mut rex = 0x40;
+
+        if let Size::U64 = size {
+            rex |= 1 << 3; // W
+        }
+
+        if let Some(r) = reg {
+            if r >= 8 {
+                rex |= 1 << 2; // R
+            }
+        }
+
+        if let Some(b) = rm {
+            if b >= 8 {
+                rex |= 1; // B
+            }
+        }
+
+        if rex != 0x40 {
+            v.push(rex);
+        }
+    }
 
 pub(super) fn mod_rm_encode( op1: &Operand, op2: &Operand )-> EncodeInformation
 {

@@ -14,19 +14,19 @@ fn main() -> std::io::Result<()> {
         Instruction::Call(Operand::Sym("my_func".to_string())),
 
         // exit(42)
-        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(500) },
-        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1) },
-        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(42) },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(500), size: None },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1), size: None },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(42), size: None },
         Instruction::Int(0x80),
     ];
 
 
     let instr2 : Vec<Instruction> = vec![
         // write(1, my_data, 1)
-        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(4) },
-        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(1) },
-        Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::Sym("my_data".to_string()) },
-        Instruction::Mov { dst: Operand::Reg(Register::Edx), src: Operand::Imm(1) },
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(4), size: None },
+        Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(1), size: None },
+        Instruction::Mov { dst: Operand::Reg(Register::Ecx), src: Operand::Sym("my_data".to_string()), size: None },
+        Instruction::Mov { dst: Operand::Reg(Register::Edx), src: Operand::Imm(1), size: None },
         Instruction::Int(0x80),
 
         Instruction::Ret,

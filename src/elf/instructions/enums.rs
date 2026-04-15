@@ -23,6 +23,8 @@ pub enum Scale {
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Size {
+    U8 = 1,
+    U16 = 2,
     U32 = 4,
     U64 = 8
 }
@@ -99,6 +101,7 @@ pub enum Instruction {
     Mov {
         dst: Operand,
         src: Operand,
+        size: Option<Size>
     },
     Add {
         dst: Operand,

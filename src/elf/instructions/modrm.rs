@@ -11,12 +11,7 @@ fn encode_modrm_field_reg(reg_op: &Operand) -> u8 {
 }
 
 fn encode_sib(scale: Scale, index: Option<Register>, base: Option<Register>) -> u8 {
-    let scale_bits = match scale {
-        Scale::One => 0b00,
-        Scale::Two => 0b01,
-        Scale::Four => 0b10,
-        Scale::Eight => 0b11,
-    };
+    let scale_bits = scale as u8;
 
     let index_bits = match index {
         Some(r) if r != Register::Esp => r as u8,
@@ -163,11 +158,11 @@ fn encode_disp(disp: i32, is_placeholder : bool) -> (u8, Vec<u8>) {
         return (0b10, disp.to_le_bytes().to_vec());
     }
     if disp == 0 {
-        (0b00, vec![])
+        (MEMNODISP, vec![])
     } else if (-128..=127).contains(&disp) {
-        (0b01, vec![disp as u8])
+        (MEMDISP8, vec![disp as u8])
     } else {
-        (0b10, disp.to_le_bytes().to_vec())
+        (MEMDISP32, disp.to_le_bytes().to_vec())
     }
 }
 
@@ -175,19 +170,28 @@ fn encode_reg(data: &mut Vec<u8>, rm: Register) {
     data[0] = (REG << 6) | (rm as u8);
 }
 
-fn encode_symbol(sym: &String, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
-    data[0] = (MEMNODISP << 6) | 0b101;
+fn encode_symbol(
+    sym: &String,
+    data: &mut Vec<u8>,
+    relocs: &mut Vec<Relocation>,
+) {
+    // RIP-relative addressing obligatoire en x86-64
+    // mod = 00, rm = 101
+    data[0] |= 0b00000101;
+
+    let offset = data.len();
+
+    // disp32 toujours !
+    data.extend(&0u32.to_le_bytes());
 
     relocs.push(Relocation {
         sym: sym.clone(),
-        offset: 1,
-        size: 4,
-        ..Default::default()
+        offset: offset,
+        size: 4, // TOUJOURS 4 en RIP-relative
+        kind: RelocKind::Relative,
+        addend: -4, // très important pour RIP
     });
-
-    data.extend(&0u32.to_le_bytes());
 }
-
 
 fn encode_memory(mem: &MemAddress, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
     match mem {
@@ -218,14 +222,25 @@ fn encode_memory(mem: &MemAddress, data: &mut Vec<u8>, relocs: &mut Vec<Relocati
 /// 
 ///////////////////////////////////////////////////////////////////
 
-pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
+pub struct ModRMResult {
+    pub data: Vec<u8>,
+    pub relocations: Vec<Relocation>,
+    pub rex_r: bool,
+    pub rex_x: bool,
+    pub rex_b: bool,
+}
+
+pub(super) fn mod_rm_encode( op1: &Operand, op2: &Operand )-> EncodeInformation
+{
     let mut data = vec![0u8];
     let mut relocs = vec![];
 
     let reg_field = encode_modrm_field_reg(op2);
 
     match op1 {
-        Operand::Reg(rm) => encode_reg(&mut data, *rm),
+        Operand::Reg(rm) => {
+            encode_reg(&mut data, *rm);
+        }
 
         Operand::MemoryAddress(mem) => {
             encode_memory(mem, &mut data, &mut relocs);
@@ -241,5 +256,8 @@ pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
     // inject reg field
     data[0] = (data[0] & 0b11000111) | ((reg_field & 0b111) << 3);
 
-    EncodeInformation { data, relocations: relocs }
+    EncodeInformation {
+        data,
+        relocations: relocs,
+    }
 }

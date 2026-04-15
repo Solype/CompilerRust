@@ -1,6 +1,5 @@
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
-#[allow(dead_code)]
 pub enum Register {
     Eax = 0,
     Ecx = 1,
@@ -15,18 +14,37 @@ pub enum Register {
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Scale {
-    One = 0,   // ×1
-    Two = 1,   // ×2
-    Four = 2,  // ×4
-    Eight = 3, // ×8
+    One = 0,
+    Two = 1,
+    Four = 2,
+    Eight = 3,
 }
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum Size {
+    U32 = 4,
+    U64 = 8
+}
+
+impl From<usize> for Size {
+    fn from(value: usize) -> Self {
+        match value {
+            4 => Size::U32,
+            8 => Size::U64,
+            _ => panic!("invalid scale value {}", value),
+        }
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub enum MemDisplacement {
     Imm(i32),
     Sym(String),
-}#[derive(Debug, Clone)]
+}
 
+#[derive(Debug, Clone)]
 pub enum MemAddress {
     Direct {
         disp: MemDisplacement,

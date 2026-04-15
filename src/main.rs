@@ -14,6 +14,7 @@ fn main() -> std::io::Result<()> {
         Instruction::Call(Operand::Sym("my_func".to_string())),
 
         // exit(42)
+        Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(500) },
         Instruction::Mov { dst: Operand::Reg(Register::Eax), src: Operand::Imm(1) },
         Instruction::Mov { dst: Operand::Reg(Register::Ebx), src: Operand::Imm(42) },
         Instruction::Int(0x80),
@@ -31,13 +32,13 @@ fn main() -> std::io::Result<()> {
         Instruction::Ret,
     ];
 
-    let mut elf_file = elf::file::ElfFile32::default();
+    let mut elf_file = elf::file::ElfFile64::default();
 
     let section_data = elf_file.add_section(
         elf::shdr::SectionName::Data.as_str().to_string(),
         elf::shdr::ElfShdr {
             sh_type: elf::shdr::ShType::ProgBits as u32,
-            sh_flags: (elf::shdr::ShFlags::Alloc as u32 | elf::shdr::ShFlags::Write as u32),
+            sh_flags: (elf::shdr::ShFlags::Alloc as u64 | elf::shdr::ShFlags::Write as u64),
             sh_addralign: 4,
             ..Default::default()
         }
@@ -55,7 +56,7 @@ fn main() -> std::io::Result<()> {
     let section = elf_file.add_section(elf::shdr::SectionName::Text.as_str().to_string(), 
     elf::shdr::ElfShdr {
         sh_type: elf::shdr::ShType::ProgBits as u32,
-        sh_flags: (elf::shdr::ShFlags::Alloc as u32 | elf::shdr::ShFlags::ExecInstr as u32),
+        sh_flags: (elf::shdr::ShFlags::Alloc as u64 | elf::shdr::ShFlags::ExecInstr as u64),
         sh_addralign: 16,
         ..Default::default()
     });

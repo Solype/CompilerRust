@@ -1,62 +1,8 @@
 use super::enums::*;
-use super::modrm::*;
+use super::encode_mov::encode_move;
 
 #[allow(dead_code)]
 impl Instruction {
-    fn encode_move(&self, op1: &Operand, op2: &Operand) -> EncodeInformation {
-        match (op1, op2) {
-            // mov reg, imm
-            (Operand::Reg(reg), Operand::Imm(val)) => {
-                let mut v = vec![0xB8 + *reg as u8];
-                v.extend(&val.to_le_bytes());
-                return EncodeInformation { data: v, ..Default::default() };
-            }
-
-            // mov reg, symbol
-            (Operand::Reg(reg), Operand::Sym(sym)) => {
-                let mut v = vec![0xB8 + *reg as u8];
-                v.extend(&0u32.to_le_bytes());
-
-                return EncodeInformation {
-                    data: v,
-                    relocations: vec![Relocation {
-                        sym: sym.clone(),
-                        offset: 1,
-                        size: 4,
-                        kind: RelocKind::Absolute,
-                        addend: 0,
-                    }],
-                };
-            }
-
-            ( Operand::Reg(_) | Operand::MemoryAddress(_), Operand::Reg(_) | Operand::MemoryAddress(_),) => {
-                let opcode = match (op1, op2) {
-                    (Operand::Reg(_), _) => 0x8B, (_, Operand::Reg(_)) => 0x89,
-                    _ => panic!("x86 cannot move memory to memory directly"),
-                };
-
-                let modrm_info = match (op1, op2) {
-                    (Operand::Reg(_), _) => mod_rm_encode(op2, op1),
-                    _ => mod_rm_encode(op1, op2),
-                };
-
-                let mut v = vec![opcode];
-                let base_offset = v.len();
-
-                v.extend(modrm_info.data);
-
-                let relocations = modrm_info.relocations.into_iter()
-                    .map(|mut reloc| { reloc.offset += base_offset; reloc.kind = RelocKind::Absolute; reloc.addend = 0; reloc })
-                    .collect();
-
-                EncodeInformation {
-                    data: v,
-                    relocations,
-                }
-            }
-            _ => unimplemented!(),
-        }
-    }
 
     fn encode_jmp(&self, op: &Operand) -> EncodeInformation {
         match op {
@@ -102,9 +48,9 @@ impl Instruction {
         }
     }
 
-    pub fn encode(&self) -> EncodeInformation {
+    pub fn encode(&self, size: Size) -> EncodeInformation {
         match self {
-            Instruction::Mov { dst, src } => self.encode_move(dst, src),
+            Instruction::Mov { dst, src } => encode_move(dst, src, size),
             Instruction::Int(n) => EncodeInformation { data: vec![0xCD, *n], ..Default::default() },
             Instruction::Jmp(op) => self.encode_jmp(op),
             Instruction::Call(op) => self.encode_call(op),

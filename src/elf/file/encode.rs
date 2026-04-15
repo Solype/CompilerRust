@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 
-use crate::elf::instructions::{EncodeInformation, Relocation};
+use crate::elf::instructions::{Scale, Size};
+
+use super::super::file::symbols::Symbols;
+use super::super::instructions::{EncodeInformation, Relocation};
 
 use super::file::ElfFile;
 use super::super::{
@@ -11,11 +14,8 @@ use super::super::{
 };
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum EncodeError {
-    SymbolError,
     InvalidSection,
-    WrongSection,
 }
 
 impl <T> ElfFile<T>
@@ -86,28 +86,36 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         &mut self,
         instr: &instructions::enums::Instruction,
         sec_ndx: usize,
+        local_syms: &mut Symbols<T>,
+        pending_syms: &mut Vec<Relocation>
     ) -> Result<(), EncodeError> {
-        let mut encode = instr.encode();
+        let mut encode = instr.encode(Size::from(size_of::<T>()));
 
         let base_offset = self.sections[sec_ndx].get_data().len();
 
-        if encode.relocations.len() != 0 {
-            println!("identified {} relocation !", encode.relocations.len());
-        }
-
-        for info in &encode.relocations.clone() {
+        for info in encode.relocations.clone() {
             let r_offset = base_offset + info.offset;
             let name_idx = self.strtab.name(&info.sym);
 
             let sym_ndx = if let Some(idx) = self.symtab.get_ndx(name_idx) {
-                idx
+                *idx
+            } else if let Some(idx) = local_syms.get_ndx(name_idx) {
+                *idx
             } else {
-                println!("Symbol not found !");
-                return Result::Err(EncodeError::SymbolError);
+                pending_syms.push(Relocation {
+                    sym: info.sym.clone(),
+                    offset: r_offset,
+                    size: info.size,
+                    kind: info.kind,
+                    addend: info.addend,
+                });
+                continue;
             };
-            self.add_relocation(&mut encode, info, *sym_ndx, sec_ndx, r_offset);
+            self.add_relocation(&mut encode, &info, sym_ndx, sec_ndx, r_offset);
         }
+
         self.sections[sec_ndx].add_data(&encode.data);
+
         Ok(())
     }
 
@@ -116,14 +124,16 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     {
         if self.sections.len() <= section_ndx {
             println!("Section n{} needed but it only has {} secitons", section_ndx, self.sections.len());
-            return Result::Err(EncodeError::WrongSection);
+            return Result::Err(EncodeError::InvalidSection);
         }
 
         let name_ndx = self.strtab.name(&name);
         let size_before = self.sections[section_ndx].get_data().len();
+        let mut local_syms = Symbols::<T>::default();
+        let mut pending_local_syms : Vec<Relocation> = vec![];
 
         for ins in data {
-            self.encode_single_instruction(ins, section_ndx)?;
+            self.encode_single_instruction(ins, section_ndx, &mut local_syms, &mut pending_local_syms)?;
         }
         let size_after = self.sections[section_ndx].get_data().len();
 

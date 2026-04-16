@@ -316,9 +316,9 @@ fn main() -> std::io::Result<()> {
         size: None,
     });
 
-    start_instr.push(Instruction::Sys {
-        op: SysOp::Int(0x80),
-    });
+    start_instr.push(Instruction::Sys { op: SysOp::Syscall });
+    start_instr.push(Instruction::Sys { op: SysOp::Sysenter });
+    start_instr.push(Instruction::Sys { op: SysOp::Int(0x80), });
 
     // =========================================================
     // ELF SETUP

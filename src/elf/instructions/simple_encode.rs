@@ -1,3 +1,5 @@
+use std::vec;
+
 use super::encode_alu::encode_binary;
 
 use super::enums::*;
@@ -24,12 +26,9 @@ impl Instruction {
             // SYSTEM
             // =========================
             Instruction::Sys { op } => match op {
-                SysOp::Int(n) => EncodeInformation {
-                    data: vec![0xCD, *n],
-                    ..Default::default()
-                },
-
-                _ => unimplemented!(),
+                SysOp::Int(n) => EncodeInformation { data: vec![0xCD, *n], ..Default::default() },
+                SysOp::Syscall => EncodeInformation { data: vec![0x0F, 0x05], ..Default::default() },
+                SysOp::Sysenter => EncodeInformation { data: vec![0x0F, 0x34], ..Default::default() },
             },
         }
     }

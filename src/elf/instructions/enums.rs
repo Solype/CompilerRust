@@ -104,8 +104,6 @@ pub enum BinOp {
     // Arithmetic
     Add,
     Sub,
-    Mul,
-    Div,
 
     // Logic
     And,

@@ -44,7 +44,8 @@ fn get_disp(
                 sym: sym.clone(),
                 offset: data_len,
                 size: 4,
-                ..Default::default()
+                kind: RelocKind::Absolute, // 🔥 FIX
+                addend: 0,                // 🔥 FIX
             });
             0
         }
@@ -54,10 +55,26 @@ fn get_disp(
 fn encode_direct(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
     data[0] = (MEMNODISP << 6) | 0b101;
 
-    let val = get_disp(disp, data.len(), relocs);
-    data.extend(&(val as u32).to_le_bytes());
-}
+    let offset = data.len();
 
+    match disp {
+        MemDisplacement::Sym(sym) => {
+            data.extend(&0u32.to_le_bytes());
+
+            relocs.push(Relocation {
+                sym: sym.clone(),
+                offset,
+                size: 4,
+                kind: RelocKind::Relative,
+                addend: -4,
+            });
+        }
+
+        MemDisplacement::Imm(val) => {
+            data.extend(&(*val as u32).to_le_bytes());
+        }
+    }
+}
 fn encode_base(base: Register, data: &mut Vec<u8>) {
     if base == Register::Esp {
         data[0] = (MEMNODISP << 6) | 0b100;
@@ -166,33 +183,6 @@ fn encode_disp(disp: i32, is_placeholder : bool) -> (u8, Vec<u8>) {
     }
 }
 
-fn encode_reg(data: &mut Vec<u8>, rm: Register) {
-    data[0] = (REG << 6) | (rm as u8);
-}
-
-fn encode_symbol(
-    sym: &String,
-    data: &mut Vec<u8>,
-    relocs: &mut Vec<Relocation>,
-) {
-    // RIP-relative addressing obligatoire en x86-64
-    // mod = 00, rm = 101
-    data[0] |= 0b00000101;
-
-    let offset = data.len();
-
-    // disp32 toujours !
-    data.extend(&0u32.to_le_bytes());
-
-    relocs.push(Relocation {
-        sym: sym.clone(),
-        offset: offset,
-        size: 4, // TOUJOURS 4 en RIP-relative
-        kind: RelocKind::Relative,
-        addend: -4, // très important pour RIP
-    });
-}
-
 fn encode_memory(mem: &MemAddress, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
     match mem {
         MemAddress::Direct { disp } => encode_direct(disp, data, relocs),
@@ -223,28 +213,52 @@ fn encode_memory(mem: &MemAddress, data: &mut Vec<u8>, relocs: &mut Vec<Relocati
 ///////////////////////////////////////////////////////////////////
 
 pub(super) fn emit_rex(v: &mut Vec<u8>, size: Size, reg: Option<u8>, rm: Option<u8>) {
-        let mut rex = 0x40;
+    let mut rex = 0x40;
 
-        if let Size::U64 = size {
-            rex |= 1 << 3; // W
-        }
+    if let Size::U64 = size {
+        rex |= 1 << 3; // W
+    }
 
-        if let Some(r) = reg {
-            if r >= 8 {
-                rex |= 1 << 2; // R
-            }
-        }
-
-        if let Some(b) = rm {
-            if b >= 8 {
-                rex |= 1; // B
-            }
-        }
-
-        if rex != 0x40 {
-            v.push(rex);
+    if let Some(r) = reg {
+        if r >= 8 {
+            rex |= 1 << 2; // R
         }
     }
+
+    if let Some(b) = rm {
+        if b >= 8 {
+            rex |= 1; // B
+        }
+    }
+
+    if rex != 0x40 {
+        v.push(rex);
+    }
+}
+
+fn encode_reg(data: &mut Vec<u8>, rm: Register) {
+    data[0] = (REG << 6) | (rm as u8);
+}
+
+fn encode_symbol(
+    sym: &String,
+    data: &mut Vec<u8>,
+    relocs: &mut Vec<Relocation>,
+) {
+    data[0] = (data[0] & 0b11111000) | 0b101;
+
+    let offset = data.len();
+
+    data.extend(&0u32.to_le_bytes());
+
+    relocs.push(Relocation {
+        sym: sym.clone(),
+        offset: offset,
+        size: 4, // TOUJOURS 4 en RIP-relative
+        kind: RelocKind::Relative,
+        addend: -4, // très important pour RIP
+    });
+}
 
 pub(super) fn mod_rm_encode( op1: &Operand, op2: &Operand )-> EncodeInformation
 {

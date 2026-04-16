@@ -91,34 +91,77 @@ pub enum MemAddress {
 pub enum Operand {
     NoOperand,
     Reg(Register),
-    Imm(u32),
+    Imm(usize),
     Sym(String),
     MemoryAddress(MemAddress),
 }
 
-#[derive(Debug, Clone)]
-pub enum Instruction {
-    Mov {
-        dst: Operand,
-        src: Operand,
-        size: Option<Size>
-    },
-    Add {
-        dst: Operand,
-        src: Operand,
-    },
-    Sub {
-        dst: Operand,
-        src: Operand,
-    },
-    Push(Operand),
-    Int(u8), // ex: int 0x80
-    Syscall,
-    Ret,
-    Call(Operand),
-    Jmp(Operand),
-    Cmp((Operand, Operand))
+#[derive(Debug, Clone, Copy)]
+pub enum BinOp {
+    // Data movement
+    Mov,
+
+    // Arithmetic
+    Add,
+    Sub,
+    Mul,
+    Div,
+
+    // Logic
+    And,
+    Or,
+    Xor,
+
+    // Comparaison (flags only)
+    Cmp,
+    Test,
+
+    // Shifts
+    Shl,
+    Shr,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub enum CtrlOp {
+    Jmp,
+    Call,
+    Ret,
+
+    // conditionnels (optionnel mais utile)
+    Je,
+    Jne,
+    Jg,
+    Jl,
+    Jge,
+    Jle,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum SysOp {
+    Int(u8),
+    Syscall,
+    Sysenter,
+}
+
+
+pub enum Instruction {
+    Binary {
+        op: BinOp, // Mov, Add, Sub, And, etc.
+        dst: Operand,
+        src: Operand,
+        size: Option<Size>,
+    },
+
+    Ctrl {
+        op: CtrlOp,
+        target: Operand,
+    },
+
+    Sys {
+        op: SysOp,
+    },
+}
+
 
 #[derive(Debug, Clone, Default)]
 pub struct Relocation {

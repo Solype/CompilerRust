@@ -69,6 +69,47 @@ pub(super) fn encode_move(op1: &Operand, op2: &Operand, size: Size) -> EncodeInf
             }
         }
 
+        (Operand::MemoryAddress(_), Operand::Imm(val)) => {
+            let mut v = Vec::new();
+
+            if let Size::U16 = size { v.push(0x66); }
+
+            let opcode = match size { Size::U8 => 0xC6, _ => 0xC7, };
+
+            emit_rex(&mut v, size, None, None);
+
+            v.push(opcode);
+
+            let modrm_info = mod_rm_encode(
+                op1, // rm
+                &Operand::NoOperand    // reg = 0 (/0)
+            );
+
+            let base_offset = v.len();
+            v.extend(modrm_info.data);
+
+            let offset_with_modrm = v.len();
+
+            match size {
+                Size::U8 => v.push(*val as u8),
+                Size::U16 => v.extend(&(*val as u16).to_le_bytes()),
+                Size::U32 => v.extend(&(*val as u32).to_le_bytes()),
+                Size::U64 => unimplemented!(),
+            }
+
+            let mut relocations = modrm_info.relocations;
+
+            for reloc in &mut relocations {
+                reloc.offset += base_offset;
+                reloc.addend -= (v.len() - offset_with_modrm) as i32
+            }
+
+            EncodeInformation {
+                data: v,
+                relocations,
+            }
+        }
+
         // -----------------------------
         // mov reg/mem, reg/mem
         // -----------------------------

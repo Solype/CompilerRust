@@ -20,7 +20,7 @@ pub enum Scale {
     Eight = 3,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum Size {
     U8 = 1,
@@ -119,6 +119,13 @@ pub enum BinOp {
     // Shifts
     Shl,
     Shr,
+}
+
+pub struct BinaryEncoding {
+    pub opcode_rm_r: u8,
+    pub opcode_r_rm: u8,
+    pub opcode_imm: u8,
+    pub modrm_ext: u8,
 }
 
 #[derive(Debug, Clone, Copy)]

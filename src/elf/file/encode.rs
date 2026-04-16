@@ -132,19 +132,22 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         let mut local_syms = Symbols::<T>::default();
         let mut pending_local_syms : Vec<Relocation> = vec![];
 
-        for ins in data {
-            self.encode_single_instruction(ins, section_ndx, &mut local_syms, &mut pending_local_syms)?;
-        }
-        let size_after = self.sections[section_ndx].get_data().len();
-
-        let _ = self.symtab.add(elfsym::ElfSym {
+        let ndx = self.symtab.add(elfsym::ElfSym {
             st_name: name_ndx as u32,
             st_info: info,
             st_shndx: section_ndx as u16,
             st_value: T::from_usize(size_before),
-            st_size: T::from_usize(size_after - size_before),
+            st_size: T::from_usize(0),
             st_other: other,
         });
+
+        for ins in data {
+            self.encode_single_instruction(ins, section_ndx, &mut local_syms, &mut pending_local_syms)?;
+        }
+        let size_after = self.sections[section_ndx].get_data().len();
+        if let Some(sym) = self.symtab.get_mut(ndx) {
+            sym.st_size = T::from_usize(size_after - size_before)
+        }
         Ok(())
     }
 }

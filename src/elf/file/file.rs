@@ -79,7 +79,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             st_value: T::from_usize(self.sections[section_ndx].get_data().len()),
             st_size: T::from_usize(data.len()),
             st_other: other,
-        }).expect("error while adding symbol to table");
+        });
         self.sections[section_ndx].add_data(&data);
     }
 

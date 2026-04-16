@@ -30,19 +30,16 @@ where T: Default
         tmp
     }
 
-    pub fn add(&mut self, sym: ElfSym<T>) -> Result<usize, SymbolError> {
+    pub fn add(&mut self, sym: ElfSym<T>) -> usize {
         let sym_name = sym.st_name as usize;
         if let Some(&idx) = self.sym_map.get(&sym_name) {
-            return Err(SymbolError::AlreadyExists {
-                name_idx: sym.st_name as usize,
-                existing_index: idx,
-            });
+            panic!("Symbol already in table")
         }
 
         let idx = self.symbols.len();
         self.symbols.push(sym);
         self.sym_map.insert(sym_name, idx);
-        Ok(idx)
+        idx
     }
 
     pub fn get_ndx(&self, name_idx: usize) -> Option<&usize>

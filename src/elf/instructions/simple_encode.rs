@@ -1,3 +1,5 @@
+use super::encode_alu::encode_binary;
+
 use super::enums::*;
 
 impl Instruction {
@@ -8,10 +10,10 @@ impl Instruction {
             // =========================
             // BINARY (MOV, ADD, etc.)
             // =========================
-            // Instruction::Binary { op, dst, src, size } => {
-            //     let size = size.unwrap_or(default_size);
-            //     encode_binary(*op, dst, src, size)
-            // }
+            Instruction::Binary { op, dst, src, size } => {
+                let size = size.unwrap_or(default_size);
+                encode_binary(*op, dst, src, size)
+            }
 
             // =========================
             // CONTROL FLOW
@@ -29,7 +31,6 @@ impl Instruction {
 
                 _ => unimplemented!(),
             },
-            _ => unimplemented!()
         }
     }
 }

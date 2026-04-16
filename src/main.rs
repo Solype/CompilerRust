@@ -135,6 +135,170 @@ fn main() -> std::io::Result<()> {
         size: Some(Size::U8),
     });
 
+    // =========================================================
+    // ALU TESTS (ADD / SUB / CMP / AND / OR / XOR / TEST)
+    // =========================================================
+
+    // -----------------------------
+    // ADD
+    // -----------------------------
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Add,
+        dst: Operand::Reg(Register::Eax),
+        src: Operand::Imm(5),
+        size: Some(Size::U32),
+    });
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Add,
+        dst: Operand::Reg(Register::Ebx),
+        src: Operand::Reg(Register::Eax),
+        size: Some(Size::U32),
+    });
+
+    // -----------------------------
+    // SUB
+    // -----------------------------
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Sub,
+        dst: Operand::Reg(Register::Ecx),
+        src: Operand::Imm(10),
+        size: Some(Size::U32),
+    });
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Sub,
+        dst: Operand::Reg(Register::Edx),
+        src: Operand::Reg(Register::Ecx),
+        size: Some(Size::U32),
+    });
+
+    // -----------------------------
+    // CMP
+    // -----------------------------
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Cmp,
+        dst: Operand::Reg(Register::Eax),
+        src: Operand::Imm(42),
+        size: Some(Size::U32),
+    });
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Cmp,
+        dst: Operand::Reg(Register::Ebx),
+        src: Operand::Reg(Register::Eax),
+        size: Some(Size::U32),
+    });
+
+    // -----------------------------
+    // AND
+    // -----------------------------
+    start_instr.push(Instruction::Binary {
+        op: BinOp::And,
+        dst: Operand::Reg(Register::Eax),
+        src: Operand::Imm(0xFF),
+        size: Some(Size::U32),
+    });
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::And,
+        dst: Operand::Reg(Register::Ebx),
+        src: Operand::Reg(Register::Eax),
+        size: Some(Size::U32),
+    });
+
+    // -----------------------------
+    // OR
+    // -----------------------------
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Or,
+        dst: Operand::Reg(Register::Ecx),
+        src: Operand::Imm(0x10),
+        size: Some(Size::U32),
+    });
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Or,
+        dst: Operand::Reg(Register::Edx),
+        src: Operand::Reg(Register::Ecx),
+        size: Some(Size::U32),
+    });
+
+    // -----------------------------
+    // XOR
+    // -----------------------------
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Xor,
+        dst: Operand::Reg(Register::Eax),
+        src: Operand::Imm(0xFF),
+        size: Some(Size::U32),
+    });
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Xor,
+        dst: Operand::Reg(Register::Ebx),
+        src: Operand::Reg(Register::Eax),
+        size: Some(Size::U32),
+    });
+
+    // -----------------------------
+    // TEST (flags only)
+    // -----------------------------
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Test,
+        dst: Operand::Reg(Register::Eax),
+        src: Operand::Imm(0x1),
+        size: Some(Size::U32),
+    });
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Test,
+        dst: Operand::Reg(Register::Ebx),
+        src: Operand::Reg(Register::Eax),
+        size: Some(Size::U32),
+    });
+
+    // -----------------------------
+    // MEM TESTS
+    // -----------------------------
+    let mem = Operand::MemoryAddress(MemAddress::BaseDisp {
+        base: Register::Eax,
+        disp: MemDisplacement::Imm(3),
+    });
+
+    // ADD [mem], imm
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Add,
+        dst: mem.clone(),
+        src: Operand::Imm(3),
+        size: Some(Size::U8),
+    });
+
+    // SUB [mem], imm
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Sub,
+        dst: mem.clone(),
+        src: Operand::Imm(1),
+        size: Some(Size::U8),
+    });
+
+    // AND [mem], reg
+    start_instr.push(Instruction::Binary {
+        op: BinOp::And,
+        dst: mem.clone(),
+        src: Operand::Reg(Register::Ebx),
+        size: Some(Size::U32),
+    });
+
+    // XOR reg, [mem]
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Xor,
+        dst: Operand::Reg(Register::Ecx),
+        src: mem.clone(),
+        size: Some(Size::U32),
+    });
+
+
     // // -----------------------------
     // // syscall exit(42)
     // // -----------------------------

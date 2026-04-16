@@ -4,6 +4,10 @@ use super::enums::*;
 impl BinOp {
     pub fn encoding(self, size: Size) -> BinaryEncoding {
         match self {
+
+            // =========================
+            // MOV (déjà OK)
+            // =========================
             BinOp::Mov => BinaryEncoding {
                 opcode_rm_r: if size == Size::U8 { 0x88 } else { 0x89 },
                 opcode_r_rm: if size == Size::U8 { 0x8A } else { 0x8B },
@@ -11,18 +15,80 @@ impl BinOp {
                 modrm_ext: 0,
             },
 
+            // =========================
+            // ADD
+            // =========================
             BinOp::Add => BinaryEncoding {
                 opcode_rm_r: if size == Size::U8 { 0x00 } else { 0x01 },
                 opcode_r_rm: if size == Size::U8 { 0x02 } else { 0x03 },
                 opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
-                modrm_ext: 0,
+                modrm_ext: 0, // /0
             },
 
-            _ => unimplemented!(),
+            // =========================
+            // SUB
+            // =========================
+            BinOp::Sub => BinaryEncoding {
+                opcode_rm_r: if size == Size::U8 { 0x28 } else { 0x29 },
+                opcode_r_rm: if size == Size::U8 { 0x2A } else { 0x2B },
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                modrm_ext: 5, // /5
+            },
+
+            // =========================
+            // CMP
+            // =========================
+            BinOp::Cmp => BinaryEncoding {
+                opcode_rm_r: if size == Size::U8 { 0x38 } else { 0x39 },
+                opcode_r_rm: if size == Size::U8 { 0x3A } else { 0x3B },
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                modrm_ext: 7, // /7
+            },
+
+            // =========================
+            // AND
+            // =========================
+            BinOp::And => BinaryEncoding {
+                opcode_rm_r: if size == Size::U8 { 0x20 } else { 0x21 },
+                opcode_r_rm: if size == Size::U8 { 0x22 } else { 0x23 },
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                modrm_ext: 4, // /4
+            },
+
+            // =========================
+            // OR
+            // =========================
+            BinOp::Or => BinaryEncoding {
+                opcode_rm_r: if size == Size::U8 { 0x08 } else { 0x09 },
+                opcode_r_rm: if size == Size::U8 { 0x0A } else { 0x0B },
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                modrm_ext: 1, // /1
+            },
+
+            // =========================
+            // XOR
+            // =========================
+            BinOp::Xor => BinaryEncoding {
+                opcode_rm_r: if size == Size::U8 { 0x30 } else { 0x31 },
+                opcode_r_rm: if size == Size::U8 { 0x32 } else { 0x33 },
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                modrm_ext: 6, // /6
+            },
+
+            // =========================
+            // TEST (pas de write)
+            // =========================
+            BinOp::Test => BinaryEncoding {
+                opcode_rm_r: if size == Size::U8 { 0x84 } else { 0x85 },
+                opcode_r_rm: if size == Size::U8 { 0x84 } else { 0x85 }, // symétrique
+                opcode_imm:  if size == Size::U8 { 0xF6 } else { 0xF7 },
+                modrm_ext: 0, // /0
+            },
+
+            _ => unimplemented!("BinOp {:?} not implemented", self),
         }
     }
 }
-
 
 pub(super) fn encode_binary(
     op: BinOp,

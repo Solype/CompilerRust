@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::elf::instructions::{Scale, Size};
+use crate::elf::instructions::{Size};
 
 use super::super::file::symbols::Symbols;
 use super::super::instructions::{EncodeInformation, Relocation};

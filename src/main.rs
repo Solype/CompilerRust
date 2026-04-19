@@ -1,8 +1,9 @@
+use crate::elf::elfsym::make_st_info;
+
 mod elf;
 
-use crate::elf::elfsym::make_st_info;
-// mod lexical_analisys;
 
+// mod lexical_analisys;
 
 
 fn main() -> std::io::Result<()> {
@@ -123,17 +124,17 @@ fn main() -> std::io::Result<()> {
         size: Some(Size::U32),
     });
 
-    start_instr.push(Instruction::Binary {
-        op: BinOp::Add,
-        dst: Operand::MemoryAddress(
-            MemAddress::BaseDisp {
-                base: Register::Eax, // ou Rax selon ton design
-                disp: MemDisplacement::Imm(3),
-            }
-        ),
-        src: Operand::Imm(3),
-        size: Some(Size::U8),
-    });
+    // start_instr.push(Instruction::Binary {
+    //     op: BinOp::Add,
+    //     dst: Operand::MemoryAddress(
+    //         MemAddress::BaseDisp {
+    //             base: Register::Eax, // ou Rax selon ton design
+    //             disp: MemDisplacement::Imm(3),
+    //         }
+    //     ),
+    //     src: Operand::Imm(3),
+    //     size: Some(Size::U8),
+    // });
 
     // =========================================================
     // ALU TESTS (ADD / SUB / CMP / AND / OR / XOR / TEST)
@@ -262,27 +263,35 @@ fn main() -> std::io::Result<()> {
     // MEM TESTS
     // -----------------------------
     let mem = Operand::MemoryAddress(MemAddress::BaseDisp {
-        base: Register::Eax,
-        disp: MemDisplacement::Imm(3),
+        base: Register::Ebx, // use a real initialized register as pointer
+        disp: MemDisplacement::Imm(0),
     });
 
-    // ADD [mem], imm
+    start_instr.push(Instruction::Binary { 
+        op: BinOp::Mov,
+        dst: Operand::Reg(Register::Ebx),
+        src: Operand::Sym("my_data".to_string()),
+        size: Some(Size::U32)
+    });
+    // Example: RBX must contain a valid writable address before these ops.
+
+    // ADD dword [rbx], 3
     start_instr.push(Instruction::Binary {
         op: BinOp::Add,
         dst: mem.clone(),
         src: Operand::Imm(3),
-        size: Some(Size::U8),
+        size: Some(Size::U32),
     });
 
-    // SUB [mem], imm
+    // SUB dword [rbx], 1
     start_instr.push(Instruction::Binary {
         op: BinOp::Sub,
         dst: mem.clone(),
         src: Operand::Imm(1),
-        size: Some(Size::U8),
+        size: Some(Size::U32),
     });
 
-    // AND [mem], reg
+    // AND dword [rbx], ebx
     start_instr.push(Instruction::Binary {
         op: BinOp::And,
         dst: mem.clone(),
@@ -290,7 +299,7 @@ fn main() -> std::io::Result<()> {
         size: Some(Size::U32),
     });
 
-    // XOR reg, [mem]
+    // XOR ecx, dword [rbx]
     start_instr.push(Instruction::Binary {
         op: BinOp::Xor,
         dst: Operand::Reg(Register::Ecx),
@@ -299,9 +308,31 @@ fn main() -> std::io::Result<()> {
     });
 
 
+    //
+    //
+    //
+    start_instr.push(Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_exit".to_string()) });
+
     // // -----------------------------
     // // syscall exit(42)
     // // -----------------------------
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Mov,
+        dst: Operand::Reg(Register::Eax),
+        src: Operand::Imm(60), // sys_exit on x86_64 Linux
+        size: None,
+    });
+
+    start_instr.push(Instruction::Binary {
+        op: BinOp::Mov,
+        dst: Operand::Reg(Register::Edi),
+        src: Operand::Imm(42), // exit status
+        size: None,
+    });
+
+    start_instr.push(Instruction::Sys { op: SysOp::Syscall, });
+
     start_instr.push(Instruction::Binary {
         op: BinOp::Mov,
         dst: Operand::Reg(Register::Eax),
@@ -315,16 +346,16 @@ fn main() -> std::io::Result<()> {
         src: Operand::Imm(42),
         size: None,
     });
-
-    start_instr.push(Instruction::Sys { op: SysOp::Syscall });
-    start_instr.push(Instruction::Sys { op: SysOp::Sysenter });
     start_instr.push(Instruction::Sys { op: SysOp::Int(0x80), });
+    start_instr.push(Instruction::Sys { op: SysOp::Sysenter });
 
     // =========================================================
     // ELF SETUP
     // =========================================================
 
     let mut elf_file = elf::file::ElfFile64::default();
+
+    elf_file.declare_non_defined_sym(&"my_exit".to_string(), elf::file::SymbolType::Function);
 
     let section_data = elf_file.add_section(
         elf::shdr::SectionName::Data.as_str().to_string(),

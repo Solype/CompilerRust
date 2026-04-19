@@ -32,7 +32,7 @@ where T: Default
 
     pub fn add(&mut self, sym: ElfSym<T>) -> usize {
         let sym_name = sym.st_name as usize;
-        if let Some(&idx) = self.sym_map.get(&sym_name) {
+        if let Some(_) = self.sym_map.get(&sym_name) {
             panic!("Symbol already in table")
         }
 

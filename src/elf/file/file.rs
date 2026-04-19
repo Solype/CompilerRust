@@ -2,16 +2,18 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::vec;
 
-use crate::elf::file::symbols;
-use crate::elf::rel::{ElfRel, ElfRela};
 
 use super::{
+    symbols::{self,},
     section::Section,
     strtab::Strtab,
 };
+
 use super::super::{
     ehdr, phdr, shdr, elfsym,
     traits::{ElfWritable, UsizeCompatible},
+    rel::{ElfRel, ElfRela},
+    elfsym::{ElfSym, SHN_UNDEF, make_st_info},
 };
 
 #[allow(dead_code)]
@@ -54,6 +56,11 @@ where
     }
 }
 
+pub enum SymbolType {
+    Function,
+    Object,
+}
+
 #[allow(dead_code)]
 impl <T> ElfFile <T>
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
@@ -81,6 +88,24 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             st_other: other,
         });
         self.sections[section_ndx].add_data(&data);
+    }
+
+    pub fn declare_non_defined_sym(&mut self, name: &String, ty: SymbolType)
+    {
+        let name_offset = self.strtab.name(&name);
+        let info = match ty {
+            SymbolType::Function => make_st_info(elfsym::StBind::Global, elfsym::StType::Func),
+            SymbolType::Object   => make_st_info(elfsym::StBind::Global, elfsym::StType::Object),
+        };
+
+        self.symtab.add(ElfSym {
+            st_name: name_offset as u32,
+            st_info: info,
+            st_other: 0,
+            st_shndx: SHN_UNDEF,
+            st_value: T::from_usize(0),
+            st_size: T::from_usize(0),
+        });
     }
 
     pub fn write(&mut self, file : &mut std::fs::File) -> std::io::Result<()>

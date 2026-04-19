@@ -14,6 +14,8 @@ where T: Default
     pub st_size: T,     // Size of the symbol (0 if not applicable)
 }
 
+pub const SHN_UNDEF: u16 = 0;
+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]

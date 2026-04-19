@@ -1,5 +1,6 @@
-use elf_derive::BinaryLogicSize;
+use std::{collections::HashMap};
 
+use elf_derive::BinaryLogicSize;
 use super::traits::ElfWritable;
 
 #[derive(Debug, Clone, Copy, Default, BinaryLogicSize)]
@@ -102,5 +103,165 @@ where
         let mut buffer = Vec::new();
         self.write(&mut buffer)?;
         Ok(buffer)
+    }
+}
+
+/// ELF symbol table used while generating an object file.
+///
+/// This structure stores:
+///
+/// - `symbols`: the ordered list of symbol entries (`ElfSym<T>`),
+///   typically written into the `.symtab` section.
+///
+/// - `sym_map`: lookup table used to quickly retrieve the index of a
+///   symbol in `symbols` from its associated string table name index
+///   (`.strtab` offset).
+///
+/// ## Generic Parameter
+///
+/// `T` represents the architecture-dependent integer type used in ELF
+/// fields (for example `u32` for ELF32 or `u64` for ELF64).
+///
+/// ## Notes
+///
+/// - Entry `0` is usually the mandatory ELF null symbol.
+/// - Local symbols must appear before global symbols in `.symtab`.
+/// - `sym_map` helps prevent duplicate symbol insertion and allows
+///   fast symbol lookup.
+///
+/// ## Example
+///
+/// ```ignore
+/// let mut syms = Symbols::<u64>::default();
+/// ```
+///
+/// ## Fields
+///
+/// - `symbols[i]` is the i-th ELF symbol entry.
+/// - `sym_map[name_idx] = sym_idx` maps a `.strtab` name offset to the
+///   corresponding symbol index.
+#[derive(Default)]
+pub struct SymbolCollection<T>
+where
+    T: Default,
+{
+    /// Ordered list of ELF symbols.
+    pub symbols: Vec<ElfSym<T>>,
+
+    /// Maps a symbol name index (`st_name`) to its index in `symbols`.
+    pub sym_map: HashMap<usize, usize>,
+}
+
+
+#[allow(dead_code)]
+impl<T> SymbolCollection<T>
+where
+    T: Default,
+{
+    /// Creates a new symbol collection.
+    ///
+    /// A default null symbol is automatically inserted as the first entry,
+    /// matching standard ELF symbol table conventions where index `0`
+    /// is reserved.
+    ///
+    /// ## Returns
+    ///
+    /// A newly initialized `SymbolCollection<T>`.
+    pub fn new() -> Self {
+        let mut tmp = Self {
+            symbols: Vec::new(),
+            sym_map: HashMap::new(),
+        };
+
+        let _ = tmp.add(ElfSym::<T>::default());
+        tmp
+    }
+
+    /// Inserts a new symbol into the collection.
+    ///
+    /// The symbol is indexed using its `st_name` field.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if another symbol with the same `st_name` already exists.
+    ///
+    /// ## Returns
+    ///
+    /// The symbol index inside the internal symbol table.
+    pub fn add(&mut self, sym: ElfSym<T>) -> usize {
+        let sym_name = sym.st_name as usize;
+
+        if self.sym_map.get(&sym_name).is_some() {
+            panic!("Symbol already in table");
+        }
+
+        let idx = self.symbols.len();
+        self.symbols.push(sym);
+        self.sym_map.insert(sym_name, idx);
+
+        idx
+    }
+
+    /// Returns the symbol table index associated with a given name index.
+    ///
+    /// `name_idx` usually corresponds to an offset inside `.strtab`.
+    ///
+    /// ## Returns
+    ///
+    /// - `Some(&usize)` if found
+    /// - `None` otherwise
+    pub fn get_ndx(&self, name_idx: usize) -> Option<&usize> {
+        self.sym_map.get(&name_idx)
+    }
+
+    /// Returns an immutable reference to a symbol using its name index.
+    ///
+    /// ## Returns
+    ///
+    /// - `Some(&ElfSym<T>)` if found
+    /// - `None` otherwise
+    pub fn get(&self, name_idx: usize) -> Option<&ElfSym<T>> {
+        self.sym_map
+            .get(&name_idx)
+            .map(|idx| &self.symbols[*idx])
+    }
+
+    /// Returns a mutable reference to a symbol using its name index.
+    ///
+    /// ## Returns
+    ///
+    /// - `Some(&mut ElfSym<T>)` if found
+    /// - `None` otherwise
+    pub fn get_mut(&mut self, name_idx: usize) -> Option<&mut ElfSym<T>> {
+        if let Some(&idx) = self.sym_map.get(&name_idx) {
+            return Some(&mut self.symbols[idx]);
+        }
+
+        None
+    }
+
+    /// Returns a symbol by its direct symbol table index.
+    ///
+    /// ## Returns
+    ///
+    /// - `Some(&ElfSym<T>)` if the index exists
+    /// - `None` otherwise
+    pub fn get_by_index(&self, idx: usize) -> Option<&ElfSym<T>> {
+        self.symbols.get(idx)
+    }
+
+    /// Returns the number of symbols in the collection.
+    ///
+    /// Includes the null symbol at index `0` if initialized with `new()`.
+    pub fn len(&self) -> usize {
+        self.symbols.len()
+    }
+
+    /// Returns `true` if the collection contains no symbols.
+    ///
+    /// Note that a collection created with `new()` is not empty because
+    /// it already contains the null ELF symbol.
+    pub fn is_empty(&self) -> bool {
+        self.symbols.is_empty()
     }
 }

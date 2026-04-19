@@ -70,12 +70,9 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             let mut rel_binary: Vec<u8> = vec![];
 
             for rel in relocs {
-                rel_binary.extend(
-                    rel.to_bytes().expect("ElfRel to_bytes failed")
-                );
+                rel_binary.extend(rel.to_bytes().expect("ElfRel to_bytes failed"));
             }
 
-            // 🔥 nom dynamique (.rel.text, .rel.data, etc.)
             let target_name_idx = self.shdrs[target_sec_idx].sh_name;
             
             let rel_section_name_opt = self.shstrtab.from_usize(target_name_idx as usize);

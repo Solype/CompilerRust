@@ -395,7 +395,7 @@ fn main() -> std::io::Result<()> {
         make_st_info(
             elf::elfsym::StBind::Global, elf::elfsym::StType::Func),
         elf::elfsym::StVis::Default as u8,
-    ).expect("encode error");
+    );
 
     elf_file.add_symbol_to_section(
         text_section,
@@ -404,7 +404,7 @@ fn main() -> std::io::Result<()> {
         make_st_info(
             elf::elfsym::StBind::Global, elf::elfsym::StType::Func),
         elf::elfsym::StVis::Default as u8,
-    ).expect("encode error");
+    );
 
     elf_file.write(&mut file)?;
     println!("ELF généré : output.elf");

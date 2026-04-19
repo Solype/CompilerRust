@@ -1,22 +1,14 @@
 use std::fmt::Debug;
 
-use crate::elf::instructions::{Size};
 
-use super::super::file::symbols::Symbols;
-use super::super::instructions::{EncodeInformation, Relocation};
+use super::super::instructions::{EncodeInformation, Relocation, Size};
 
 use super::file::ElfFile;
 use super::super::{
     rel::{ElfRel, ElfRela},
     traits::{ElfWritable, UsizeCompatible},
     instructions,
-    elfsym,
 };
-
-#[derive(Debug)]
-pub enum EncodeError {
-    InvalidSection,
-}
 
 impl <T> ElfFile<T>
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
@@ -86,9 +78,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         &mut self,
         instr: &instructions::enums::Instruction,
         sec_ndx: usize,
-        local_syms: &mut Symbols<T>,
-        pending_syms: &mut Vec<Relocation>
-    ) -> Result<(), EncodeError> {
+    ){
         let mut encode = instr.encode(Size::from(size_of::<T>()));
 
         let base_offset = self.sections[sec_ndx].get_data().len();
@@ -99,56 +89,20 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 
             let sym_ndx = if let Some(idx) = self.symtab.get_ndx(name_idx) {
                 *idx
-            } else if let Some(idx) = local_syms.get_ndx(name_idx) {
-                *idx
             } else {
-                pending_syms.push(Relocation {
-                    sym: info.sym.clone(),
-                    offset: r_offset,
-                    size: info.size,
-                    kind: info.kind,
-                    addend: info.addend,
-                });
-                continue;
+                panic!("Symbol not found");
             };
             self.add_relocation(&mut encode, &info, sym_ndx, sec_ndx, r_offset);
         }
 
         self.sections[sec_ndx].add_data(&encode.data);
-
-        Ok(())
     }
 
-    pub fn add_symbol_to_section(&mut self, section_ndx: usize, name: String, data: &Vec<instructions::enums::Instruction>, info: u8, other: u8)
-    -> Result<(), EncodeError>
+    pub fn encode_instructions(&mut self, section_ndx: usize, data: &Vec<instructions::enums::Instruction>)
     {
-        if self.sections.len() <= section_ndx {
-            println!("Section n{} needed but it only has {} secitons", section_ndx, self.sections.len());
-            return Result::Err(EncodeError::InvalidSection);
-        }
-
-        let name_ndx = self.strtab.name(&name);
-        let size_before = self.sections[section_ndx].get_data().len();
-        let mut local_syms = Symbols::<T>::default();
-        let mut pending_local_syms : Vec<Relocation> = vec![];
-
-        let ndx = self.symtab.add(elfsym::ElfSym {
-            st_name: name_ndx as u32,
-            st_info: info,
-            st_shndx: section_ndx as u16,
-            st_value: T::from_usize(size_before),
-            st_size: T::from_usize(0),
-            st_other: other,
-        });
-
         for ins in data {
-            self.encode_single_instruction(ins, section_ndx, &mut local_syms, &mut pending_local_syms)?;
+            self.encode_single_instruction(ins, section_ndx);
         }
-        let size_after = self.sections[section_ndx].get_data().len();
-        if let Some(sym) = self.symtab.get_mut(ndx) {
-            sym.st_size = T::from_usize(size_after - size_before)
-        }
-        Ok(())
     }
 }
 

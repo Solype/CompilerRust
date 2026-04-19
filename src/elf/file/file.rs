@@ -2,18 +2,16 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::vec;
 
-
 use super::{
-    symbols::{self,},
     section::Section,
     strtab::Strtab,
 };
 
 use super::super::{
-    ehdr, phdr, shdr, elfsym,
+    ehdr, phdr, shdr,
     traits::{ElfWritable, UsizeCompatible},
     rel::{ElfRel, ElfRela},
-    elfsym::{ElfSym, SHN_UNDEF, make_st_info},
+    elfsym::SymbolCollection,
 };
 
 #[allow(dead_code)]
@@ -27,7 +25,7 @@ where T: Copy + ElfWritable + Debug + Default,
 
     pub strtab: Strtab,
     pub shstrtab: Strtab,
-    pub symtab: symbols::Symbols<T>,
+    pub symtab: SymbolCollection<T>,
     pub rels: HashMap<usize, Vec<ElfRel<T>>>,
     pub relas: HashMap<usize, Vec<ElfRela<T>>>
 }
@@ -47,7 +45,7 @@ where
             shdrs: vec![ shdr::ElfShdr::<T>::default() ],
             phdrs: vec![],
             sections: vec![ Section::default() ],
-            symtab: symbols::Symbols::new(),
+            symtab: SymbolCollection::new(),
             strtab: Strtab::default(),
             shstrtab: Strtab::default(),
             rels: HashMap::<usize, Vec<ElfRel<T>>>::default(),
@@ -72,40 +70,6 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         self.shdrs.push(header);
         self.sections.push(Section::default());
         section_ndx
-    }
-
-    pub fn add_symbol_to_section_raw(&mut self, section_ndx: usize, name: String, data: &Vec<u8>, info: u8, other: u8)
-    {
-        let name_ndx = self.strtab.name(&name);
-        println!("adding symbol : {}, ndx in strtab: {}", name, name_ndx);
-
-        self.symtab.add(elfsym::ElfSym {
-            st_name: name_ndx as u32,
-            st_info: info,
-            st_shndx: section_ndx as u16,
-            st_value: T::from_usize(self.sections[section_ndx].get_data().len()),
-            st_size: T::from_usize(data.len()),
-            st_other: other,
-        });
-        self.sections[section_ndx].add_data(&data);
-    }
-
-    pub fn declare_non_defined_sym(&mut self, name: &String, ty: SymbolType)
-    {
-        let name_offset = self.strtab.name(&name);
-        let info = match ty {
-            SymbolType::Function => make_st_info(elfsym::StBind::Global, elfsym::StType::Func),
-            SymbolType::Object   => make_st_info(elfsym::StBind::Global, elfsym::StType::Object),
-        };
-
-        self.symtab.add(ElfSym {
-            st_name: name_offset as u32,
-            st_info: info,
-            st_other: 0,
-            st_shndx: SHN_UNDEF,
-            st_value: T::from_usize(0),
-            st_size: T::from_usize(0),
-        });
     }
 
     pub fn write(&mut self, file : &mut std::fs::File) -> std::io::Result<()>

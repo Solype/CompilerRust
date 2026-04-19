@@ -1,83 +1,79 @@
-use std::{collections::HashMap};
 
-use super::super::elfsym::ElfSym;
+use std::fmt::Debug;
+
+use super::super::{
+    elfsym,
+    traits::{ElfWritable, UsizeCompatible},
+    elfsym::{ElfSym, SHN_UNDEF, make_st_info,},
+    instructions::{enums::*},
+};
 
 
-#[derive(Default)]
-pub struct Symbols<T>
-where T:Default
+use super::{
+    ElfFile,
+    SymbolType
+};
+
+impl <T> ElfFile <T>
+where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
-    pub symbols: Vec<ElfSym<T>>,
-    pub sym_map: HashMap<usize, usize>, // map the name idx to the idx in the symbol list
-}
+    pub fn add_symbol_to_section_raw(&mut self, section_ndx: usize, name: String, data: &Vec<u8>, info: u8, other: u8)
+    {
+        let name_ndx = self.strtab.name(&name);
+        println!("adding symbol : {}, ndx in strtab: {}", name, name_ndx);
 
-#[derive(Debug)]
-#[allow(dead_code)]
-pub enum SymbolError {
-    AlreadyExists { name_idx: usize, existing_index: usize },
-}
+        self.symtab.add(elfsym::ElfSym {
+            st_name: name_ndx as u32,
+            st_info: info,
+            st_shndx: section_ndx as u16,
+            st_value: T::from_usize(self.sections[section_ndx].get_data().len()),
+            st_size: T::from_usize(data.len()),
+            st_other: other,
+        });
+        self.sections[section_ndx].add_data(&data);
+    }
 
-#[allow(dead_code)]
-impl<T> Symbols<T>
-where T: Default
-{
-    pub fn new() -> Self {
-        let mut tmp = Self {
-            symbols: Vec::new(),
-            sym_map: HashMap::new(),
+    pub fn declare_non_defined_sym(&mut self, name: &String, ty: SymbolType)
+    {
+        let name_offset = self.strtab.name(&name);
+        let info = match ty {
+            SymbolType::Function => make_st_info(elfsym::StBind::Global, elfsym::StType::Func),
+            SymbolType::Object   => make_st_info(elfsym::StBind::Global, elfsym::StType::Object),
         };
-        let _ = tmp.add(ElfSym::<T>::default());
-        tmp
+
+        self.symtab.add(ElfSym {
+            st_name: name_offset as u32,
+            st_info: info,
+            st_other: 0,
+            st_shndx: SHN_UNDEF,
+            st_value: T::from_usize(0),
+            st_size: T::from_usize(0),
+        });
     }
 
-    pub fn add(&mut self, sym: ElfSym<T>) -> usize {
-        let sym_name = sym.st_name as usize;
-        if let Some(_) = self.sym_map.get(&sym_name) {
-            panic!("Symbol already in table")
+    pub fn add_symbol_to_section(&mut self, section_ndx: usize, name: String, data: &Vec<Instruction>, info: u8, other: u8)
+    {
+        if self.sections.len() <= section_ndx {
+            panic!("Section n{} needed but it only has {} secitons", section_ndx, self.sections.len());
         }
 
-        let idx = self.symbols.len();
-        self.symbols.push(sym);
-        self.sym_map.insert(sym_name, idx);
-        idx
-    }
+        let name_ndx = self.strtab.name(&name);
+        let size_before = self.sections[section_ndx].get_data().len();
 
-    pub fn get_ndx(&self, name_idx: usize) -> Option<&usize>
-    {
-        println!("{:?}", self.sym_map);
-        return self.sym_map.get(&name_idx);
-    }
+        let ndx = self.symtab.add(elfsym::ElfSym {
+            st_name: name_ndx as u32,
+            st_info: info,
+            st_shndx: section_ndx as u16,
+            st_value: T::from_usize(size_before),
+            st_size: T::from_usize(0),
+            st_other: other,
+        });
 
-    pub fn get(&self, name_idx: usize) -> Option<&ElfSym<T>>
-    {
-        let opt_idx = self.sym_map.get(&name_idx);
-        if let Some(idx) = opt_idx {
-            return Some(&self.symbols[*idx]);
-        } else {
-            return None;
+        self.encode_instructions(section_ndx, data);
+
+        let size_after = self.sections[section_ndx].get_data().len();
+        if let Some(sym) = self.symtab.get_mut(ndx) {
+            sym.st_size = T::from_usize(size_after - size_before)
         }
-    }
-
-    pub fn get_mut(&mut self, name_idx: usize) -> Option<&mut ElfSym<T>>
-    {
-        if let Some(&idx) = self.sym_map.get(&name_idx) {
-            return Some(&mut self.symbols[idx]);
-        }
-        None
-    }
-
-    pub fn get_by_index(&self, idx: usize) -> Option<&ElfSym<T>>
-    {
-        self.symbols.get(idx)
-    }
-
-    pub fn len(&self) -> usize
-    {
-        self.symbols.len()
-    }
-
-    pub fn is_empty(&self) -> bool
-    {
-        self.symbols.is_empty()
     }
 }

@@ -35,6 +35,8 @@ impl Instruction {
             // LOCAL SYMBOL FOR JMP
             // =========================
             Instruction::LocalSym(_) => EncodeInformation::default(),
+
+            _ => unimplemented!()
         }
     }
 }

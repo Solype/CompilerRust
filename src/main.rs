@@ -266,50 +266,50 @@ fn main() -> std::io::Result<()> {
     // -----------------------------
     // MEM TESTS
     // -----------------------------
-    let mem = Operand::MemoryAddress(MemAddress::BaseDisp {
-        base: Register::Ebx, // use a real initialized register as pointer
-        disp: MemDisplacement::Imm(0),
-    });
+    // let mem = Operand::MemoryAddress(MemAddress::BaseDisp {
+    //     base: Register::Ebx, // use a real initialized register as pointer
+    //     disp: MemDisplacement::Imm(0),
+    // });
 
-    start_instr.push(Instruction::Binary { 
-        op: BinOp::Mov,
-        dst: Operand::Reg(Register::Ebx),
-        src: Operand::Sym("my_data".to_string()),
-        size: Some(Size::U32)
-    });
-    // Example: RBX must contain a valid writable address before these ops.
+    // start_instr.push(Instruction::Binary { 
+    //     op: BinOp::Mov,
+    //     dst: Operand::Reg(Register::Ebx),
+    //     src: Operand::Sym("my_data".to_string()),
+    //     size: Some(Size::U32)
+    // });
+    // // Example: RBX must contain a valid writable address before these ops.
 
-    // ADD dword [rbx], 3
-    start_instr.push(Instruction::Binary {
-        op: BinOp::Add,
-        dst: mem.clone(),
-        src: Operand::Imm(3),
-        size: Some(Size::U32),
-    });
+    // // ADD dword [rbx], 3
+    // start_instr.push(Instruction::Binary {
+    //     op: BinOp::Add,
+    //     dst: mem.clone(),
+    //     src: Operand::Imm(3),
+    //     size: Some(Size::U32),
+    // });
 
-    // SUB dword [rbx], 1
-    start_instr.push(Instruction::Binary {
-        op: BinOp::Sub,
-        dst: mem.clone(),
-        src: Operand::Imm(1),
-        size: Some(Size::U32),
-    });
+    // // SUB dword [rbx], 1
+    // start_instr.push(Instruction::Binary {
+    //     op: BinOp::Sub,
+    //     dst: mem.clone(),
+    //     src: Operand::Imm(1),
+    //     size: Some(Size::U32),
+    // });
 
-    // AND dword [rbx], ebx
-    start_instr.push(Instruction::Binary {
-        op: BinOp::And,
-        dst: mem.clone(),
-        src: Operand::Reg(Register::Ebx),
-        size: Some(Size::U32),
-    });
+    // // AND dword [rbx], ebx
+    // start_instr.push(Instruction::Binary {
+    //     op: BinOp::And,
+    //     dst: mem.clone(),
+    //     src: Operand::Reg(Register::Ebx),
+    //     size: Some(Size::U32),
+    // });
 
-    // XOR ecx, dword [rbx]
-    start_instr.push(Instruction::Binary {
-        op: BinOp::Xor,
-        dst: Operand::Reg(Register::Ecx),
-        src: mem.clone(),
-        size: Some(Size::U32),
-    });
+    // // XOR ecx, dword [rbx]
+    // start_instr.push(Instruction::Binary {
+    //     op: BinOp::Xor,
+    //     dst: Operand::Reg(Register::Ecx),
+    //     src: mem.clone(),
+    //     size: Some(Size::U32),
+    // });
 
     start_instr.push(Instruction::LocalSym("test_local".to_string()));
 

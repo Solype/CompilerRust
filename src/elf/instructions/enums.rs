@@ -125,10 +125,20 @@ pub enum Operand {
     MemoryAddress(MemAddress),
 }
 
+enum ComplexBinOp {
+    Mul,
+    Div,
+    Imul,
+    Idiv,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum BinOp {
     // Data movement
     Mov,
+    Movzx,
+    Movsx,
+    Xchg,
 
     // Arithmetic
     Add,
@@ -139,20 +149,63 @@ pub enum BinOp {
     Or,
     Xor,
 
-    // Comparaison (flags only)
+    // Comparaison
     Cmp,
     Test,
 
     // Shifts
     Shl,
     Shr,
+    Sar,
+
+    // Rotations (souvent utile)
+    Rol,
+    Ror,
 }
 
-pub struct BinaryEncoding {
-    pub opcode_rm_r: u8,
-    pub opcode_r_rm: u8,
-    pub opcode_imm: u8,
-    pub modrm_ext: u8,
+
+#[derive(Debug, Clone, Copy)]
+pub enum UnaryOp {
+    Neg,
+    Not,
+    Inc,
+    Dec,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum StackOp {
+    Push,
+    Pop,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum BitOp {
+    Bt,
+    Bts,
+    Btr,
+    Btc,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum SetCC {
+    Sete,
+    Setne,
+    Setg,
+    Setl,
+    Setge,
+    Setle,
+    Seta,
+    Setb,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum CMovCC {
+    Cmove,
+    Cmovne,
+    Cmovg,
+    Cmovl,
+    Cmovge,
+    Cmovle,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -180,10 +233,39 @@ pub enum SysOp {
 
 pub enum Instruction {
     Binary {
-        op: BinOp, // Mov, Add, Sub, And, etc.
+        op: BinOp,
         dst: Operand,
         src: Operand,
         size: Option<Size>,
+    },
+
+    Unary {
+        op: UnaryOp,
+        dst: Operand,
+        size: Option<Size>,
+    },
+
+    Stack {
+        op: StackOp,
+        value: Operand,
+        size: Option<Size>,
+    },
+
+    Bit {
+        op: BitOp,
+        dst: Operand,
+        src: Operand,
+    },
+
+    SetCC {
+        op: SetCC,
+        dst: Operand,
+    },
+
+    CMovCC {
+        op: CMovCC,
+        dst: Operand,
+        src: Operand,
     },
 
     Ctrl {
@@ -195,7 +277,7 @@ pub enum Instruction {
         op: SysOp,
     },
 
-    LocalSym (String)
+    LocalSym(String),
 }
 
 

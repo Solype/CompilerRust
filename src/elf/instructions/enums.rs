@@ -48,36 +48,64 @@ pub enum MemDisplacement {
 
 #[derive(Debug, Clone)]
 pub enum MemAddress {
+    /// Absolute memory address: [disp]
+    /// Examples:
+    /// [0x401000]
+    /// [symbol]
     Direct {
         disp: MemDisplacement,
     },
 
+    /// Base register only: [base]
+    /// Examples:
+    /// [eax]
+    /// [rbx]
     Base {
         base: Register,
     },
 
+    /// Base register + displacement: [base + disp]
+    /// Examples:
+    /// [ebp - 4]
+    /// [rbx + symbol]
     BaseDisp {
         base: Register,
         disp: MemDisplacement,
     },
 
+    /// Index register * scale + displacement: [index * scale + disp]
+    /// Examples:
+    /// [ecx * 4 + 8]
+    /// [rdx * 8 + array]
     IndexScaleDisp {
         index: Register,
         scale: Scale,
         disp: MemDisplacement,
     },
 
+    /// Base register + index register: [base + index]
+    /// Examples:
+    /// [eax + ecx]
+    /// [rbx + rsi]
     BaseIndex {
         base: Register,
         index: Register,
     },
 
+    /// Base register + index register * scale: [base + index * scale]
+    /// Examples:
+    /// [rax + rcx * 4]
+    /// [rbx + rdx * 8]
     BaseIndexScale {
         base: Register,
         index: Register,
         scale: Scale,
     },
 
+    /// Full SIB addressing: [base + index * scale + disp]
+    /// Examples:
+    /// [rax + rcx * 4 + 16]
+    /// [rbx + rsi * 8 + symbol]
     BaseIndexScaleDisp {
         base: Register,
         index: Register,
@@ -85,6 +113,7 @@ pub enum MemAddress {
         disp: MemDisplacement,
     },
 }
+
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]

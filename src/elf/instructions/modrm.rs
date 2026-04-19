@@ -89,23 +89,51 @@ fn encode_base(base: Register, data: &mut Vec<u8>) {
 }
 
 fn encode_base_disp(
-    base: Register,
-    disp: &MemDisplacement,
-    data: &mut Vec<u8>,
-    relocs: &mut Vec<Relocation>,
+    base: Register,              // Base register used in memory operand
+    disp: &MemDisplacement,      // Displacement: immediate or symbolic offset
+    data: &mut Vec<u8>,          // Output encoded bytes (ModRM / SIB / displacement)
+    relocs: &mut Vec<Relocation> // Relocations if displacement references a symbol
 ) {
+    // Resolve displacement value.
+    // If symbolic, creates relocation entry and returns placeholder value.
     let val = get_disp(disp, data.len(), relocs);
+
+    // Encode displacement size:
+    // returns:
+    // - mod_bits : ModRM mode bits (disp8 / disp32 / no disp)
+    // - disp_bytes : encoded displacement bytes
     let (mod_bits, disp_bytes) = encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
 
+    // Special case:
+    // ESP/RSP as base requires mandatory SIB byte.
     if base == Register::Esp {
+        // ModRM:
+        // mod = mod_bits
+        // rm  = 100 => SIB follows
         data[0] = (mod_bits << 6) | 0b100;
+
+        // SIB:
+        // scale = 1
+        // index = none
+        // base = ESP/RSP
+        //
+        // Represents:
+        // [esp + disp]
         data.push(encode_sib(Scale::One, None, Some(base)));
     } else {
+        // Standard ModRM:
+        // mod = mod_bits
+        // rm  = base register
+        //
+        // Represents:
+        // [base + disp]
         data[0] = (mod_bits << 6) | (base as u8);
     }
 
+    // Append displacement bytes (8-bit or 32-bit typically)
     data.extend(disp_bytes);
 }
+
 
 fn encode_base_index(base: Register, index: Register, data: &mut Vec<u8>) {
     data[0] = (MEMNODISP << 6) | 0b100;

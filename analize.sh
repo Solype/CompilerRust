@@ -14,10 +14,10 @@ if [ ! -f "$FILE" ]; then
     exit 1
 fi
 
-echo "=============================="
-echo "📦 Infos générales"
-echo "=============================="
-file "$FILE"
+# echo "=============================="
+# echo "📦 Infos générales"
+# echo "=============================="
+# file "$FILE"
 
 echo -e "\n=============================="
 echo "🔣 Symboles (nm)"
@@ -29,12 +29,12 @@ echo "🧠 Désassemblage (objdump)"
 echo "=============================="
 objdump -d "$FILE"
 
-echo -e "\n=============================="
-echo "📚 Sections (readelf)"
-echo "=============================="
-readelf -S "$FILE"
+# echo -e "\n=============================="
+# echo "📚 Sections (readelf)"
+# echo "=============================="
+# readelf -S "$FILE"
 
-echo -e "\n=============================="
-echo "🔍 Headers ELF"
-echo "=============================="
-readelf -h "$FILE"
+# echo -e "\n=============================="
+# echo "🔍 Headers ELF"
+# echo "=============================="
+# readelf -h "$FILE"

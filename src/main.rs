@@ -20,7 +20,7 @@ fn main() -> std::io::Result<()> {
     // FUNCTION: my_func (CTRL test)
     // =========================================================
     let func_instr: Vec<Instruction> = vec![
-        Instruction::LocalSym("test_local2".to_string()),
+        Instruction::Ctrl { op: CtrlOp::Jmp,  target: Operand::Sym("test_local2".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Jmp,  target: Operand::Sym("my_func".to_string()) },
 
@@ -28,11 +28,12 @@ fn main() -> std::io::Result<()> {
         Instruction::Ctrl { op: CtrlOp::Jne, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Jg,  target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Jl,  target: Operand::Sym("my_func".to_string()) },
-
+        
         Instruction::Ctrl { op: CtrlOp::Jge, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Jle, target: Operand::Sym("my_func".to_string()) },
-
+        
         // ✅ RET sans target
+        Instruction::LocalSym("test_local2".to_string()),
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];
 
@@ -50,6 +51,8 @@ fn main() -> std::io::Result<()> {
         src: Operand::Imm(0x12),
         size: Some(Size::U8),
     });
+
+    start_instr.push(Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) });
 
     start_instr.push(Instruction::Binary {
         op: BinOp::Mov,

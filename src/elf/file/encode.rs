@@ -1,13 +1,12 @@
 use std::fmt::Debug;
 
 
-
 use super::super::instructions::{EncodeInformation, Relocation, Size};
 
 use super::file::ElfFile;
 use super::super::{
     elfsym::{SHN_UNDEF, make_st_info, ElfSym, StVis, StBind, StType},
-    rel::{ElfRel, ElfRela},
+    rel::{ElfRel, ElfRela, shift_r_info},
     traits::{ElfWritable, UsizeCompatible},
     instructions,
 };
@@ -76,24 +75,17 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         }
     }
 
-    fn handle_local_symbol_relocation(&mut self, new_global_ndx : usize)
+    fn handle_local_symbol_relocation(&mut self, new_global_ndx: usize)
     {
         for (_, rel_list) in self.rels.iter_mut() {
             for rel in rel_list {
-                let sym_index: usize = T::to_usize(&rel.r_info);
-    
-                if sym_index >= new_global_ndx {
-                    rel.r_info = T::from_usize(sym_index + 1);
-                }
+                rel.r_info = shift_r_info(rel.r_info, new_global_ndx);
             }
         }
+
         for (_, rel_list) in self.relas.iter_mut() {
             for rel in rel_list {
-                let sym_index: usize = T::to_usize(&rel.r_info);
-    
-                if sym_index >= new_global_ndx {
-                    rel.r_info = T::from_usize(sym_index + 1);
-                }
+                rel.r_info = shift_r_info(rel.r_info, new_global_ndx);
             }
         }
     }
@@ -122,7 +114,6 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                     st_value: T::from_usize(0),
                     st_size: T::from_usize(0),
                 };
-
                 let ndx = self.symtab.add(undef_sym);
                 self.handle_local_symbol_relocation(ndx);
                 ndx
@@ -139,7 +130,9 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             if let instructions::Instruction::LocalSym(name) = ins {
                 let name_idx = self.strtab.name(name);
 
-                self.symtab.add(ElfSym {
+                let must_reloc = self.symtab.get(name_idx).is_none();
+
+                let sym_ndx = self.symtab.add(ElfSym {
                     st_name: name_idx as u32,
                     st_info: make_st_info(StBind::Local, StType::NoType,),
                     st_other: StVis::Default as u8,
@@ -147,7 +140,9 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                     st_value: T::from_usize(self.sections[section_ndx].get_data().len()),
                     st_size: T::from_usize(0),
                 });
-
+                if must_reloc {
+                    self.handle_local_symbol_relocation(sym_ndx);
+                }
                 continue;
             }
 

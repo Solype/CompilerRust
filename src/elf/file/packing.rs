@@ -24,15 +24,15 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
     fn pack_strtab(&mut self) -> usize
     {
-        let strtab_idx = self.shdrs.len();
+        let strtab_ndx = self.shdrs.len();
         let strtab_name = self.shstrtab.name(&shdr::SectionName::Strtab.as_str().to_string());
         self.sections.push(Section::new(self.strtab.to_vec()));
         self.shdrs.push(shdr::ElfShdr::strtab(strtab_name as u32));
 
-        return  strtab_idx;
+        return  strtab_ndx;
     }
 
-    fn pack_symtab(&mut self, strtab_idx: usize) -> usize
+    fn pack_symtab(&mut self, strtab_ndx: usize) -> usize
     {
         if self.symtab.symbols.is_empty() { return 0; }
         let mut sym_binary: Vec<u8> = vec![];
@@ -46,7 +46,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             shdr::SectionName::Symtab.as_str().to_string(),
             shdr::ElfShdr { 
                 sh_type: shdr::ShType::SymTab as u32,
-                sh_link: strtab_idx as u32,
+                sh_link: strtab_ndx as u32,
                 sh_addralign: T::from_usize(elfsym::ElfSym::<T>::mem_len()),
                 sh_entsize: T::from_usize(elfsym::ElfSym::<T>::mem_len()),
                 sh_info: 1,
@@ -57,7 +57,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         section_id
     }
 
-    fn pack_rel(&mut self, symtab_idx: usize)
+    fn pack_rel(&mut self, symtab_ndx: usize)
     {
         if self.rels.is_empty() {
             return;
@@ -66,16 +66,16 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         let entsize = ElfRel::<T>::mem_len();
         let rels = std::mem::take(&mut self.rels);
 
-        for (target_sec_idx, relocs) in rels {
+        for (target_section_ndx, relocs) in rels {
             let mut rel_binary: Vec<u8> = vec![];
 
             for rel in relocs {
                 rel_binary.extend(rel.to_bytes().expect("ElfRel to_bytes failed"));
             }
 
-            let target_name_idx = self.shdrs[target_sec_idx].sh_name;
+            let target_name_ndx = self.shdrs[target_section_ndx].sh_name;
             
-            let rel_section_name_opt = self.shstrtab.from_usize(target_name_idx as usize);
+            let rel_section_name_opt = self.shstrtab.from_usize(target_name_ndx as usize);
     
             if let Some(section_name) = rel_section_name_opt {
 
@@ -85,8 +85,8 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                     new_name,
                     shdr::ElfShdr {
                         sh_type: shdr::ShType::Rel as u32,
-                        sh_link: symtab_idx as u32,
-                        sh_info: target_sec_idx as u32, // ⭐ clé ici
+                        sh_link: symtab_ndx as u32,
+                        sh_info: target_section_ndx as u32, // ⭐ clé ici
                         sh_addralign: T::from_usize(entsize),
                         sh_entsize: T::from_usize(entsize),
                         ..Default::default()
@@ -98,7 +98,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         }
     }
 
-    fn pack_rela(&mut self, symtab_idx: usize)
+    fn pack_rela(&mut self, symtab_ndx: usize)
     {
         if self.relas.is_empty() {
             return;
@@ -107,7 +107,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         let entsize = ElfRela::<T>::mem_len();
         let rels = std::mem::take(&mut self.relas);
 
-        for (target_sec_idx, relocs) in rels {
+        for (target_section_ndx, relocs) in rels {
             let mut rel_binary: Vec<u8> = vec![];
 
             for rel in relocs {
@@ -116,8 +116,8 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                 );
             }
 
-            let target_name_idx = self.shdrs[target_sec_idx].sh_name;
-            let rel_section_name_opt = self.shstrtab.from_usize(target_name_idx as usize);
+            let target_name_ndx = self.shdrs[target_section_ndx].sh_name;
+            let rel_section_name_opt = self.shstrtab.from_usize(target_name_ndx as usize);
 
             if let Some(section_name) = rel_section_name_opt {
 
@@ -127,8 +127,8 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                     new_name,
                     shdr::ElfShdr {
                         sh_type: shdr::ShType::Rela as u32,
-                        sh_link: symtab_idx as u32,
-                        sh_info: target_sec_idx as u32, // ⭐ clé ici
+                        sh_link: symtab_ndx as u32,
+                        sh_info: target_section_ndx as u32, // ⭐ clé ici
                         sh_addralign: T::from_usize(entsize),
                         sh_entsize: T::from_usize(entsize),
                         ..Default::default()

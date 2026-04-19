@@ -30,6 +30,11 @@ impl Instruction {
                 SysOp::Syscall => EncodeInformation { data: vec![0x0F, 0x05], ..Default::default() },
                 SysOp::Sysenter => EncodeInformation { data: vec![0x0F, 0x34], ..Default::default() },
             },
+
+            // =========================
+            // LOCAL SYMBOL FOR JMP
+            // =========================
+            Instruction::LocalSym(_) => EncodeInformation::default(),
         }
     }
 }

@@ -165,6 +165,8 @@ pub enum Instruction {
     Sys {
         op: SysOp,
     },
+
+    LocalSym (String)
 }
 
 

@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::vec;
+use std::{default, vec};
+
+use crate::elf::rel;
 
 use super::{
     section::Section,
@@ -59,10 +61,10 @@ pub enum SymbolType {
     Object,
 }
 
-#[allow(dead_code)]
 impl <T> ElfFile <T>
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
+
     pub fn add_section( &mut self, name: String, mut header: shdr::ElfShdr<T>) -> usize
     {
         let section_ndx = self.shdrs.len();

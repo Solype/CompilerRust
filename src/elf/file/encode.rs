@@ -1,10 +1,12 @@
 use std::fmt::Debug;
 
 
+
 use super::super::instructions::{EncodeInformation, Relocation, Size};
 
 use super::file::ElfFile;
 use super::super::{
+    elfsym::{SHN_UNDEF, make_st_info, ElfSym, StVis, StBind, StType},
     rel::{ElfRel, ElfRela},
     traits::{ElfWritable, UsizeCompatible},
     instructions,
@@ -74,6 +76,28 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         }
     }
 
+    fn handle_local_symbol_relocation(&mut self, new_global_ndx : usize)
+    {
+        for (_, rel_list) in self.rels.iter_mut() {
+            for rel in rel_list {
+                let sym_index: usize = T::to_usize(&rel.r_info);
+    
+                if sym_index >= new_global_ndx {
+                    rel.r_info = T::from_usize(sym_index + 1);
+                }
+            }
+        }
+        for (_, rel_list) in self.relas.iter_mut() {
+            for rel in rel_list {
+                let sym_index: usize = T::to_usize(&rel.r_info);
+    
+                if sym_index >= new_global_ndx {
+                    rel.r_info = T::from_usize(sym_index + 1);
+                }
+            }
+        }
+    }
+
     fn encode_single_instruction(
         &mut self,
         instr: &instructions::enums::Instruction,
@@ -90,7 +114,18 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             let sym_ndx = if let Some(idx) = self.symtab.get_ndx(name_idx) {
                 *idx
             } else {
-                panic!("Symbol not found");
+                let undef_sym = ElfSym {
+                    st_name: name_idx as u32,
+                    st_info: make_st_info(StBind::Local, StType::NoType, ),
+                    st_other: StVis::Default as u8,
+                    st_shndx: SHN_UNDEF,
+                    st_value: T::from_usize(0),
+                    st_size: T::from_usize(0),
+                };
+
+                let ndx = self.symtab.add(undef_sym);
+                self.handle_local_symbol_relocation(ndx);
+                ndx
             };
             self.add_relocation(&mut encode, &info, sym_ndx, sec_ndx, r_offset);
         }
@@ -101,6 +136,21 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     pub fn encode_instructions(&mut self, section_ndx: usize, data: &Vec<instructions::enums::Instruction>)
     {
         for ins in data {
+            if let instructions::Instruction::LocalSym(name) = ins {
+                let name_idx = self.strtab.name(name);
+
+                self.symtab.add(ElfSym {
+                    st_name: name_idx as u32,
+                    st_info: make_st_info(StBind::Local, StType::NoType,),
+                    st_other: StVis::Default as u8,
+                    st_shndx: section_ndx as u16,
+                    st_value: T::from_usize(self.sections[section_ndx].get_data().len()),
+                    st_size: T::from_usize(0),
+                });
+
+                continue;
+            }
+
             self.encode_single_instruction(ins, section_ndx);
         }
     }

@@ -20,6 +20,7 @@ fn main() -> std::io::Result<()> {
     // FUNCTION: my_func (CTRL test)
     // =========================================================
     let func_instr: Vec<Instruction> = vec![
+        Instruction::LocalSym("test_local2".to_string()),
         Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Jmp,  target: Operand::Sym("my_func".to_string()) },
 
@@ -307,6 +308,7 @@ fn main() -> std::io::Result<()> {
         size: Some(Size::U32),
     });
 
+    start_instr.push(Instruction::LocalSym("test_local".to_string()));
 
     //
     //

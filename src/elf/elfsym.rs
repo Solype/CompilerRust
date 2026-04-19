@@ -150,6 +150,8 @@ where
 
     /// Maps a symbol name index (`st_name`) to its index in `symbols`.
     pub sym_map: HashMap<usize, usize>,
+
+    pub first_global_index : usize,
 }
 
 
@@ -171,6 +173,7 @@ where
         let mut tmp = Self {
             symbols: Vec::new(),
             sym_map: HashMap::new(),
+            first_global_index: 0,
         };
 
         let _ = tmp.add(ElfSym::<T>::default());
@@ -191,15 +194,52 @@ where
     pub fn add(&mut self, sym: ElfSym<T>) -> usize {
         let sym_name = sym.st_name as usize;
 
-        if self.sym_map.get(&sym_name).is_some() {
-            panic!("Symbol already in table");
+        // Check if symbol already exists
+        if let Some(&existing_idx) = self.sym_map.get(&sym_name) {
+            let existing = &self.symbols[existing_idx];
+
+            let new_is_undef = sym.st_shndx == SHN_UNDEF;
+            let old_is_undef = existing.st_shndx == SHN_UNDEF;
+
+            if new_is_undef && !old_is_undef { return existing_idx; }
+
+            if !new_is_undef && old_is_undef {
+                self.symbols[existing_idx] = sym;
+                return existing_idx;
+            }
+
+            if new_is_undef && old_is_undef {
+                return existing_idx;
+            }
+
+            panic!("Symbol already defined in table");
         }
 
-        let idx = self.symbols.len();
-        self.symbols.push(sym);
-        self.sym_map.insert(sym_name, idx);
+        // Extract binding from st_info
+        let bind = sym.st_info >> 4;
+        let is_local = bind == StBind::Local as u8;
 
-        idx
+        if is_local {
+            let insert_idx = self.first_global_index;
+
+            self.symbols.insert(insert_idx, sym);
+
+            for value in self.sym_map.values_mut() {
+                if *value >= insert_idx {
+                    *value += 1;
+                }
+            }
+
+            self.sym_map.insert(sym_name, insert_idx);
+            self.first_global_index += 1;
+
+            insert_idx
+        } else {
+            let idx = self.symbols.len();
+            self.symbols.push(sym);
+            self.sym_map.insert(sym_name, idx);
+            idx
+        }
     }
 
     /// Returns the symbol table index associated with a given name index.
@@ -221,9 +261,10 @@ where
     /// - `Some(&ElfSym<T>)` if found
     /// - `None` otherwise
     pub fn get(&self, name_idx: usize) -> Option<&ElfSym<T>> {
-        self.sym_map
-            .get(&name_idx)
-            .map(|idx| &self.symbols[*idx])
+        if let Some(&idx) = self.sym_map.get(&name_idx) {
+            return Some(&self.symbols[idx]);
+        }
+        None
     }
 
     /// Returns a mutable reference to a symbol using its name index.

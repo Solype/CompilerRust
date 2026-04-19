@@ -49,7 +49,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                 sh_link: strtab_ndx as u32,
                 sh_addralign: T::from_usize(elfsym::ElfSym::<T>::mem_len()),
                 sh_entsize: T::from_usize(elfsym::ElfSym::<T>::mem_len()),
-                sh_info: 1,
+                sh_info: self.symtab.first_global_index as u32,
                 ..Default::default()
             }
         );

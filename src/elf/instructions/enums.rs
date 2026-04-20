@@ -1,3 +1,5 @@
+use crate::elf::instructions::enums;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum Register {
@@ -150,6 +152,16 @@ enum ComplexBinOp {
     Idiv,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum CMovCC {
+    Cmove,
+    Cmovne,
+    Cmovg,
+    Cmovl,
+    Cmovge,
+    Cmovle,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum BinOp {
     // Data movement
@@ -159,12 +171,8 @@ pub enum BinOp {
     Xchg,
 
     // Conditional mov
-    Cmove,
-    Cmovne,
-    Cmovg,
-    Cmovl,
-    Cmovge,
-    Cmovle,
+    CondMov(CMovCC),
+
 
     // Arithmetic
     Add,

@@ -20,19 +20,26 @@ fn main() -> std::io::Result<()> {
     // =========================================================
     // FUNCTION: my_func
     // =========================================================
-    let func_instr: Vec<Instruction> = vec![
-        Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("test_local2".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Je, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Jne, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Jg, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Jl, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Jge, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Jle, target: Operand::Sym("my_func".to_string()) },
-        Instruction::LocalSym("test_local2".to_string()),
-        Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
-    ];
+let func_instr: Vec<Instruction> = vec![
+    Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("test_local2".to_string()) },
+    Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
+    Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("my_func".to_string()) },
+    Instruction::Ctrl { op: CtrlOp::Je, target: Operand::Sym("my_func".to_string()) },
+    Instruction::Ctrl { op: CtrlOp::Jne, target: Operand::Sym("my_func".to_string()) },
+    Instruction::Ctrl { op: CtrlOp::Jg, target: Operand::Sym("my_func".to_string()) },
+    Instruction::Ctrl { op: CtrlOp::Jl, target: Operand::Sym("my_func".to_string()) },
+    Instruction::Ctrl { op: CtrlOp::Jge, target: Operand::Sym("my_func".to_string()) },
+    Instruction::Ctrl { op: CtrlOp::Jle, target: Operand::Sym("my_func".to_string()) },
+
+    Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmove),  dst: Operand::Reg(Register::Eax), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+    Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovne), dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Edx), size: Some(Size::U32) },
+    Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovg),  dst: Operand::Reg(Register::Eax), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(0) }), size: Some(Size::U32) },
+    Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovl),  dst: Operand::Reg(Register::Ebx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ecx, disp: MemDisplacement::Imm(4) }), size: Some(Size::U32) },
+    Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovge), dst: Operand::Reg(Register::Edx), src: Operand::Reg(Register::Eax), size: Some(Size::U32) },
+    Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovle), dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+    Instruction::LocalSym("test_local2".to_string()),
+    Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
+];
 
     // =========================================================
     // _start : FULL BINOP TEST SUITE

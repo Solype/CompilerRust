@@ -11,6 +11,24 @@ pub enum Register {
     Edi = 7,
 }
 
+impl TryFrom<u8> for Register {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Register::Eax),
+            1 => Ok(Register::Ecx),
+            2 => Ok(Register::Edx),
+            3 => Ok(Register::Ebx),
+            4 => Ok(Register::Esp),
+            5 => Ok(Register::Ebp),
+            6 => Ok(Register::Esi),
+            7 => Ok(Register::Edi),
+            _ => Err(()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Scale {
@@ -140,6 +158,14 @@ pub enum BinOp {
     Movsx,
     Xchg,
 
+    // Conditional mov
+    Cmove,
+    Cmovne,
+    Cmovg,
+    Cmovl,
+    Cmovge,
+    Cmovle,
+
     // Arithmetic
     Add,
     Sub,
@@ -199,16 +225,6 @@ pub enum SetCC {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum CMovCC {
-    Cmove,
-    Cmovne,
-    Cmovg,
-    Cmovl,
-    Cmovge,
-    Cmovle,
-}
-
-#[derive(Debug, Clone, Copy)]
 pub enum CtrlOp {
     Jmp,
     Call,
@@ -260,12 +276,6 @@ pub enum Instruction {
     SetCC {
         op: SetCC,
         dst: Operand,
-    },
-
-    CMovCC {
-        op: CMovCC,
-        dst: Operand,
-        src: Operand,
     },
 
     Ctrl {

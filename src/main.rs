@@ -96,6 +96,95 @@ fn main() -> std::io::Result<()> {
 
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];
+
+
+    let setcc_instr: Vec<Instruction> = vec![
+        // =====================================================
+        // Prepare flags with CMP
+        // =====================================================
+        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::Eax), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+
+        // =====================================================
+        // Register targets
+        // =====================================================
+        Instruction::SetCC { op: SetCC::Sete,  dst: Operand::Reg(Register::Eax) }, // sete al
+        Instruction::SetCC { op: SetCC::Setne, dst: Operand::Reg(Register::Ebx) }, // setne bl
+        Instruction::SetCC { op: SetCC::Setg,  dst: Operand::Reg(Register::Ecx) }, // setg cl
+        Instruction::SetCC { op: SetCC::Setl,  dst: Operand::Reg(Register::Edx) }, // setl dl
+        Instruction::SetCC { op: SetCC::Setge, dst: Operand::Reg(Register::Eax) }, // setge al
+        Instruction::SetCC { op: SetCC::Setle, dst: Operand::Reg(Register::Ebx) }, // setle bl
+        Instruction::SetCC { op: SetCC::Seta,  dst: Operand::Reg(Register::Ecx) }, // seta cl
+        Instruction::SetCC { op: SetCC::Setb,  dst: Operand::Reg(Register::Edx) }, // setb dl
+
+        // =====================================================
+        // Memory targets
+        // =====================================================
+        Instruction::SetCC {
+            op: SetCC::Sete,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Ebx,
+                disp: MemDisplacement::Imm(0),
+            }),
+        },
+
+        Instruction::SetCC {
+            op: SetCC::Setne,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Ebx,
+                disp: MemDisplacement::Imm(1),
+            }),
+        },
+
+        Instruction::SetCC {
+            op: SetCC::Setg,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Ebx,
+                disp: MemDisplacement::Imm(2),
+            }),
+        },
+
+        Instruction::SetCC {
+            op: SetCC::Setl,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Ebx,
+                disp: MemDisplacement::Imm(3),
+            }),
+        },
+
+        Instruction::SetCC {
+            op: SetCC::Setge,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Ebx,
+                disp: MemDisplacement::Imm(4),
+            }),
+        },
+
+        Instruction::SetCC {
+            op: SetCC::Setle,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Ebx,
+                disp: MemDisplacement::Imm(5),
+            }),
+        },
+
+        Instruction::SetCC {
+            op: SetCC::Seta,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Ebx,
+                disp: MemDisplacement::Imm(6),
+            }),
+        },
+
+        Instruction::SetCC {
+            op: SetCC::Setb,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Ebx,
+                disp: MemDisplacement::Imm(7),
+            }),
+        },
+
+        Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
+    ];
     // =========================================================
     // _start : FULL BINOP TEST SUITE
     // =========================================================
@@ -255,6 +344,14 @@ fn main() -> std::io::Result<()> {
         text_section,
         "my_func".to_string(),
         &func_instr,
+        make_st_info(elf::elfsym::StBind::Global, elf::elfsym::StType::Func),
+        elf::elfsym::StVis::Default as u8,
+    );
+
+    elf_file.add_symbol_to_section(
+        text_section,
+        "my_other_other_func".to_string(),
+        &setcc_instr,
         make_st_info(elf::elfsym::StBind::Global, elf::elfsym::StType::Func),
         elf::elfsym::StVis::Default as u8,
     );

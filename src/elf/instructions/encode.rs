@@ -1,5 +1,7 @@
 use std::vec;
 
+use crate::elf::instructions::encode_setcc::encode_setcc;
+
 use super::{
     encode_stack::encode_stack,
     encode_unary::encode_unary,
@@ -52,6 +54,8 @@ impl Instruction {
                 let size = size.unwrap_or(default_size);
                 encode_stack(*op, value, size)
             }
+
+            Instruction::SetCC { op, dst } => encode_setcc(*op, dst),
 
             // =========================
             // LOCAL SYMBOL FOR JMP

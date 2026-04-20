@@ -7,3 +7,4 @@ mod encode_ctrl;
 mod encode_alu;
 mod encode_unary;
 mod encode_stack;
+mod encode_setcc;

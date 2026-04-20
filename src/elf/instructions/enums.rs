@@ -1,5 +1,3 @@
-use crate::elf::instructions::enums;
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum Register {
@@ -33,6 +31,7 @@ impl TryFrom<u8> for Register {
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
+#[allow(dead_code)]
 pub enum Scale {
     One = 0,
     Two = 1,
@@ -66,6 +65,7 @@ pub enum MemDisplacement {
     Sym(String),
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum MemAddress {
     /// Absolute memory address: [disp]
@@ -233,20 +233,6 @@ pub enum ComplexBinOp {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum UnaryOp {
-    Neg,
-    Not,
-    Inc,
-    Dec,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum StackOp {
-    Push,
-    Pop,
-}
-
-#[derive(Debug, Clone, Copy)]
 pub enum BitOp {
     Bt,
     Bts,
@@ -264,6 +250,20 @@ pub enum SetCC {
     Setle,
     Seta,
     Setb,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum UnaryOp {
+    Neg,
+    Not,
+    Inc,
+    Dec,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum StackOp {
+    Push,
+    Pop,
 }
 
 #[derive(Debug, Clone, Copy)]

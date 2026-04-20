@@ -145,13 +145,6 @@ pub enum Operand {
     MemoryAddress(MemAddress),
 }
 
-enum ComplexBinOp {
-    Mul,
-    Div,
-    Imul,
-    Idiv,
-}
-
 #[derive(Clone, Copy, Debug)]
 pub enum CMovCC {
     Cmove,
@@ -197,6 +190,47 @@ pub enum BinOp {
     Ror,
 }
 
+/*
+mul r/m8
+mul r/m16
+mul r/m32
+mul r/m64
+
+imul r/m8
+imul r/m16
+imul r/m32
+imul r/m64
+
+imul r16, r/m16
+imul r32, r/m32
+imul r64, r/m64
+
+imul r16, r/m16, imm8
+imul r16, r/m16, imm16
+
+imul r32, r/m32, imm8
+imul r32, r/m32, imm32
+
+imul r64, r/m64, imm8
+imul r64, r/m64, imm32
+
+div r/m8
+div r/m16
+div r/m32
+div r/m64
+
+idiv r/m8
+idiv r/m16
+idiv r/m32
+idiv r/m64
+ */
+
+pub enum ComplexBinOp {
+    Mul,
+    Div,
+    Imul,
+    Idiv,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum UnaryOp {
@@ -260,6 +294,14 @@ pub enum Instruction {
         op: BinOp,
         dst: Operand,
         src: Operand,
+        size: Option<Size>,
+    },
+
+    ComplexBinary {
+        op: ComplexBinOp,
+        dst: Operand,
+        src: Operand,
+        extra: Option<Operand>,
         size: Option<Size>,
     },
 

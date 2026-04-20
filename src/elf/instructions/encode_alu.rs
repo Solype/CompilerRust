@@ -179,7 +179,7 @@ impl BinOp {
     }
 }
 
-fn emit_size_prefix(v: &mut Vec<u8>, size: Size) {
+pub fn emit_size_prefix(v: &mut Vec<u8>, size: Size) {
     if let Size::U16 = size {
         v.push(0x66);
     }

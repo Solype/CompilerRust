@@ -1,8 +1,10 @@
 use std::vec;
+use crate::elf::instructions::encode_unary::encode_unary;
 
 use super::encode_alu::encode_binary;
-
 use super::enums::*;
+
+
 
 impl Instruction {
 
@@ -29,6 +31,15 @@ impl Instruction {
                 SysOp::Int(n) => EncodeInformation { data: vec![0xCD, *n], ..Default::default() },
                 SysOp::Syscall => EncodeInformation { data: vec![0x0F, 0x05], ..Default::default() },
                 SysOp::Sysenter => EncodeInformation { data: vec![0x0F, 0x34], ..Default::default() },
+            },
+
+            
+            // =========================
+            // UNARY
+            // =========================
+            Instruction::Unary { op, dst, size } => {
+                let size = size.unwrap_or(default_size);
+                encode_unary(*op, dst, size)
             },
 
             // =========================

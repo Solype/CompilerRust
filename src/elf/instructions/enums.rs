@@ -153,6 +153,20 @@ pub enum CMovCC {
     Cmovl,
     Cmovge,
     Cmovle,
+
+    Cmova,
+    Cmovae,
+    Cmovb,
+    Cmovbe,
+
+    Cmovs,
+    Cmovns,
+
+    Cmovo,
+    Cmovno,
+
+    Cmovp,
+    Cmovnp,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -250,6 +264,18 @@ pub enum SetCC {
     Setle,
     Seta,
     Setb,
+
+    Setae,
+    Setbe,
+
+    Sets,
+    Setns,
+
+    Seto,
+    Setno,
+
+    Setp,
+    Setnp,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -279,6 +305,19 @@ pub enum CtrlOp {
     Jl,
     Jge,
     Jle,
+    Ja,
+    Jae,
+    Jb,
+    Jbe,
+
+    Js,
+    Jns,
+
+    Jo,
+    Jno,
+
+    Jp,
+    Jnp,
 }
 
 #[derive(Debug, Clone, Copy)]

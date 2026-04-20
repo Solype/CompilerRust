@@ -26,6 +26,7 @@ impl CtrlOp {
             CtrlOp::Jl => encode_rel32_with_prefix(Some(0x0F), 0x8C, target),
             CtrlOp::Jge => encode_rel32_with_prefix(Some(0x0F), 0x8D, target),
             CtrlOp::Jle => encode_rel32_with_prefix(Some(0x0F), 0x8E, target),
+            _ => unimplemented!()
         }
     }
 }

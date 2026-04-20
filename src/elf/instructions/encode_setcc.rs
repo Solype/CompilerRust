@@ -15,6 +15,7 @@ pub(super) fn encode_setcc(
         SetCC::Setge => 0x9D,
         SetCC::Setle => 0x9E,
         SetCC::Setg  => 0x9F,
+        _ => unimplemented!()
     };
 
     let rm_u8 = match dest {

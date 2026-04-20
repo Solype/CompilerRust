@@ -171,6 +171,7 @@ impl BinOp {
                     CMovCC::Cmovge => 0x4D,
                     CMovCC::Cmovle => 0x4E,
                     CMovCC::Cmovg  => 0x4F,
+                    _ => unimplemented!()
                 }
             },
 
@@ -211,22 +212,11 @@ fn encode_shift_rotate( dst: &Operand, src: &Operand, size: Size, enc: &BinaryEn
 
     emit_size_prefix(&mut v, size);
 
+    emit_rex(&mut v, size, None, None);
     match src {
-        Operand::Imm(1) => {
-            emit_rex(&mut v, size, None, None);
-            v.push(opcode_1);
-        }
-
-        Operand::Imm(_) => {
-            emit_rex(&mut v, size, None, None);
-            v.push(opcode_imm);
-        }
-
-        Operand::Reg(Register::Ecx) => {
-            emit_rex(&mut v, size, None, None);
-            v.push(opcode_cl);
-        }
-
+        Operand::Imm(1) => v.push(opcode_1),
+        Operand::Imm(_) => v.push(opcode_imm),
+        Operand::Reg(Register::Ecx) => v.push(opcode_cl),
         _ => unimplemented!("invalid shift count"),
     }
 
@@ -243,19 +233,9 @@ fn encode_shift_rotate( dst: &Operand, src: &Operand, size: Size, enc: &BinaryEn
         }
     }
 
-    let relocations = modrm
-        .relocations
-        .into_iter()
-        .map(|mut r| {
-            r.offset += base;
-            r
-        })
-        .collect();
+    let relocations = modrm.relocations.into_iter().map(|mut r| { r.offset += base; r }).collect();
 
-    EncodeInformation {
-        data: v,
-        relocations,
-    }
+    EncodeInformation { data: v, relocations, }
 }
 
 fn encode_reg_imm(
@@ -281,12 +261,7 @@ fn encode_reg_imm(
 
         BinaryEncoding::Alu { opcode_imm, modrm_ext, .. } => {
             v.push(opcode_imm);
-
-            let modrm =
-                0b11_000_000 |
-                ((modrm_ext & 7) << 3) |
-                (reg_u8 & 7);
-
+            let modrm = 0b11_000_000 | ((modrm_ext & 7) << 3) | (reg_u8 & 7);
             v.push(modrm);
         }
 
@@ -324,9 +299,7 @@ fn encode_reg_sym(
 
         BinaryEncoding::Alu { opcode_imm, modrm_ext , .. } => {
             v.push(*opcode_imm);
-            let modrm = 0b11_000_000
-                | ((modrm_ext & 7) << 3)
-                | (reg_u8 & 7);
+            let modrm = 0b11_000_000 | ((modrm_ext & 7) << 3) | (reg_u8 & 7);
             v.push(modrm);
         }
         _ => unimplemented!()
@@ -419,11 +392,7 @@ fn encode_reg_mem(
     let opcode = match *enc {
         BinaryEncoding::Mov { opcode_rm_r, opcode_r_rm, .. }
         | BinaryEncoding::Alu { opcode_rm_r, opcode_r_rm, .. } => {
-            if is_reg_dst { 
-                opcode_r_rm
-            } else {
-                opcode_rm_r
-            }
+            if is_reg_dst {  opcode_r_rm } else { opcode_rm_r }
         }
 
         BinaryEncoding::Xchg { opcode } => opcode,
@@ -445,8 +414,6 @@ fn encode_reg_mem(
 
     let base = v.len();
 
-    // rm operand goes in rm field
-    // reg operand goes in reg field
     let modrm = mod_rm_encode(rm_op, reg_op);
 
     v.extend(modrm.data);

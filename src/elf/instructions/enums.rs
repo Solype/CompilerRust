@@ -321,6 +321,7 @@ pub enum Instruction {
         op: BitOp,
         dst: Operand,
         src: Operand,
+        size: Option<Size>
     },
 
     SetCC {

@@ -8,3 +8,4 @@ mod encode_alu;
 mod encode_unary;
 mod encode_stack;
 mod encode_setcc;
+mod encode_bitop;

@@ -37,6 +37,57 @@ fn main() -> std::io::Result<()> {
         Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovl),  dst: Operand::Reg(Register::Ebx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ecx, disp: MemDisplacement::Imm(4) }), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovge), dst: Operand::Reg(Register::Edx), src: Operand::Reg(Register::Eax), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovle), dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+
+        // =====================================================
+        // BIT OPS : reg + imm
+        // =====================================================
+        Instruction::Bit { op: BitOp::Bt,  dst: Operand::Reg(Register::Eax), src: Operand::Imm(3), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Bts, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(5), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Btr, dst: Operand::Reg(Register::Ecx), src: Operand::Imm(7), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Btc, dst: Operand::Reg(Register::Edx), src: Operand::Imm(1), size: Some(Size::U32) },
+
+        // =====================================================
+        // BIT OPS : reg + reg
+        // =====================================================
+        Instruction::Bit { op: BitOp::Bt,  dst: Operand::Reg(Register::Eax), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Bts, dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Edx), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Btr, dst: Operand::Reg(Register::Ebx), src: Operand::Reg(Register::Eax), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Btc, dst: Operand::Reg(Register::Edx), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
+
+        // =====================================================
+        // BIT OPS : mem + imm
+        // =====================================================
+        Instruction::Bit {
+            op: BitOp::Bt,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(8) }),
+            src: Operand::Imm(2),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Bit {
+            op: BitOp::Bts,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(12) }),
+            src: Operand::Imm(4),
+            size: Some(Size::U32),
+        },
+
+        // =====================================================
+        // BIT OPS : mem + reg
+        // =====================================================
+        Instruction::Bit {
+            op: BitOp::Btr,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ecx, disp: MemDisplacement::Imm(16) }),
+            src: Operand::Reg(Register::Eax),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Bit {
+            op: BitOp::Btc,
+            dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Edx, disp: MemDisplacement::Imm(20) }),
+            src: Operand::Reg(Register::Ebx),
+            size: Some(Size::U32),
+        },
+
         Instruction::LocalSym("test_local2".to_string()),
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];

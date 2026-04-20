@@ -284,6 +284,15 @@ pub enum UnaryOp {
     Not,
     Inc,
     Dec,
+    Nop,
+
+    Cdq,
+    Cqo,
+    Cwd,
+
+    Clc,
+    Stc,
+    Cmc,
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -30,6 +30,7 @@ impl UnaryOp {
                 opcode: if size == Size::U8 { 0xF6 } else { 0xF7 },
                 modrm_ext: 3,
             },
+            _ => unimplemented!()
         }
     }
 }

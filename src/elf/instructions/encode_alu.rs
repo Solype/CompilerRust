@@ -171,7 +171,19 @@ impl BinOp {
                     CMovCC::Cmovge => 0x4D,
                     CMovCC::Cmovle => 0x4E,
                     CMovCC::Cmovg  => 0x4F,
-                    _ => unimplemented!()
+                    CMovCC::Cmova  => 0x47,
+                    CMovCC::Cmovae => 0x43,
+                    CMovCC::Cmovb  => 0x42,
+                    CMovCC::Cmovbe => 0x46,
+
+                    CMovCC::Cmovo  => 0x40,
+                    CMovCC::Cmovno => 0x41,
+
+                    CMovCC::Cmovs  => 0x48,
+                    CMovCC::Cmovns => 0x49,
+
+                    CMovCC::Cmovp  => 0x4A,
+                    CMovCC::Cmovnp => 0x4B,
                 }
             },
 

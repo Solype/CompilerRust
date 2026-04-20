@@ -1,8 +1,11 @@
 use std::vec;
-use crate::elf::instructions::encode_unary::encode_unary;
 
-use super::encode_alu::encode_binary;
-use super::enums::*;
+use super::{
+    encode_stack::encode_stack,
+    encode_unary::encode_unary,
+    enums::*,
+    encode_alu::encode_binary
+};
 
 
 
@@ -41,6 +44,14 @@ impl Instruction {
                 let size = size.unwrap_or(default_size);
                 encode_unary(*op, dst, size)
             },
+
+            // =========================
+            // UNARY
+            // =========================
+            Instruction::Stack { op, value, size } => {
+                let size = size.unwrap_or(default_size);
+                encode_stack(*op, value, size)
+            }
 
             // =========================
             // LOCAL SYMBOL FOR JMP

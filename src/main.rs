@@ -62,9 +62,40 @@ fn main() -> std::io::Result<()> {
         Instruction::Unary { op: UnaryOp::Not, dst: Operand::Reg(Register::Edx), size: Some(Size::U32) },
         Instruction::Unary { op: UnaryOp::Not, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Eax, disp: MemDisplacement::Imm(12) }), size: Some(Size::U32) },
 
+        // =====================================================
+        // PUSH reg
+        // =====================================================
+        Instruction::Stack { op: StackOp::Push, value: Operand::Reg(Register::Eax), size: Some(Size::U32) },
+        Instruction::Stack { op: StackOp::Push, value: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+
+        // PUSH imm
+        Instruction::Stack { op: StackOp::Push, value: Operand::Imm(5), size: Some(Size::U32) },
+        Instruction::Stack { op: StackOp::Push, value: Operand::Imm(0x12345678), size: Some(Size::U32) },
+
+        // PUSH symbol
+        Instruction::Stack { op: StackOp::Push, value: Operand::Sym("my_data".to_string()), size: Some(Size::U32) },
+
+        // PUSH memory
+        Instruction::Stack { op: StackOp::Push, value: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(16), }), size: Some(Size::U32), },
+
+        // =====================================================
+        // POP reg
+        // =====================================================
+        Instruction::Stack { op: StackOp::Pop, value: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
+        Instruction::Stack { op: StackOp::Pop, value: Operand::Reg(Register::Edx), size: Some(Size::U32) },
+
+        // POP memory
+        Instruction::Stack {
+            op: StackOp::Pop,
+            value: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Eax,
+                disp: MemDisplacement::Imm(20),
+            }),
+            size: Some(Size::U32),
+        },
+
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];
-
     // =========================================================
     // _start : FULL BINOP TEST SUITE
     // =========================================================

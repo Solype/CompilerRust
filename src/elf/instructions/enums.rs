@@ -1,14 +1,14 @@
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum Register {
-    Eax = 0,
-    Ecx = 1,
-    Edx = 2,
-    Ebx = 3,
-    Esp = 4,
-    Ebp = 5,
-    Esi = 6,
-    Edi = 7,
+    A = 0,
+    C = 1,
+    D = 2,
+    B = 3,
+    Sp = 4,
+    Bp = 5,
+    Si = 6,
+    Di = 7,
 }
 
 impl TryFrom<u8> for Register {
@@ -16,14 +16,14 @@ impl TryFrom<u8> for Register {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(Register::Eax),
-            1 => Ok(Register::Ecx),
-            2 => Ok(Register::Edx),
-            3 => Ok(Register::Ebx),
-            4 => Ok(Register::Esp),
-            5 => Ok(Register::Ebp),
-            6 => Ok(Register::Esi),
-            7 => Ok(Register::Edi),
+            0 => Ok(Register::A),
+            1 => Ok(Register::C),
+            2 => Ok(Register::D),
+            3 => Ok(Register::B),
+            4 => Ok(Register::Sp),
+            5 => Ok(Register::Bp),
+            6 => Ok(Register::Si),
+            7 => Ok(Register::Di),
             _ => Err(()),
         }
     }

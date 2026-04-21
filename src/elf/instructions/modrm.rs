@@ -14,7 +14,7 @@ fn encode_sib(scale: Scale, index: Option<Register>, base: Option<Register>) -> 
     let scale_bits = scale as u8;
 
     let index_bits = match index {
-        Some(r) if r != Register::Esp => r as u8,
+        Some(r) if r != Register::Sp => r as u8,
         _ => 0b100, // no index
     };
 
@@ -77,10 +77,10 @@ fn encode_direct(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Re
 }
 
 fn encode_base(base: Register, data: &mut Vec<u8>) {
-    if base == Register::Esp {
+    if base == Register::Sp {
         data[0] = (MEMNODISP << 6) | 0b100;
         data.push(encode_sib(Scale::One, None, Some(base)));
-    } else if base == Register::Ebp {
+    } else if base == Register::Bp {
         data[0] = (MEMDISP8 << 6) | (base as u8);
         data.push(0);
     } else {
@@ -106,7 +106,7 @@ fn encode_base_disp(
 
     // Special case:
     // ESP/RSP as base requires mandatory SIB byte.
-    if base == Register::Esp {
+    if base == Register::Sp {
         // ModRM:
         // mod = mod_bits
         // rm  = 100 => SIB follows
@@ -147,7 +147,7 @@ fn encode_index_disp(
     data: &mut Vec<u8>,
     relocs: &mut Vec<Relocation>,
 ) {
-    assert!(index != Register::Esp); // interdit
+    assert!(index != Register::Sp); // interdit
 
     let val = get_disp(disp, data.len(), relocs);
     let (mod_bits, disp_bytes) = encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
@@ -166,7 +166,7 @@ fn encode_base_index_scale(
     scale: Scale,
     data: &mut Vec<u8>,
 ) {
-    assert!(index != Register::Esp);
+    assert!(index != Register::Sp);
 
     data[0] = (MEMNODISP << 6) | 0b100;
 
@@ -181,7 +181,7 @@ fn encode_base_index_scale_disp(
     data: &mut Vec<u8>,
     relocs: &mut Vec<Relocation>,
 ) {
-    assert!(index != Register::Esp);
+    assert!(index != Register::Sp);
 
     let val = get_disp(disp, data.len(), relocs);
     let (mod_bits, disp_bytes) = encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));

@@ -150,7 +150,7 @@ pub(super) fn encode_stack(
 
                 v.push(0x8F);
 
-                let reg_field = Operand::Reg(Register::Eax); // /0
+                let reg_field = Operand::Reg(Register::A); // /0
 
                 let base = v.len();
                 let modrm = mod_rm_encode(value, &reg_field);

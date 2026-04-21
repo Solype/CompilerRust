@@ -70,7 +70,7 @@ pub fn encode_shift_rotate( op: &ShiftOp, dst: &Operand, src: &Operand, size: Si
     match src {
         Operand::Imm(1) => v.push(opcode_1),
         Operand::Imm(_) => v.push(opcode_imm),
-        Operand::Reg(Register::Ecx) => v.push(opcode_cl),
+        Operand::Reg(Register::C) => v.push(opcode_cl),
         _ => unimplemented!("invalid shift count"),
     }
 

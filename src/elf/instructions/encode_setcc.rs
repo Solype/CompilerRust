@@ -41,7 +41,7 @@ pub(super) fn encode_setcc(
     let base = v.len();
 
     // reg field ignored for SETcc, use /0 convention
-    let reg_field = Operand::Reg(Register::Eax);
+    let reg_field = Operand::Reg(Register::A);
 
     let modrm = mod_rm_encode(dest, &reg_field);
 

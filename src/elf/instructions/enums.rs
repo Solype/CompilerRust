@@ -314,25 +314,7 @@ pub enum CtrlOp {
     Ret,
 
     // conditionnels (optionnel mais utile)
-    Je,
-    Jne,
-    Jg,
-    Jl,
-    Jge,
-    Jle,
-    Ja,
-    Jae,
-    Jb,
-    Jbe,
-
-    Js,
-    Jns,
-
-    Jo,
-    Jno,
-
-    Jp,
-    Jnp,
+    JmpCC(ConditionCode)
 }
 
 #[derive(Debug, Clone, Copy)]

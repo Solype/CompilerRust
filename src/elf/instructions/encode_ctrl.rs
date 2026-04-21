@@ -16,42 +16,26 @@ impl CtrlOp {
             // =====================================
             // equality / zero flag
             // =====================================
-            CtrlOp::Je  => encode_rel32_with_prefix(Some(0x0F), 0x84, target),
-            CtrlOp::Jne => encode_rel32_with_prefix(Some(0x0F), 0x85, target),
-
-            // =====================================
-            // signed comparisons
-            // =====================================
-            CtrlOp::Jl  => encode_rel32_with_prefix(Some(0x0F), 0x8C, target), // SF != OF
-            CtrlOp::Jge => encode_rel32_with_prefix(Some(0x0F), 0x8D, target), // SF == OF
-            CtrlOp::Jle => encode_rel32_with_prefix(Some(0x0F), 0x8E, target), // ZF=1 || SF!=OF
-            CtrlOp::Jg  => encode_rel32_with_prefix(Some(0x0F), 0x8F, target), // ZF=0 && SF==OF
-
-            // =====================================
-            // unsigned comparisons
-            // =====================================
-            CtrlOp::Ja  => encode_rel32_with_prefix(Some(0x0F), 0x87, target), // CF=0 && ZF=0
-            CtrlOp::Jae => encode_rel32_with_prefix(Some(0x0F), 0x83, target), // CF=0
-            CtrlOp::Jb  => encode_rel32_with_prefix(Some(0x0F), 0x82, target), // CF=1
-            CtrlOp::Jbe => encode_rel32_with_prefix(Some(0x0F), 0x86, target), // CF=1 || ZF=1
-
-            // =====================================
-            // sign flag
-            // =====================================
-            CtrlOp::Js  => encode_rel32_with_prefix(Some(0x0F), 0x88, target),
-            CtrlOp::Jns => encode_rel32_with_prefix(Some(0x0F), 0x89, target),
-
-            // =====================================
-            // overflow flag
-            // =====================================
-            CtrlOp::Jo  => encode_rel32_with_prefix(Some(0x0F), 0x80, target),
-            CtrlOp::Jno => encode_rel32_with_prefix(Some(0x0F), 0x81, target),
-
-            // =====================================
-            // parity flag
-            // =====================================
-            CtrlOp::Jp  => encode_rel32_with_prefix(Some(0x0F), 0x8A, target),
-            CtrlOp::Jnp => encode_rel32_with_prefix(Some(0x0F), 0x8B, target),
+            CtrlOp::JmpCC(cc) => {
+                match cc {
+                    ConditionCode::E  => encode_rel32_with_prefix(Some(0x0F), 0x84, target),
+                    ConditionCode::NE => encode_rel32_with_prefix(Some(0x0F), 0x85, target),
+                    ConditionCode::G  => encode_rel32_with_prefix(Some(0x0F), 0x8C, target),
+                    ConditionCode::GE => encode_rel32_with_prefix(Some(0x0F), 0x8D, target),
+                    ConditionCode::L  => encode_rel32_with_prefix(Some(0x0F), 0x8E, target),
+                    ConditionCode::LE => encode_rel32_with_prefix(Some(0x0F), 0x8F, target),
+                    ConditionCode::A  => encode_rel32_with_prefix(Some(0x0F), 0x87, target),
+                    ConditionCode::AE => encode_rel32_with_prefix(Some(0x0F), 0x83, target),
+                    ConditionCode::B  => encode_rel32_with_prefix(Some(0x0F), 0x82, target),
+                    ConditionCode::BE => encode_rel32_with_prefix(Some(0x0F), 0x86, target),
+                    ConditionCode::S  => encode_rel32_with_prefix(Some(0x0F), 0x88, target),
+                    ConditionCode::NS => encode_rel32_with_prefix(Some(0x0F), 0x89, target),
+                    ConditionCode::O  => encode_rel32_with_prefix(Some(0x0F), 0x80, target),
+                    ConditionCode::NO => encode_rel32_with_prefix(Some(0x0F), 0x81, target),
+                    ConditionCode::P  => encode_rel32_with_prefix(Some(0x0F), 0x8A, target),
+                    ConditionCode::NP => encode_rel32_with_prefix(Some(0x0F), 0x8B, target),
+                }
+            }
         }
     }
 }

@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::{default, vec};
+use std::{vec};
 
-use crate::elf::rel;
 
 use super::{
     section::Section,
@@ -56,6 +55,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 pub enum SymbolType {
     Function,
     Object,

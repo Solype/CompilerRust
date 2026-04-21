@@ -150,89 +150,33 @@ fn main() -> std::io::Result<()> {
 
 
     let setcc_instr: Vec<Instruction> = vec![
-        // =====================================================
-        // Prepare flags with CMP
-        // =====================================================
         Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::Eax), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+        Instruction::SetCC { op: SetCC::Sete, dst: Operand::Reg(Register::Eax) }, Instruction::SetCC { op: SetCC::Setne, dst: Operand::Reg(Register::Ebx) }, Instruction::SetCC { op: SetCC::Setg, dst: Operand::Reg(Register::Ecx) }, Instruction::SetCC { op: SetCC::Setl, dst: Operand::Reg(Register::Edx) }, Instruction::SetCC { op: SetCC::Setge, dst: Operand::Reg(Register::Eax) }, Instruction::SetCC { op: SetCC::Setle, dst: Operand::Reg(Register::Ebx) }, Instruction::SetCC { op: SetCC::Seta, dst: Operand::Reg(Register::Ecx) }, Instruction::SetCC { op: SetCC::Setb, dst: Operand::Reg(Register::Edx) },
+        Instruction::SetCC { op: SetCC::Setae, dst: Operand::Reg(Register::Eax) },
+        Instruction::SetCC { op: SetCC::Setbe, dst: Operand::Reg(Register::Ebx) }, 
+        Instruction::SetCC { op: SetCC::Sets, dst: Operand::Reg(Register::Ecx) },
+        Instruction::SetCC { op: SetCC::Setns, dst: Operand::Reg(Register::Edx) },
+        Instruction::SetCC { op: SetCC::Seto, dst: Operand::Reg(Register::Eax) },
+        Instruction::SetCC { op: SetCC::Setno, dst: Operand::Reg(Register::Ebx) },
+        Instruction::SetCC { op: SetCC::Setp, dst: Operand::Reg(Register::Ecx) },
+        Instruction::SetCC { op: SetCC::Setnp, dst: Operand::Reg(Register::Edx) },
 
-        // =====================================================
-        // Register targets
-        // =====================================================
-        Instruction::SetCC { op: SetCC::Sete,  dst: Operand::Reg(Register::Eax) }, // sete al
-        Instruction::SetCC { op: SetCC::Setne, dst: Operand::Reg(Register::Ebx) }, // setne bl
-        Instruction::SetCC { op: SetCC::Setg,  dst: Operand::Reg(Register::Ecx) }, // setg cl
-        Instruction::SetCC { op: SetCC::Setl,  dst: Operand::Reg(Register::Edx) }, // setl dl
-        Instruction::SetCC { op: SetCC::Setge, dst: Operand::Reg(Register::Eax) }, // setge al
-        Instruction::SetCC { op: SetCC::Setle, dst: Operand::Reg(Register::Ebx) }, // setle bl
-        Instruction::SetCC { op: SetCC::Seta,  dst: Operand::Reg(Register::Ecx) }, // seta cl
-        Instruction::SetCC { op: SetCC::Setb,  dst: Operand::Reg(Register::Edx) }, // setb dl
-
-        // =====================================================
-        // Memory targets
-        // =====================================================
-        Instruction::SetCC {
-            op: SetCC::Sete,
-            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
-                base: Register::Ebx,
-                disp: MemDisplacement::Imm(0),
-            }),
-        },
-
-        Instruction::SetCC {
-            op: SetCC::Setne,
-            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
-                base: Register::Ebx,
-                disp: MemDisplacement::Imm(1),
-            }),
-        },
-
-        Instruction::SetCC {
-            op: SetCC::Setg,
-            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
-                base: Register::Ebx,
-                disp: MemDisplacement::Imm(2),
-            }),
-        },
-
-        Instruction::SetCC {
-            op: SetCC::Setl,
-            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
-                base: Register::Ebx,
-                disp: MemDisplacement::Imm(3),
-            }),
-        },
-
-        Instruction::SetCC {
-            op: SetCC::Setge,
-            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
-                base: Register::Ebx,
-                disp: MemDisplacement::Imm(4),
-            }),
-        },
-
-        Instruction::SetCC {
-            op: SetCC::Setle,
-            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
-                base: Register::Ebx,
-                disp: MemDisplacement::Imm(5),
-            }),
-        },
-
-        Instruction::SetCC {
-            op: SetCC::Seta,
-            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
-                base: Register::Ebx,
-                disp: MemDisplacement::Imm(6),
-            }),
-        },
-
-        Instruction::SetCC {
-            op: SetCC::Setb,
-            dst: Operand::MemoryAddress(MemAddress::BaseDisp {
-                base: Register::Ebx,
-                disp: MemDisplacement::Imm(7),
-            }),
-        },
+        Instruction::SetCC { op: SetCC::Sete, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(0) }) },
+        Instruction::SetCC { op: SetCC::Setne, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(1) }) },
+        Instruction::SetCC { op: SetCC::Setg, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(2) }) },
+        Instruction::SetCC { op: SetCC::Setl, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(3) }) },
+        Instruction::SetCC { op: SetCC::Setge, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(4) }) },
+        Instruction::SetCC { op: SetCC::Setle, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(5) }) },
+        Instruction::SetCC { op: SetCC::Seta, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(6) }) },
+        Instruction::SetCC { op: SetCC::Setb, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(7) }) },
+        Instruction::SetCC { op: SetCC::Setae, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(8) }) },
+        Instruction::SetCC { op: SetCC::Setbe, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(9) }) },
+        Instruction::SetCC { op: SetCC::Sets, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(10) }) },
+        Instruction::SetCC { op: SetCC::Setns, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(11) }) },
+        Instruction::SetCC { op: SetCC::Seto, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(12) }) },
+        Instruction::SetCC { op: SetCC::Setno, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(13) }) },
+        Instruction::SetCC { op: SetCC::Setp, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(14) }) },
+        Instruction::SetCC { op: SetCC::Setnp, dst: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(15) }) },
 
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];

@@ -340,6 +340,12 @@ pub enum Instruction {
         size: Option<Size>
     },
 
+    Lea {
+        src: Operand,
+        dst: Register,
+        size: Option<Size>
+    },
+
     Shift {
         op: ShiftOp,
         dst: Operand,

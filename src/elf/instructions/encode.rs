@@ -1,8 +1,11 @@
 use std::vec;
 
-use crate::elf::instructions::{encode_bitop::encode_bit, encode_cond_mov::encode_cmovcc, encode_setcc::encode_setcc, encode_shift_rotate::encode_shift_rotate};
-
 use super::{
+    encode_bitop::encode_bit,
+    encode_cond_mov::encode_cmovcc,
+    encode_lea::encode_lea,
+    encode_setcc::encode_setcc,
+    encode_shift_rotate::encode_shift_rotate,
     encode_stack::encode_stack,
     encode_unary::encode_unary,
     enums::*,
@@ -76,6 +79,11 @@ impl Instruction {
             Instruction::CMovCC { cc, dst, src, size } => {
                 let size = size.unwrap_or(default_size);
                 encode_cmovcc(cc, dst, src, size)
+            }
+
+            Instruction::Lea { src, dst, size } => {
+                let size = size.unwrap_or(default_size);
+                encode_lea(dst, src, size)
             }
 
             // =========================

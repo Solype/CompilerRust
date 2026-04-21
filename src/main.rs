@@ -297,6 +297,10 @@ fn main() -> std::io::Result<()> {
         Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::B), src: Operand::Imm(42), size: None },
         Instruction::Sys { op: SysOp::Int(0x80) },
         Instruction::Sys { op: SysOp::Sysenter },
+        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::Base { base: Register::B }), size: Some(Size::U32), },
+        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress( MemAddress::BaseDisp { base: Register::B, disp: MemDisplacement::Imm(8), } ), size: Some(Size::U32), },
+        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress( MemAddress::BaseDisp { base: Register::Bp, disp: MemDisplacement::Imm(-16), } ), size: Some(Size::U32), },
+        Instruction::Lea {dst: Register::A,src: Operand::MemoryAddress( MemAddress::BaseIndexScale { base: Register::C, index: Register::C, scale: Scale::Four,}),size: Some(Size::U32), },
     ];
 
 
@@ -357,6 +361,7 @@ fn main() -> std::io::Result<()> {
 
         Instruction::LocalSym("test_local3".to_string()),
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
+        
     ];
 
     // =========================================================

@@ -193,7 +193,9 @@ pub enum BinOp {
     // Comparaison
     Cmp,
     Test,
+}
 
+pub enum ShiftOp {
     // Shifts
     Shl,
     Shr,
@@ -340,6 +342,13 @@ pub enum SysOp {
 pub enum Instruction {
     Binary {
         op: BinOp,
+        dst: Operand,
+        src: Operand,
+        size: Option<Size>,
+    },
+
+    Shift {
+        op: ShiftOp,
         dst: Operand,
         src: Operand,
         size: Option<Size>,

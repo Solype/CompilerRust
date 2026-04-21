@@ -25,13 +25,6 @@ enum BinaryEncoding {
         opcode: u8,
     },
 
-    ShiftRotate {
-        opcode_1: u8,   // shift by 1
-        opcode_cl: u8,  // shift by CL
-        opcode_imm: u8, // shift by imm8
-        modrm_ext: u8,
-    },
-
     Xchg {
         opcode: u8,
     },
@@ -125,44 +118,6 @@ impl BinOp {
                 modrm_ext: 0,
             },
 
-            // --------------------------------------------------
-            // SHIFTS / ROTATES
-            // --------------------------------------------------
-            BinOp::Rol => BinaryEncoding::ShiftRotate {
-                opcode_1: 0xD0,
-                opcode_cl: 0xD2,
-                opcode_imm: 0xC0,
-                modrm_ext: 0,
-            },
-
-            BinOp::Ror => BinaryEncoding::ShiftRotate {
-                opcode_1: 0xD0,
-                opcode_cl: 0xD2,
-                opcode_imm: 0xC0,
-                modrm_ext: 1,
-            },
-
-            BinOp::Shl => BinaryEncoding::ShiftRotate {
-                opcode_1: 0xD0,
-                opcode_cl: 0xD2,
-                opcode_imm: 0xC0,
-                modrm_ext: 4,
-            },
-
-            BinOp::Shr => BinaryEncoding::ShiftRotate {
-                opcode_1: 0xD0,
-                opcode_cl: 0xD2,
-                opcode_imm: 0xC0,
-                modrm_ext: 5,
-            },
-
-            BinOp::Sar => BinaryEncoding::ShiftRotate {
-                opcode_1: 0xD0,
-                opcode_cl: 0xD2,
-                opcode_imm: 0xC0,
-                modrm_ext: 7,
-            },
-
             BinOp::CondMov(cond_mov) => BinaryEncoding::CMov {
                 opcode: match cond_mov {
                     CMovCC::Cmove  => 0x44,
@@ -205,49 +160,6 @@ fn emit_imm(v: &mut Vec<u8>, val: usize, size: Size) {
         Size::U32 => v.extend(&(val as u32).to_le_bytes()),
         Size::U64 => v.extend(&(val as u64).to_le_bytes()),
     }
-}
-
-fn encode_shift_rotate( dst: &Operand, src: &Operand, size: Size, enc: &BinaryEncoding, ) -> EncodeInformation
-{
-    let (opcode_1, opcode_cl, opcode_imm, ext) = match *enc {
-        BinaryEncoding::ShiftRotate {
-            opcode_1,
-            opcode_cl,
-            opcode_imm,
-            modrm_ext,
-        } => (opcode_1, opcode_cl, opcode_imm, modrm_ext),
-
-        _ => unreachable!(),
-    };
-
-    let mut v = Vec::new();
-
-    emit_size_prefix(&mut v, size);
-
-    emit_rex(&mut v, size, None, None);
-    match src {
-        Operand::Imm(1) => v.push(opcode_1),
-        Operand::Imm(_) => v.push(opcode_imm),
-        Operand::Reg(Register::Ecx) => v.push(opcode_cl),
-        _ => unimplemented!("invalid shift count"),
-    }
-
-    let reg_field = Operand::Reg(Register::try_from(ext).unwrap());
-
-    let modrm = mod_rm_encode(dst, &reg_field);
-
-    let base = v.len();
-    v.extend(modrm.data);
-
-    if let Operand::Imm(n) = src {
-        if *n != 1 {
-            v.push(*n as u8);
-        }
-    }
-
-    let relocations = modrm.relocations.into_iter().map(|mut r| { r.offset += base; r }).collect();
-
-    EncodeInformation { data: v, relocations, }
 }
 
 fn encode_reg_imm(
@@ -452,10 +364,6 @@ pub(super) fn encode_binary(
     size: Size,
 ) -> EncodeInformation {
     let enc = op.encoding(size);
-
-    if let BinaryEncoding::ShiftRotate { .. } = enc {
-        return encode_shift_rotate(dst, src, size, &enc)
-    }
 
     if let BinaryEncoding::CMov { .. } = enc {
         match dst {

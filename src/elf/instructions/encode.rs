@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::elf::instructions::{encode_bitop::encode_bit, encode_setcc::encode_setcc};
+use crate::elf::instructions::{encode_bitop::encode_bit, encode_setcc::encode_setcc, encode_shift_rotate::encode_shift_rotate};
 
 use super::{
     encode_stack::encode_stack,
@@ -67,6 +67,11 @@ impl Instruction {
                 let size = size.unwrap_or(default_size);
                 encode_bit(*op, dst, src, size)
             },
+
+            Instruction::Shift { op, dst, src, size } => {
+                let size = size.unwrap_or(default_size);
+                encode_shift_rotate(op, dst, src, size)
+            }
 
             // =========================
             // LOCAL SYMBOL FOR JMP

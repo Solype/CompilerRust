@@ -261,23 +261,23 @@ fn main() -> std::io::Result<()> {
         // -------------------------------------------------
         // SHL / SHR / SAR
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Shl, dst: Operand::Reg(Register::Eax), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Shl, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(3), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Shl, dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::Eax), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(3), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
 
-        Instruction::Binary { op: BinOp::Shr, dst: Operand::Reg(Register::Edx), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Shr, dst: mem.clone(), src: Operand::Imm(2), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shr, dst: Operand::Reg(Register::Edx), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shr, dst: mem.clone(), src: Operand::Imm(2), size: Some(Size::U32) },
 
-        Instruction::Binary { op: BinOp::Sar, dst: Operand::Reg(Register::Eax), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Sar, dst: mem.clone(), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Sar, dst: Operand::Reg(Register::Eax), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Sar, dst: mem.clone(), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
 
         // -------------------------------------------------
         // ROL / ROR
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Rol, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Rol, dst: Operand::Reg(Register::Ecx), src: Operand::Imm(4), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Ror, dst: Operand::Reg(Register::Edx), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Ror, dst: mem.clone(), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
+        Instruction::Shift { op: ShiftOp::Rol, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift { op: ShiftOp::Rol, dst: Operand::Reg(Register::Ecx), src: Operand::Imm(4), size: Some(Size::U32) },
+        Instruction::Shift { op: ShiftOp::Ror, dst: Operand::Reg(Register::Edx), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift { op: ShiftOp::Ror, dst: mem.clone(), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
 
         // -------------------------------------------------
         // Labels / Calls

@@ -39,6 +39,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 
         println!("Number of symbols : {}", self.symtab.len());
         for sym in self.symtab.symbols.iter() {
+            println!("size of symbol {:?} : {}", self.strtab.from_usize(sym.st_name as usize), sym.st_size.to_usize());
             sym_binary.extend(sym.to_bytes().expect("ElfSym to_bytes failed"));
         }
 

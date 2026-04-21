@@ -95,6 +95,7 @@ pub(super) fn encode_unary(
         // ==================================================
         UnaryEncoding::Simple { opcode } => {
             let mut v = Vec::new();
+            emit_size_prefix(&mut v, size);   // <-- important
             v.extend_from_slice(opcode);
 
             EncodeInformation {

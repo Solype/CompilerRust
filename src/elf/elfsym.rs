@@ -212,7 +212,7 @@ where
                 return existing_idx;
             }
 
-            panic!("Symbol already defined in table");
+            panic!("Symbol {} already defined in table", sym_name);
         }
 
         // Extract binding from st_info
@@ -244,14 +244,34 @@ where
 
     /// Returns the symbol table index associated with a given name index.
     ///
-    /// `name_idx` usually corresponds to an offset inside `.strtab`.
+    /// `name_idx` is usually an offset inside `.strtab`.
     ///
     /// ## Returns
     ///
-    /// - `Some(&usize)` if found
+    /// - `Some(idx)` if found
     /// - `None` otherwise
-    pub fn get_ndx(&self, name_idx: usize) -> Option<&usize> {
-        self.sym_map.get(&name_idx)
+    pub fn get_index_from_name(&self, name_idx: usize) -> Option<usize> {
+        self.sym_map.get(&name_idx).copied()
+    }
+
+    /// Returns an immutable reference to a symbol using its symbol table index.
+    ///
+    /// ## Returns
+    ///
+    /// - `Some(&ElfSym<T>)` if the index exists
+    /// - `None` otherwise
+    pub fn get(&self, idx: usize) -> Option<&ElfSym<T>> {
+        self.symbols.get(idx)
+    }
+
+    /// Returns a mutable reference to a symbol using its symbol table index.
+    ///
+    /// ## Returns
+    ///
+    /// - `Some(&mut ElfSym<T>)` if the index exists
+    /// - `None` otherwise
+    pub fn get_mut(&mut self, idx: usize) -> Option<&mut ElfSym<T>> {
+        self.symbols.get_mut(idx)
     }
 
     /// Returns an immutable reference to a symbol using its name index.
@@ -260,11 +280,9 @@ where
     ///
     /// - `Some(&ElfSym<T>)` if found
     /// - `None` otherwise
-    pub fn get(&self, name_idx: usize) -> Option<&ElfSym<T>> {
-        if let Some(&idx) = self.sym_map.get(&name_idx) {
-            return Some(&self.symbols[idx]);
-        }
-        None
+    pub fn get_by_name(&self, name_idx: usize) -> Option<&ElfSym<T>> {
+        self.get_index_from_name(name_idx)
+            .and_then(|idx| self.symbols.get(idx))
     }
 
     /// Returns a mutable reference to a symbol using its name index.
@@ -273,22 +291,12 @@ where
     ///
     /// - `Some(&mut ElfSym<T>)` if found
     /// - `None` otherwise
-    pub fn get_mut(&mut self, name_idx: usize) -> Option<&mut ElfSym<T>> {
-        if let Some(&idx) = self.sym_map.get(&name_idx) {
-            return Some(&mut self.symbols[idx]);
+    pub fn get_mut_by_name(&mut self, name_idx: usize) -> Option<&mut ElfSym<T>> {
+        if let Some(idx) = self.get_index_from_name(name_idx) {
+            self.symbols.get_mut(idx)
+        } else {
+            None
         }
-
-        None
-    }
-
-    /// Returns a symbol by its direct symbol table index.
-    ///
-    /// ## Returns
-    ///
-    /// - `Some(&ElfSym<T>)` if the index exists
-    /// - `None` otherwise
-    pub fn get_by_index(&self, idx: usize) -> Option<&ElfSym<T>> {
-        self.symbols.get(idx)
     }
 
     /// Returns the number of symbols in the collection.

@@ -103,8 +103,8 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             let r_offset = base_offset + info.offset;
             let name_idx = self.strtab.name(&info.sym);
 
-            let sym_ndx = if let Some(idx) = self.symtab.get_ndx(name_idx) {
-                *idx
+            let sym_ndx = if let Some(idx) = self.symtab.get_index_from_name(name_idx) {
+                idx
             } else {
                 let undef_sym = ElfSym {
                     st_name: name_idx as u32,

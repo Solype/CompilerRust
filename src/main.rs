@@ -338,7 +338,7 @@ fn main() -> std::io::Result<()> {
         // -------------------------------------------------
         // Labels / Calls
         // -------------------------------------------------
-        Instruction::LocalSym("test_local".to_string()),
+        // Instruction::LocalSym("test_local".to_string()),
         Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_exit".to_string()) },
 
@@ -350,9 +350,69 @@ fn main() -> std::io::Result<()> {
         Instruction::Sys { op: SysOp::Syscall },
 
         Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Eax), src: Operand::Imm(1), size: None },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(42), size: None },
-        Instruction::Sys { op: SysOp::Int(0x80) },
-        Instruction::Sys { op: SysOp::Sysenter },
+        // Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(42), size: None },
+        // Instruction::Sys { op: SysOp::Int(0x80) },
+        // Instruction::Sys { op: SysOp::Sysenter },
+    ];
+
+
+    let func_instr2: Vec<Instruction> = vec![
+        Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("test_local3".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("my_func".to_string()) },
+
+        Instruction::Ctrl { op: CtrlOp::Je,  target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jne, target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jg,  target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jl,  target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jge, target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jle, target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Ja,  target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jae, target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jb,  target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jbe, target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Js,  target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jns, target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jo,  target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jno, target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jp,  target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Jnp, target: Operand::Sym("my_func".to_string()) },
+
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmove),   dst: Operand::Reg(Register::Eax), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovne),  dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Edx), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovg),   dst: Operand::Reg(Register::Eax), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ebx, disp: MemDisplacement::Imm(0) }), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovl),   dst: Operand::Reg(Register::Ebx), src: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::Ecx, disp: MemDisplacement::Imm(4) }), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovge),  dst: Operand::Reg(Register::Edx), src: Operand::Reg(Register::Eax), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovle),  dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmova),   dst: Operand::Reg(Register::Eax), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovae),  dst: Operand::Reg(Register::Ebx), src: Operand::Reg(Register::Edx), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovb),   dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Eax), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovbe),  dst: Operand::Reg(Register::Edx), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovs),   dst: Operand::Reg(Register::Eax), src: Operand::Reg(Register::Edx), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovns),  dst: Operand::Reg(Register::Ebx), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
+
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovo),   dst: Operand::Reg(Register::Ecx), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovno),  dst: Operand::Reg(Register::Edx), src: Operand::Reg(Register::Eax), size: Some(Size::U32) },
+
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovp),   dst: Operand::Reg(Register::Eax), src: Operand::Reg(Register::Ebx), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::CondMov(CMovCC::Cmovnp),  dst: Operand::Reg(Register::Ebx), src: Operand::Reg(Register::Ecx), size: Some(Size::U32) },
+
+        Instruction::Unary { op: UnaryOp::Nop, dst: Operand::NoOperand, size: None },
+
+        Instruction::Unary { op: UnaryOp::Cwd, dst: Operand::NoOperand, size: Some(Size::U16) },
+        Instruction::Unary { op: UnaryOp::Cdq, dst: Operand::NoOperand, size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Cqo, dst: Operand::NoOperand, size: Some(Size::U64) },
+
+        Instruction::Unary { op: UnaryOp::Clc, dst: Operand::NoOperand, size: None },
+        Instruction::Unary { op: UnaryOp::Stc, dst: Operand::NoOperand, size: None },
+        Instruction::Unary { op: UnaryOp::Cmc, dst: Operand::NoOperand, size: None },
+
+        Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
+
+        Instruction::LocalSym("test_local3".to_string()),
+        Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];
 
     // =========================================================
@@ -403,6 +463,14 @@ fn main() -> std::io::Result<()> {
         text_section,
         "my_other_other_func".to_string(),
         &setcc_instr,
+        make_st_info(elf::elfsym::StBind::Global, elf::elfsym::StType::Func),
+        elf::elfsym::StVis::Default as u8,
+    );
+
+    elf_file.add_symbol_to_section(
+        text_section,
+        "my_other_ctrl_func".to_string(),
+        &func_instr2,
         make_st_info(elf::elfsym::StBind::Global, elf::elfsym::StType::Func),
         elf::elfsym::StVis::Default as u8,
     );

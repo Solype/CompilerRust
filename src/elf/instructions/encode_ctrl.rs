@@ -3,35 +3,60 @@ use super::enums::*;
 impl CtrlOp {
     pub(super) fn encode(self, target: &Operand) -> EncodeInformation {
         match self {
-            // =========================
-            // REL32 (jmp / call)
-            // =========================
-            CtrlOp::Jmp => encode_rel32_with_prefix(None, 0xE9, target),
-            CtrlOp::Call => encode_rel32_with_prefix(None, 0xE8, target),
-
-            // =========================
-            // RET (no operand)
-            // =========================
-            CtrlOp::Ret => EncodeInformation {
+            // =====================================
+            // unconditional
+            // =====================================
+            CtrlOp::Jmp  => encode_rel32_with_prefix(None,       0xE9, target),
+            CtrlOp::Call => encode_rel32_with_prefix(None,       0xE8, target),
+            CtrlOp::Ret  => EncodeInformation {
                 data: vec![0xC3],
                 relocations: vec![],
             },
 
-            // =========================
-            // FUTURE: conditional jumps
-            // =========================
-            CtrlOp::Je => encode_rel32_with_prefix(Some(0x0F), 0x84, target),
+            // =====================================
+            // equality / zero flag
+            // =====================================
+            CtrlOp::Je  => encode_rel32_with_prefix(Some(0x0F), 0x84, target),
             CtrlOp::Jne => encode_rel32_with_prefix(Some(0x0F), 0x85, target),
-            CtrlOp::Jg => encode_rel32_with_prefix(Some(0x0F), 0x8F, target),
-            CtrlOp::Jl => encode_rel32_with_prefix(Some(0x0F), 0x8C, target),
-            CtrlOp::Jge => encode_rel32_with_prefix(Some(0x0F), 0x8D, target),
-            CtrlOp::Jle => encode_rel32_with_prefix(Some(0x0F), 0x8E, target),
-            _ => unimplemented!()
+
+            // =====================================
+            // signed comparisons
+            // =====================================
+            CtrlOp::Jl  => encode_rel32_with_prefix(Some(0x0F), 0x8C, target), // SF != OF
+            CtrlOp::Jge => encode_rel32_with_prefix(Some(0x0F), 0x8D, target), // SF == OF
+            CtrlOp::Jle => encode_rel32_with_prefix(Some(0x0F), 0x8E, target), // ZF=1 || SF!=OF
+            CtrlOp::Jg  => encode_rel32_with_prefix(Some(0x0F), 0x8F, target), // ZF=0 && SF==OF
+
+            // =====================================
+            // unsigned comparisons
+            // =====================================
+            CtrlOp::Ja  => encode_rel32_with_prefix(Some(0x0F), 0x87, target), // CF=0 && ZF=0
+            CtrlOp::Jae => encode_rel32_with_prefix(Some(0x0F), 0x83, target), // CF=0
+            CtrlOp::Jb  => encode_rel32_with_prefix(Some(0x0F), 0x82, target), // CF=1
+            CtrlOp::Jbe => encode_rel32_with_prefix(Some(0x0F), 0x86, target), // CF=1 || ZF=1
+
+            // =====================================
+            // sign flag
+            // =====================================
+            CtrlOp::Js  => encode_rel32_with_prefix(Some(0x0F), 0x88, target),
+            CtrlOp::Jns => encode_rel32_with_prefix(Some(0x0F), 0x89, target),
+
+            // =====================================
+            // overflow flag
+            // =====================================
+            CtrlOp::Jo  => encode_rel32_with_prefix(Some(0x0F), 0x80, target),
+            CtrlOp::Jno => encode_rel32_with_prefix(Some(0x0F), 0x81, target),
+
+            // =====================================
+            // parity flag
+            // =====================================
+            CtrlOp::Jp  => encode_rel32_with_prefix(Some(0x0F), 0x8A, target),
+            CtrlOp::Jnp => encode_rel32_with_prefix(Some(0x0F), 0x8B, target),
         }
     }
 }
 
-pub(super) fn encode_rel32_with_prefix(
+fn encode_rel32_with_prefix(
     prefix: Option<u8>,
     opcode: u8,
     target: &Operand,

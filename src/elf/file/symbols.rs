@@ -72,7 +72,9 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         self.encode_instructions(section_ndx, data);
 
         let size_after = self.sections[section_ndx].get_data().len();
+        println!("Taille du symbole {:} : {}", name, size_after);
         if let Some(sym) = self.symtab.get_mut(ndx) {
+            println!("Setting size of {:}...", name);
             sym.st_size = T::from_usize(size_after - size_before)
         }
     }

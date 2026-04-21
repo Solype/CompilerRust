@@ -60,7 +60,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         let name_ndx = self.strtab.name(&name);
         let size_before = self.sections[section_ndx].get_data().len();
 
-        let ndx = self.symtab.add(elfsym::ElfSym {
+        self.symtab.add(elfsym::ElfSym {
             st_name: name_ndx as u32,
             st_info: info,
             st_shndx: section_ndx as u16,
@@ -72,10 +72,9 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         self.encode_instructions(section_ndx, data);
 
         let size_after = self.sections[section_ndx].get_data().len();
-        println!("Taille du symbole {:} : {}", name, size_after);
-        if let Some(sym) = self.symtab.get_mut(ndx) {
-            println!("Setting size of {:}...", name);
-            sym.st_size = T::from_usize(size_after - size_before)
+        let sym_size = size_after - size_before;
+        if let Some(sym) = self.symtab.get_mut_by_name(name_ndx) {
+            sym.st_size = T::from_usize(sym_size)
         }
     }
 }

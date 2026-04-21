@@ -28,7 +28,7 @@ fn get_opcode(cond_mov: ConditionCode,) -> u8
 }
 
 pub(super) fn encode_cmovcc(
-    opcode: ConditionCode,
+    cc: &ConditionCode,
     dst: &Register,
     src: &Operand,
     size: Size,
@@ -44,7 +44,7 @@ pub(super) fn encode_cmovcc(
     emit_size_prefix(&mut v, size);
     emit_rex(&mut v, size, Some(dst_reg), Some(rm_u8));
     v.push(0x0F);
-    v.push(get_opcode(opcode));
+    v.push(get_opcode(*cc));
 
     let base = v.len();
     let modrm = mod_rm_encode(src, &Operand::Reg(*dst));

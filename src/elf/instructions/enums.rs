@@ -146,27 +146,34 @@ pub enum Operand {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum CMovCC {
-    Cmove,
-    Cmovne,
-    Cmovg,
-    Cmovl,
-    Cmovge,
-    Cmovle,
+pub enum ConditionCode {
+    // Equal / Zero
+    E,
+    NE,
 
-    Cmova,
-    Cmovae,
-    Cmovb,
-    Cmovbe,
+    // Signed comparisons
+    G,
+    GE,
+    L,
+    LE,
 
-    Cmovs,
-    Cmovns,
+    // Unsigned comparisons
+    A,
+    AE,
+    B,
+    BE,
 
-    Cmovo,
-    Cmovno,
+    // Sign flag
+    S,
+    NS,
 
-    Cmovp,
-    Cmovnp,
+    // Overflow flag
+    O,
+    NO,
+
+    // Parity flag
+    P,
+    NP,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -176,9 +183,6 @@ pub enum BinOp {
     Movzx,
     Movsx,
     Xchg,
-
-    // Conditional mov
-    CondMov(CMovCC),
 
 
     // Arithmetic
@@ -345,6 +349,13 @@ pub enum Instruction {
         dst: Operand,
         src: Operand,
         size: Option<Size>,
+    },
+
+    CMovCC {
+        cc: ConditionCode,
+        dst: Register,
+        src: Operand,
+        size: Option<Size>
     },
 
     Shift {

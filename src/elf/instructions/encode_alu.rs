@@ -28,10 +28,6 @@ enum BinaryEncoding {
     Xchg {
         opcode: u8,
     },
-
-    CMov {
-        opcode: u8,
-    }
 }
 
 impl BinOp {
@@ -117,32 +113,6 @@ impl BinOp {
                 opcode_imm: if size == Size::U8 { 0xF6 } else { 0xF7 },
                 modrm_ext: 0,
             },
-
-            BinOp::CondMov(cond_mov) => BinaryEncoding::CMov {
-                opcode: match cond_mov {
-                    CMovCC::Cmove  => 0x44,
-                    CMovCC::Cmovne => 0x45,
-                    CMovCC::Cmovl  => 0x4C,
-                    CMovCC::Cmovge => 0x4D,
-                    CMovCC::Cmovle => 0x4E,
-                    CMovCC::Cmovg  => 0x4F,
-                    CMovCC::Cmova  => 0x47,
-                    CMovCC::Cmovae => 0x43,
-                    CMovCC::Cmovb  => 0x42,
-                    CMovCC::Cmovbe => 0x46,
-
-                    CMovCC::Cmovo  => 0x40,
-                    CMovCC::Cmovno => 0x41,
-
-                    CMovCC::Cmovs  => 0x48,
-                    CMovCC::Cmovns => 0x49,
-
-                    CMovCC::Cmovp  => 0x4A,
-                    CMovCC::Cmovnp => 0x4B,
-                }
-            },
-
-            //_ => unimplemented!("Instruction {:?} not yet implemented", self),
         }
     }
 }
@@ -325,13 +295,6 @@ fn encode_reg_mem(
             v.push(prefix);
             opcode
         }
-
-        BinaryEncoding::CMov { opcode } => {
-            v.push(0x0F);
-            opcode
-        }
-
-        _ => unimplemented!("reg/mem unsupported for this instruction {:?}", *enc),
     };
 
     v.push(opcode);
@@ -364,13 +327,6 @@ pub(super) fn encode_binary(
     size: Size,
 ) -> EncodeInformation {
     let enc = op.encoding(size);
-
-    if let BinaryEncoding::CMov { .. } = enc {
-        match dst {
-            Operand::Reg(_) => {}
-            _ => panic!("cmov destination must be register"),
-        }
-    }
 
     match (dst, src) {
 

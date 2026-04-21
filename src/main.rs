@@ -294,9 +294,9 @@ fn main() -> std::io::Result<()> {
         Instruction::Sys { op: SysOp::Syscall },
 
         Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Eax), src: Operand::Imm(1), size: None },
-        // Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(42), size: None },
-        // Instruction::Sys { op: SysOp::Int(0x80) },
-        // Instruction::Sys { op: SysOp::Sysenter },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Ebx), src: Operand::Imm(42), size: None },
+        Instruction::Sys { op: SysOp::Int(0x80) },
+        Instruction::Sys { op: SysOp::Sysenter },
     ];
 
 

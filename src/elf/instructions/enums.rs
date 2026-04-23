@@ -265,6 +265,7 @@ idiv r/m32
 idiv r/m64
  */
 
+#[derive(Debug)]
 pub enum ComplexBinOp {
     Mul,
     Div,

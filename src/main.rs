@@ -8,7 +8,7 @@ fn main() -> std::io::Result<()> {
 
     let mut file = File::create("output.elf")?;
 
-    let my_data = Operand::MemoryAddress(MemAddress::Direct {
+    let _my_data = Operand::MemoryAddress(MemAddress::Direct {
         disp: MemDisplacement::Sym("my_data".to_string()),
     });
 
@@ -320,14 +320,14 @@ fn main() -> std::io::Result<()> {
             op: BinOp::Mov,
             dst: Operand::Reg(Register::A),
             src: Operand::Imm(0x123456789abcdef0),
-            size: Some(Size::U64),
+            size: None,
         },
 
         Instruction::Binary {
             op: BinOp::Mov,
             dst: Operand::Reg(Register::D),
             src: Operand::Imm(0x401000),
-            size: Some(Size::U64),
+            size: None,
         },
 
         // -------------------------------------------------
@@ -435,7 +435,7 @@ fn main() -> std::io::Result<()> {
         Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress( MemAddress::BaseDisp { base: Register::B, disp: MemDisplacement::Imm(8), } ), size: Some(Size::U32), },
         Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress( MemAddress::BaseDisp { base: Register::Bp, disp: MemDisplacement::Imm(-16), } ), size: Some(Size::U32), },
         Instruction::Lea {dst: Register::A,src: Operand::MemoryAddress( MemAddress::BaseIndexScale { base: Register::C, index: Register::C, scale: Scale::Four,}),size: Some(Size::U32), },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: Some(Size::U64), },
+        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: None, },
         Instruction::Lea {
             dst: Register::A,
             src: Operand::MemoryAddress(MemAddress::Base {
@@ -477,7 +477,7 @@ fn main() -> std::io::Result<()> {
             src: Operand::MemoryAddress(MemAddress::Direct {
                 disp: MemDisplacement::Sym("my_data".to_string()),
             }),
-            size: Some(Size::U64),
+            size: None,
         },
     
         Instruction::ComplexBinary {
@@ -545,14 +545,13 @@ fn main() -> std::io::Result<()> {
             extra: None,
             size: Some(Size::U32),
         },
-        //////////////////////////////// Ne fonctionne plus
 
         Instruction::ComplexBinary {
             op: ComplexBinOp::Div,
             dst: Operand::NoOperand,
             src: Operand::Reg(Register::B),
             extra: None,
-            size: Some(Size::U64),
+            size: None,
         },
 
         Instruction::ComplexBinary {
@@ -562,7 +561,7 @@ fn main() -> std::io::Result<()> {
                 base: Register::B,
             }),
             extra: None,
-            size: Some(Size::U64),
+            size: None,
         },
 
         Instruction::ComplexBinary {
@@ -619,7 +618,94 @@ fn main() -> std::io::Result<()> {
                 scale: Scale::Two,
             }),
             extra: None,
-            size: Some(Size::U64),
+            size: None,
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Reg(Register::B),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::C),
+            src: Operand::MemoryAddress(MemAddress::Base {
+                base: Register::B,
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::D),
+            src: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Bp,
+                disp: MemDisplacement::Imm(-8),
+            }),
+            extra: None,
+            size: None,
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::A),
+            src: Operand::MemoryAddress(MemAddress::BaseIndexScale {
+                base: Register::B,
+                index: Register::C,
+                scale: Scale::Four,
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Reg(Register::B),
+            extra: Some(Operand::Imm(5)),
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::C),
+            src: Operand::Reg(Register::D),
+            extra: Some(Operand::Imm(127)),
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Reg(Register::B),
+            extra: Some(Operand::Imm(128)),
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::D),
+            src: Operand::MemoryAddress(MemAddress::Base {
+                base: Register::B,
+            }),
+            extra: Some(Operand::Imm(1000)),
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::Reg(Register::A),
+            src: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp {
+                base: Register::B,
+                index: Register::C,
+                scale: Scale::Eight,
+                disp: MemDisplacement::Imm(16),
+            }),
+            extra: Some(Operand::Imm(9)),
+            size: None,
         },
     ];
 
@@ -671,7 +757,7 @@ fn main() -> std::io::Result<()> {
 
         Instruction::Unary { op: UnaryOp::Cwd, dst: Operand::NoOperand, size: Some(Size::U16) },
         Instruction::Unary { op: UnaryOp::Cdq, dst: Operand::NoOperand, size: Some(Size::U32) },
-        Instruction::Unary { op: UnaryOp::Cqo, dst: Operand::NoOperand, size: Some(Size::U64) },
+        Instruction::Unary { op: UnaryOp::Cqo, dst: Operand::NoOperand, size: None },
 
         Instruction::Unary { op: UnaryOp::Clc, dst: Operand::NoOperand, size: None },
         Instruction::Unary { op: UnaryOp::Stc, dst: Operand::NoOperand, size: None },

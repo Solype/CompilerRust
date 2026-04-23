@@ -187,14 +187,148 @@ fn main() -> std::io::Result<()> {
         // -------------------------------------------------
         // MOV
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(0x12), size: Some(Size::U8) },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::B), src: Operand::Imm(0x1234), size: Some(Size::U16) },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::C), src: Operand::Imm(0x12345678), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::D), src: Operand::Sym("my_data".to_string()), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Mov, dst: my_data.clone(), src: Operand::Imm(0x41), size: Some(Size::U8) },
-        Instruction::Binary { op: BinOp::Mov, dst: my_data.clone(), src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: my_data.clone(), size: Some(Size::U32) },
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Imm(0x12),
+            size: Some(Size::U8),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::B),
+            src: Operand::Imm(0x1234),
+            size: Some(Size::U16),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::C),
+            src: Operand::Imm(0x12345678),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::D),
+            src: Operand::Sym("my_data".to_string()),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Reg(Register::B),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::MemoryAddress(MemAddress::Direct {
+                disp: MemDisplacement::Sym("my_data".to_string()),
+            }),
+            src: Operand::Imm(0x41),
+            size: Some(Size::U8),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::MemoryAddress(MemAddress::Direct {
+                disp: MemDisplacement::Sym("my_data".to_string()),
+            }),
+            src: Operand::Reg(Register::A),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::MemoryAddress(MemAddress::Direct {
+                disp: MemDisplacement::Sym("my_data".to_string()),
+            }),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::MemoryAddress(MemAddress::Direct {
+                disp: MemDisplacement::Sym("my_data".to_string()),
+            }),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::MemoryAddress(MemAddress::Direct {
+                disp: MemDisplacement::Sym("my_data".to_string()),
+            }),
+            src: Operand::Reg(Register::A),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::MemoryAddress(MemAddress::BaseIndex {
+                base: Register::B,
+                index: Register::C,
+            }),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::MemoryAddress(MemAddress::BaseIndexScale {
+                base: Register::B,
+                index: Register::C,
+                scale: Scale::Four,
+            }),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp {
+                base: Register::B,
+                index: Register::C,
+                scale: Scale::Eight,
+                disp: MemDisplacement::Imm(16),
+            }),
+            src: Operand::Reg(Register::A),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Movzx,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Reg(Register::B),
+            size: Some(Size::U8),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Movsx,
+            dst: Operand::Reg(Register::C),
+            src: Operand::MemoryAddress(MemAddress::Base {
+                base: Register::B,
+            }),
+            size: Some(Size::U8),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Imm(0x123456789abcdef0),
+            size: Some(Size::U64),
+        },
+
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::D),
+            src: Operand::Imm(0x401000),
+            size: Some(Size::U64),
+        },
 
         // -------------------------------------------------
         // MOVZX / MOVSX
@@ -301,6 +435,192 @@ fn main() -> std::io::Result<()> {
         Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress( MemAddress::BaseDisp { base: Register::B, disp: MemDisplacement::Imm(8), } ), size: Some(Size::U32), },
         Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress( MemAddress::BaseDisp { base: Register::Bp, disp: MemDisplacement::Imm(-16), } ), size: Some(Size::U32), },
         Instruction::Lea {dst: Register::A,src: Operand::MemoryAddress( MemAddress::BaseIndexScale { base: Register::C, index: Register::C, scale: Scale::Four,}),size: Some(Size::U32), },
+        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: Some(Size::U64), },
+        Instruction::Lea {
+            dst: Register::A,
+            src: Operand::MemoryAddress(MemAddress::Base {
+                base: Register::B,
+            }),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Lea {
+            dst: Register::A,
+            src: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::B,
+                disp: MemDisplacement::Imm(8),
+            }),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Lea {
+            dst: Register::A,
+            src: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Bp,
+                disp: MemDisplacement::Imm(-16),
+            }),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Lea {
+            dst: Register::A,
+            src: Operand::MemoryAddress(MemAddress::BaseIndexScale {
+                base: Register::C,
+                index: Register::C,
+                scale: Scale::Four,
+            }),
+            size: Some(Size::U32),
+        },
+
+        Instruction::Lea {
+            dst: Register::A,
+            src: Operand::MemoryAddress(MemAddress::Direct {
+                disp: MemDisplacement::Sym("my_data".to_string()),
+            }),
+            size: Some(Size::U64),
+        },
+    
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Div,
+            dst: Operand::NoOperand,
+            src: Operand::Reg(Register::C),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Div,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::B,
+                disp: MemDisplacement::Imm(8),
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Div,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::Bp,
+                disp: MemDisplacement::Imm(-16),
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Div,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::BaseIndex {
+                base: Register::B,
+                index: Register::C,
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Div,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::BaseIndexScale {
+                base: Register::B,
+                index: Register::C,
+                scale: Scale::Four,
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Div,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp {
+                base: Register::B,
+                index: Register::C,
+                scale: Scale::Eight,
+                disp: MemDisplacement::Imm(16),
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+        //////////////////////////////// Ne fonctionne plus
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Div,
+            dst: Operand::NoOperand,
+            src: Operand::Reg(Register::B),
+            extra: None,
+            size: Some(Size::U64),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Div,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::Base {
+                base: Register::B,
+            }),
+            extra: None,
+            size: Some(Size::U64),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Idiv,
+            dst: Operand::NoOperand,
+            src: Operand::Reg(Register::B),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Idiv,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::BaseDisp {
+                base: Register::B,
+                disp: MemDisplacement::Imm(4),
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Mul,
+            dst: Operand::NoOperand,
+            src: Operand::Reg(Register::B),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Mul,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::Base {
+                base: Register::B,
+            }),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::NoOperand,
+            src: Operand::Reg(Register::B),
+            extra: None,
+            size: Some(Size::U32),
+        },
+
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Imul,
+            dst: Operand::NoOperand,
+            src: Operand::MemoryAddress(MemAddress::BaseIndexScale {
+                base: Register::B,
+                index: Register::C,
+                scale: Scale::Two,
+            }),
+            extra: None,
+            size: Some(Size::U64),
+        },
     ];
 
 

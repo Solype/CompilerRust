@@ -1,4 +1,4 @@
-use crate::elf::instructions::{
+use super::{
     EncodeInformation,
     Operand,
     Register,

@@ -1,5 +1,7 @@
 use std::vec;
 
+use crate::elf::instructions::encode_complexbin::encode_complex_binary;
+
 use super::{
     encode_bitop::encode_bit,
     encode_cond_mov::encode_cmovcc,
@@ -86,12 +88,16 @@ impl Instruction {
                 encode_lea(dst, src, size)
             }
 
+            Instruction::ComplexBinary { op, dst, src, extra, size } => {
+                let size = size.unwrap_or(default_size);
+                encode_complex_binary(op, dst, src, extra, size)
+            }
             // =========================
             // LOCAL SYMBOL FOR JMP
             // =========================
             Instruction::LocalSym(_) => EncodeInformation::default(),
 
-            _ => unimplemented!()
+            // _ => unimplemented!()
         }
     }
 }

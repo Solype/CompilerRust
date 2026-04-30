@@ -214,61 +214,6 @@ pub enum ShiftOp {
     Ror,
 }
 
-/*
-MUL
-mul r/m8
-mul r/m16
-mul r/m32
-mul r/m64
-
-IMUL (1 operand, implicit accumulator)
-imul r/m8
-imul r/m16
-imul r/m32
-imul r/m64
-
-IMUL (2 operands)
-imul r16, r/m16
-imul r32, r/m32
-imul r64, r/m64
-
-IMUL (3 operands immediate)
-imul r16, r/m16, imm8
-imul r16, r/m16, imm16
-
-imul r32, r/m32, imm8
-imul r32, r/m32, imm32
-
-imul r64, r/m64, imm8
-imul r64, r/m64, imm32
-
-IMUL (register source explicit forms included by r/m)
-imul r16, r16
-imul r32, r32
-imul r64, r64
-
-imul r16, r16, imm8
-imul r16, r16, imm16
-
-imul r32, r32, imm8
-imul r32, r32, imm32
-
-imul r64, r64, imm8
-imul r64, r64, imm32
-
-DIV
-div r/m8
-div r/m16
-div r/m32
-div r/m64
-
-IDIV
-idiv r/m8
-idiv r/m16
-idiv r/m32
-idiv r/m64
- */
-
 #[derive(Debug)]
 pub enum ComplexBinOp {
     Mul,
@@ -337,8 +282,6 @@ pub enum CtrlOp {
     Jmp,
     Call,
     Ret,
-
-    // conditionnels (optionnel mais utile)
     JmpCC(ConditionCode)
 }
 
@@ -349,6 +292,10 @@ pub enum SysOp {
     Sysenter,
 }
 
+pub enum BitScanOp {
+    Bsf,
+    Bsr,
+}
 
 pub enum Instruction {
     Binary {
@@ -408,6 +355,13 @@ pub enum Instruction {
     SetCC {
         op: SetCC,
         dst: Operand,
+    },
+
+    BitScan {
+        op: BitScanOp,
+        dst: Register,
+        src: Operand,
+        size: Option<Size>,
     },
 
     Ctrl {

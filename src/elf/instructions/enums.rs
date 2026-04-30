@@ -271,7 +271,10 @@ pub enum UnaryOp {
     Cmc,
 
     Cli,
-    Sti
+    Sti,
+
+    Lahf,
+    Sahf,
 }
 
 #[derive(Debug, Clone, Copy)]

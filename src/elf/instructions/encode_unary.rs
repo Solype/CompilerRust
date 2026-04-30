@@ -67,30 +67,15 @@ impl UnaryOp {
             // ==========================================
             // carry flag ops
             // ==========================================
-            UnaryOp::Clc => UnaryEncoding::Simple {
-                opcode: &[0xF8],
-            },
-
-            UnaryOp::Stc => UnaryEncoding::Simple {
-                opcode: &[0xF9],
-            },
-
-            UnaryOp::Cmc => UnaryEncoding::Simple {
-                opcode: &[0xF5],
-            },
-            _ => unreachable!()
+            UnaryOp::Clc => UnaryEncoding::Simple { opcode: &[0xF8], },
+            UnaryOp::Stc => UnaryEncoding::Simple { opcode: &[0xF9], },
+            UnaryOp::Cmc => UnaryEncoding::Simple { opcode: &[0xF5], },
+            UnaryOp::Cli => UnaryEncoding::Simple { opcode: &[0xFA], },
+            UnaryOp::Sti => UnaryEncoding::Simple { opcode: &[0xFB], },
+            UnaryOp::Lahf => UnaryEncoding::Simple { opcode: &[0x9F], },
+            UnaryOp::Sahf => UnaryEncoding::Simple { opcode: &[0x9E], },
         }
     }
-}
-
-fn encode_cli_sli(op: UnaryOp) -> EncodeInformation
-{
-    let opcode : u8 = match op {
-        UnaryOp::Cli => 0xFA,
-        UnaryOp::Sti => 0xFB,
-        _ => unreachable!()
-    };
-    EncodeInformation { data: vec![opcode], ..Default::default() }
 }
 
 pub(super) fn encode_unary(
@@ -98,10 +83,6 @@ pub(super) fn encode_unary(
     dst: &Operand,
     size: Size,
 ) -> EncodeInformation {
-
-    if op == UnaryOp::Cli || op == UnaryOp::Sti {
-        return encode_cli_sli(op);
-    }
 
     let enc = op.encoding(size);
 

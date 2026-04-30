@@ -401,6 +401,9 @@ fn main() -> std::io::Result<()> {
             size: Some(Size::U64),
         },
 
+        Instruction::Unary { op: UnaryOp::Cli, dst: Operand::NoOperand, size: None, },
+        Instruction::Unary { op: UnaryOp::Sti, dst: Operand::NoOperand, size: None, },
+
         // -------------------------------------------------
         // SUB
         // -------------------------------------------------

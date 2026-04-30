@@ -254,7 +254,7 @@ pub enum SetCC {
     Setnp,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum UnaryOp {
     Neg,
     Not,
@@ -269,6 +269,9 @@ pub enum UnaryOp {
     Clc,
     Stc,
     Cmc,
+
+    Cli,
+    Sti
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -78,8 +78,19 @@ impl UnaryOp {
             UnaryOp::Cmc => UnaryEncoding::Simple {
                 opcode: &[0xF5],
             },
+            _ => unreachable!()
         }
     }
+}
+
+fn encode_cli_sli(op: UnaryOp) -> EncodeInformation
+{
+    let opcode : u8 = match op {
+        UnaryOp::Cli => 0xFA,
+        UnaryOp::Sti => 0xFB,
+        _ => unreachable!()
+    };
+    EncodeInformation { data: vec![opcode], ..Default::default() }
 }
 
 pub(super) fn encode_unary(
@@ -87,6 +98,11 @@ pub(super) fn encode_unary(
     dst: &Operand,
     size: Size,
 ) -> EncodeInformation {
+
+    if op == UnaryOp::Cli || op == UnaryOp::Sti {
+        return encode_cli_sli(op);
+    }
+
     let enc = op.encoding(size);
 
     match enc {

@@ -189,6 +189,10 @@ pub enum BinOp {
     Add,
     Sub,
 
+    // Arithmetic with carry
+    Adc,
+    Sbb,
+
     // Logic
     And,
     Or,

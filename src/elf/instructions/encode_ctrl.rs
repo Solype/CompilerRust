@@ -70,7 +70,6 @@ fn encode_rel32_with_prefix(
             }
         }
 
-        // 🔥 bonus très utile
         Operand::Imm(val) => {
             let mut v = Vec::new();
 

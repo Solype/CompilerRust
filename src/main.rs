@@ -351,6 +351,15 @@ fn main() -> std::io::Result<()> {
         Instruction::Binary { op: BinOp::Add, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::Add, dst: mem.clone(), src: Operand::Imm(3), size: Some(Size::U32) },
 
+
+        Instruction::Binary { op: BinOp::Adc, dst: Operand::Reg(Register::A), src: Operand::Imm(5), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Adc, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Adc, dst: mem.clone(), src: Operand::Imm(3), size: Some(Size::U32) },
+
+        Instruction::Binary { op: BinOp::Sbb, dst: Operand::Reg(Register::A), src: Operand::Imm(5), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Sbb, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Sbb, dst: mem.clone(), src: Operand::Imm(3), size: Some(Size::U32) },
+
         // -------------------------------------------------
         // SUB
         // -------------------------------------------------

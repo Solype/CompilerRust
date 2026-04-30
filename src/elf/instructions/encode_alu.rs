@@ -72,6 +72,20 @@ impl BinOp {
                 modrm_ext: 0,
             },
 
+            BinOp::Adc => BinaryEncoding::Alu {
+                opcode_rm_r: if size == Size::U8 { 0x10 } else { 0x11 },
+                opcode_r_rm: if size == Size::U8 { 0x12 } else { 0x13 },
+                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+                modrm_ext: 2,
+            },
+
+            BinOp::Sbb => BinaryEncoding::Alu {
+                opcode_rm_r: if size == Size::U8 { 0x18 } else { 0x19 },
+                opcode_r_rm: if size == Size::U8 { 0x1A } else { 0x1B },
+                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+                modrm_ext: 3,
+            },
+
             BinOp::Or => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x08 } else { 0x09 },
                 opcode_r_rm: if size == Size::U8 { 0x0A } else { 0x0B },

@@ -360,6 +360,47 @@ fn main() -> std::io::Result<()> {
         Instruction::Binary { op: BinOp::Sbb, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::Sbb, dst: mem.clone(), src: Operand::Imm(3), size: Some(Size::U32) },
 
+        // ===== BSF =====
+        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U64), },
+
+        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::C, src: Operand::Reg(Register::D), size: Some(Size::U64), },
+
+        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32), },
+
+        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U16), },
+
+        // mémoire
+        Instruction::BitScan {
+            op: BitScanOp::Bsf,
+            dst: Register::A,
+            src: Operand::MemoryAddress(MemAddress::Base {
+                base: Register::B,
+            }),
+            size: Some(Size::U64),
+        },
+
+        // ===== BSR =====
+        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U64), },
+
+        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::C, src: Operand::Reg(Register::D), size: Some(Size::U64), },
+
+        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32), },
+
+        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U16), },
+
+        // mémoire
+        Instruction::BitScan {
+            op: BitScanOp::Bsr,
+            dst: Register::A,
+            src: Operand::MemoryAddress(MemAddress::BaseIndexScaleDisp {
+                base: Register::B,
+                index: Register::C,
+                scale: Scale::Two,
+                disp: MemDisplacement::Imm(8),
+            }),
+            size: Some(Size::U64),
+        },
+
         // -------------------------------------------------
         // SUB
         // -------------------------------------------------

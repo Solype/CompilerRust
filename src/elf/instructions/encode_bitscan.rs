@@ -35,7 +35,7 @@ pub(super) fn encode_bitscan(
     buf.push(opcode);
 
     // ModRM (reg = dst, r/m = src)
-    let modrm = mod_rm_encode(&Operand::Reg(*dst), &src);
+    let modrm = mod_rm_encode(&src, &Operand::Reg(*dst));
     buf.extend(modrm.data);
 
     EncodeInformation {

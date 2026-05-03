@@ -11,6 +11,28 @@ pub(super) fn encode_stack(
     let mut v = Vec::new();
 
     match op {
+        StackOp::Pushf => {
+            emit_size_prefix(&mut v, size);
+
+            v.push(0x9C);
+
+            EncodeInformation {
+                data: v,
+                ..Default::default()
+            }
+        }
+
+        StackOp::Popf => {
+            emit_size_prefix(&mut v, size);
+
+            v.push(0x9D);
+
+            EncodeInformation {
+                data: v,
+                ..Default::default()
+            }
+        }
+
         // =====================================================
         // PUSH
         // =====================================================

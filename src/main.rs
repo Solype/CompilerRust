@@ -401,6 +401,15 @@ fn main() -> std::io::Result<()> {
             size: Some(Size::U64),
         },
 
+        Instruction::Stack { op: StackOp::Pushf, value: Operand::NoOperand, size: Some(Size::U16) },
+        Instruction::Stack { op: StackOp::Popf, value: Operand::NoOperand, size: Some(Size::U16) },
+    
+        Instruction::Stack { op: StackOp::Pushf, value: Operand::NoOperand, size: Some(Size::U64) },
+        Instruction::Stack { op: StackOp::Popf, value: Operand::NoOperand, size: Some(Size::U64) },
+
+        Instruction::Stack { op: StackOp::Pushf, value: Operand::NoOperand, size: None },
+        Instruction::Stack { op: StackOp::Popf, value: Operand::NoOperand, size: None },
+
         Instruction::Unary { op: UnaryOp::Cli, dst: Operand::NoOperand, size: None, },
         Instruction::Unary { op: UnaryOp::Sti, dst: Operand::NoOperand, size: None, },
         Instruction::Unary { op: UnaryOp::Lahf, dst: Operand::NoOperand, size: None, },

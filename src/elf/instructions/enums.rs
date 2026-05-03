@@ -281,6 +281,8 @@ pub enum UnaryOp {
 pub enum StackOp {
     Push,
     Pop,
+    Pushf,
+    Popf,
 }
 
 #[derive(Debug, Clone, Copy)]

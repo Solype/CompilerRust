@@ -414,7 +414,9 @@ fn main() -> std::io::Result<()> {
         Instruction::Unary { op: UnaryOp::Sti, dst: Operand::NoOperand, size: None, },
         Instruction::Unary { op: UnaryOp::Lahf, dst: Operand::NoOperand, size: None, },
         Instruction::Unary { op: UnaryOp::Sahf, dst: Operand::NoOperand, size: None, },
-
+        Instruction::Unary { op: UnaryOp::Cbw, dst: Operand::NoOperand, size: None },
+        Instruction::Unary { op: UnaryOp::Cwde, dst: Operand::NoOperand, size: None },
+        Instruction::Unary { op: UnaryOp::Cdqe, dst: Operand::NoOperand, size: None },
 
         // -------------------------------------------------
         // SUB

@@ -275,6 +275,10 @@ pub enum UnaryOp {
 
     Lahf,
     Sahf,
+
+    Cbw,
+    Cwde,
+    Cdqe,
 }
 
 #[derive(Debug, Clone, Copy)]

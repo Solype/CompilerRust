@@ -52,17 +52,12 @@ impl UnaryOp {
             // ==========================================
             // sign extension accumulator -> high regs
             // ==========================================
-            UnaryOp::Cwd => UnaryEncoding::Simple {
-                opcode: &[0x99], // AX -> DX:AX (16-bit)
-            },
-
-            UnaryOp::Cdq => UnaryEncoding::Simple {
-                opcode: &[0x99], // EAX -> EDX:EAX (32-bit)
-            },
-
-            UnaryOp::Cqo => UnaryEncoding::Simple {
-                opcode: &[0x48, 0x99], // REX.W + CQO
-            },
+            UnaryOp::Cwd => UnaryEncoding::Simple { opcode: &[0x99], }, // AX -> DX:AX (16-bit)
+            UnaryOp::Cdq => UnaryEncoding::Simple { opcode: &[0x99], }, // EAX -> EDX:EAX (32-bit)
+            UnaryOp::Cqo => UnaryEncoding::Simple { opcode: &[0x48, 0x99], }, // REX.W + CQO
+            UnaryOp::Cbw => UnaryEncoding::Simple { opcode: &[0x66, 0x98], },
+            UnaryOp::Cwde => UnaryEncoding::Simple { opcode: &[0x98], },
+            UnaryOp::Cdqe => UnaryEncoding::Simple { opcode: &[0x48, 0x98], },
 
             // ==========================================
             // carry flag ops
@@ -91,12 +86,8 @@ pub(super) fn encode_unary(
         // Simple opcodes (nop, cdq, cqo, clc, stc, cmc...)
         // ==================================================
         UnaryEncoding::Simple { opcode } => {
-            let mut v = Vec::new();
-            emit_size_prefix(&mut v, size);   // <-- important
-            v.extend_from_slice(opcode);
-
             EncodeInformation {
-                data: v,
+                data: opcode.to_vec(),
                 ..Default::default()
             }
         }

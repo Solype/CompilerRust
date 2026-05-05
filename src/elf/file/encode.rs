@@ -30,11 +30,13 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     fn get_rel_reloc_type(&self, reloc_size: usize) -> u32 {
         match (size_of::<T>(), reloc_size) {
             // ===== x86 =====
-            (4, 4) => 2,   // R_386_PC32
+            (4, 1) => 15, // R_386_PC8
+            (4, 4) => 2,  // R_386_PC32
 
             // ===== x86_64 =====
-            (8, 4) => 2,   // R_X86_64_PC32
-            (8, 8) => 24,  // R_X86_64_PC64
+            (8, 1) => 23, // R_X86_64_PC8
+            (8, 4) => 2,  // R_X86_64_PC32
+            (8, 8) => 24, // R_X86_64_PC64
 
             _ => panic!("Unsupported relative relocation size"),
         }

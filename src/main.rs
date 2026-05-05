@@ -795,9 +795,13 @@ fn main() -> std::io::Result<()> {
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::S),  target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::NS), target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::O),  target: Operand::Sym("my_func".to_string()) },
+        Instruction::LocalSym("loop1".to_string()),
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::NO), target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::P),  target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::NP), target: Operand::Sym("my_func".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Loop, target: Operand::Sym("loop1".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Loope, target: Operand::Sym("loop1".to_string()) },
+        Instruction::Ctrl { op: CtrlOp::Loopne, target: Operand::Sym("loop1".to_string()) },
 
         Instruction::CMovCC { cc: ConditionCode::E,   dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32) },
         Instruction::CMovCC { cc: ConditionCode::NE,  dst: Register::C, src: Operand::Reg(Register::D), size: Some(Size::U32) },

@@ -294,7 +294,10 @@ pub enum CtrlOp {
     Jmp,
     Call,
     Ret,
-    JmpCC(ConditionCode)
+    JmpCC(ConditionCode),
+    Loop,
+    Loope,
+    Loopne,
 }
 
 #[derive(Debug, Clone, Copy)]

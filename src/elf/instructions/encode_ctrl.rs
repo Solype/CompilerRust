@@ -35,7 +35,13 @@ impl CtrlOp {
                     ConditionCode::P  => encode_rel32_with_prefix(Some(0x0F), 0x8A, target),
                     ConditionCode::NP => encode_rel32_with_prefix(Some(0x0F), 0x8B, target),
                 }
-            }
+            },
+            // =====================================
+            // loop family (rel8 uniquement)
+            // =====================================
+            CtrlOp::Loop   => encode_rel8(0xE2, target),
+            CtrlOp::Loope  => encode_rel8(0xE1, target),
+            CtrlOp::Loopne => encode_rel8(0xE0, target),
         }
     }
 }
@@ -89,5 +95,48 @@ fn encode_rel32_with_prefix(
         }
 
         _ => unimplemented!("unsupported target for rel32: {:?}", target),
+    }
+}
+
+fn encode_rel8(
+    opcode: u8,
+    target: &Operand,
+) -> EncodeInformation {
+    match target {
+        Operand::Sym(sym) => {
+            let mut v = Vec::with_capacity(2);
+
+            v.push(opcode);
+
+            let offset = v.len();
+            v.push(0); // placeholder i8
+
+            EncodeInformation {
+                data: v,
+                relocations: vec![Relocation {
+                    sym: sym.clone(),
+                    offset,
+                    size: 1,
+                    kind: RelocKind::Relative,
+                    addend: -1,
+                }],
+            }
+        }
+
+        Operand::Imm(val) => {
+            let mut v = Vec::with_capacity(2);
+
+            v.push(opcode);
+
+            let rel = *val as i8; // ⚠️ doit être validé ailleurs
+            v.push(rel as u8);
+
+            EncodeInformation {
+                data: v,
+                relocations: vec![],
+            }
+        }
+
+        _ => unimplemented!("unsupported target for rel8: {:?}", target),
     }
 }

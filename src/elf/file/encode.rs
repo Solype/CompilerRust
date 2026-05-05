@@ -132,7 +132,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             if let instructions::Instruction::LocalSym(name) = ins {
                 let name_idx = self.strtab.name(name);
 
-                let must_reloc = self.symtab.get(name_idx).is_none();
+                let must_reloc = self.symtab.get_by_name(name_idx).is_none();
 
                 let sym_ndx = self.symtab.add(ElfSym {
                     st_name: name_idx as u32,

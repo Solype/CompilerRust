@@ -21,7 +21,7 @@ fn main() -> std::io::Result<()> {
     // FUNCTION: my_func
     // =========================================================
     let func_instr: Vec<Instruction> = vec![
-        Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("test_local2".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("test_local2".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::E), target: Operand::Sym("my_func".to_string()) },
@@ -88,7 +88,7 @@ fn main() -> std::io::Result<()> {
             size: Some(Size::U32),
         },
 
-        Instruction::LocalSym("test_local2".to_string()),
+        // Instruction::LocalSym("test_local2".to_string()),
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];
 

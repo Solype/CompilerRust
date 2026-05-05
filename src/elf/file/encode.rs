@@ -34,7 +34,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             (4, 4) => 2,  // R_386_PC32
 
             // ===== x86_64 =====
-            (8, 1) => 23, // R_X86_64_PC8
+            (8, 1) => 15, // R_X86_64_PC8
             (8, 4) => 2,  // R_X86_64_PC32
             (8, 8) => 24, // R_X86_64_PC64
 
@@ -56,6 +56,12 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         };
 
         let r_info = ElfRel::pack_info(sym_ndx as u32, r_type);
+
+        println!(
+            "reloc size={} → type={}",
+            info.size,
+            r_type
+        );
         match size_of::<T>() {
             4 => {
                 let bytes = (info.addend as i32).to_le_bytes();

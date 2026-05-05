@@ -22,14 +22,14 @@ fn main() -> std::io::Result<()> {
     // =========================================================
     let func_instr: Vec<Instruction> = vec![
         // Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("test_local2".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::E), target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::NE), target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::G), target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::L), target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::GE), target: Operand::Sym("my_func".to_string()) },
-        Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::LE), target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::Jmp, target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::E), target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::NE), target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::G), target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::L), target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::GE), target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::LE), target: Operand::Sym("my_func".to_string()) },
 
         Instruction::CMovCC { cc: ConditionCode::E,  dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32) },
         Instruction::CMovCC { cc: ConditionCode::NE, dst: Register::C, src: Operand::Reg(Register::D), size: Some(Size::U32) },
@@ -124,7 +124,7 @@ fn main() -> std::io::Result<()> {
         Instruction::Stack { op: StackOp::Push, value: Operand::Imm(0x12345678), size: Some(Size::U32) },
 
         // PUSH symbol
-        Instruction::Stack { op: StackOp::Push, value: Operand::Sym("my_data".to_string()), size: Some(Size::U32) },
+        // Instruction::Stack { op: StackOp::Push, value: Operand::Sym("my_data".to_string()), size: Some(Size::U32) },
 
         // PUSH memory
         Instruction::Stack { op: StackOp::Push, value: Operand::MemoryAddress(MemAddress::BaseDisp { base: Register::B, disp: MemDisplacement::Imm(16), }), size: Some(Size::U32), },
@@ -187,85 +187,17 @@ fn main() -> std::io::Result<()> {
         // -------------------------------------------------
         // MOV
         // -------------------------------------------------
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
-            src: Operand::Imm(0x12),
-            size: Some(Size::U8),
-        },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(0x12), size: Some(Size::U8), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::B), src: Operand::Imm(0x1234), size: Some(Size::U16), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::C), src: Operand::Imm(0x12345678), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), size: Some(Size::U32), },
+        // Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::D), src: Operand::Sym("my_data".to_string()), size: Some(Size::U32), },
 
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::Reg(Register::B),
-            src: Operand::Imm(0x1234),
-            size: Some(Size::U16),
-        },
-
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::Reg(Register::C),
-            src: Operand::Imm(0x12345678),
-            size: Some(Size::U32),
-        },
-
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::Reg(Register::D),
-            src: Operand::Sym("my_data".to_string()),
-            size: Some(Size::U32),
-        },
-
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
-            src: Operand::Reg(Register::B),
-            size: Some(Size::U32),
-        },
-
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::MemoryAddress(MemAddress::Direct {
-                disp: MemDisplacement::Sym("my_data".to_string()),
-            }),
-            src: Operand::Imm(0x41),
-            size: Some(Size::U8),
-        },
-
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::MemoryAddress(MemAddress::Direct {
-                disp: MemDisplacement::Sym("my_data".to_string()),
-            }),
-            src: Operand::Reg(Register::A),
-            size: Some(Size::U32),
-        },
-
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
-            src: Operand::MemoryAddress(MemAddress::Direct {
-                disp: MemDisplacement::Sym("my_data".to_string()),
-            }),
-            size: Some(Size::U32),
-        },
-
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
-            src: Operand::MemoryAddress(MemAddress::Direct {
-                disp: MemDisplacement::Sym("my_data".to_string()),
-            }),
-            size: Some(Size::U32),
-        },
-
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: Operand::MemoryAddress(MemAddress::Direct {
-                disp: MemDisplacement::Sym("my_data".to_string()),
-            }),
-            src: Operand::Reg(Register::A),
-            size: Some(Size::U32),
-        },
+        // Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Imm(0x41), size: Some(Size::U8), },
+        // Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Reg(Register::A), size: Some(Size::U32), },
+        // Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: Some(Size::U32), },
+        // Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: Some(Size::U32), },
+        // Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Reg(Register::A), size: Some(Size::U32), },
 
         Instruction::Binary {
             op: BinOp::Mov,
@@ -484,7 +416,7 @@ fn main() -> std::io::Result<()> {
         // Labels / Calls
         // -------------------------------------------------
         // Instruction::LocalSym("test_local".to_string()),
-        Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
+        // Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_exit".to_string()) },
 
         // -------------------------------------------------
@@ -502,7 +434,7 @@ fn main() -> std::io::Result<()> {
         Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress( MemAddress::BaseDisp { base: Register::B, disp: MemDisplacement::Imm(8), } ), size: Some(Size::U32), },
         Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress( MemAddress::BaseDisp { base: Register::Bp, disp: MemDisplacement::Imm(-16), } ), size: Some(Size::U32), },
         Instruction::Lea {dst: Register::A,src: Operand::MemoryAddress( MemAddress::BaseIndexScale { base: Register::C, index: Register::C, scale: Scale::Four,}),size: Some(Size::U32), },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: None, },
+        // Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: None, },
         Instruction::Lea {
             dst: Register::A,
             src: Operand::MemoryAddress(MemAddress::Base {
@@ -539,13 +471,7 @@ fn main() -> std::io::Result<()> {
             size: Some(Size::U32),
         },
 
-        Instruction::Lea {
-            dst: Register::A,
-            src: Operand::MemoryAddress(MemAddress::Direct {
-                disp: MemDisplacement::Sym("my_data".to_string()),
-            }),
-            size: None,
-        },
+        // Instruction::Lea {dst: Register::A,src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()),}),size: None, },
     
         Instruction::ComplexBinary {
             op: ComplexBinOp::Div,

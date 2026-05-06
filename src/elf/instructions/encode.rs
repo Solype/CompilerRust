@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::elf::instructions::{encode_bitscan::encode_bitscan, encode_complexbin::encode_complex_binary};
+use crate::elf::instructions::{encode_bitscan::encode_bitscan, encode_complexbin::encode_complex_binary, encode_str::encode_str};
 
 use super::{
     encode_bitop::encode_bit,
@@ -72,9 +72,15 @@ impl Instruction {
             // LOCAL SYMBOL FOR JMP
             // =========================
             Instruction::LocalSym(_) => EncodeInformation::default(),
+
             Instruction::BitScan { op, dst, src, size } => {
                 let size = size.unwrap_or(default_size);
                 encode_bitscan(op, dst, src, size)
+            },
+
+            Instruction::String { op, size } => {
+                let size = size.unwrap_or(default_size);
+                encode_str(op, size)
             }
             // _ => unimplemented!()
         }

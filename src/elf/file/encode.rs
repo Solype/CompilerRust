@@ -57,11 +57,6 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 
         let r_info = ElfRel::pack_info(sym_ndx as u32, r_type);
 
-        println!(
-            "reloc size={} → type={}",
-            info.size,
-            r_type
-        );
         match size_of::<T>() {
             4 => {
                 let bytes = (info.addend as i32).to_le_bytes();

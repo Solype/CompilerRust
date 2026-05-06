@@ -764,7 +764,11 @@ fn main() -> std::io::Result<()> {
 
         Instruction::LocalSym("test_local3".to_string()),
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
-        
+        Instruction::String { op: StringOp::Cmps, size: None },
+        Instruction::String { op: StringOp::Lods, size: None },
+        Instruction::String { op: StringOp::Movs, size: None },
+        Instruction::String { op: StringOp::Scas, size: None },
+        Instruction::String { op: StringOp::Stos, size: None },
     ];
 
     // =========================================================

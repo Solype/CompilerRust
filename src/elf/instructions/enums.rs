@@ -312,6 +312,14 @@ pub enum BitScanOp {
     Bsr,
 }
 
+pub enum StringOp {
+    Movs,
+    Cmps,
+    Scas,
+    Lods,
+    Stos,
+}
+
 pub enum Instruction {
     Binary {
         op: BinOp,
@@ -382,6 +390,11 @@ pub enum Instruction {
     Ctrl {
         op: CtrlOp,
         target: Operand,
+    },
+
+    String {
+        op: StringOp,
+        size: Option<Size>
     },
 
     Sys {

@@ -14,3 +14,4 @@ mod encode_cond_mov;
 mod encode_lea;
 mod encode_complexbin;
 mod encode_bitscan;
+mod encode_str;

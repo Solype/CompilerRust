@@ -230,30 +230,6 @@ pub enum BitOp {
     Btc,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum SetCC {
-    Sete,
-    Setne,
-    Setg,
-    Setl,
-    Setge,
-    Setle,
-    Seta,
-    Setb,
-
-    Setae,
-    Setbe,
-
-    Sets,
-    Setns,
-
-    Seto,
-    Setno,
-
-    Setp,
-    Setnp,
-}
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum UnaryOp {
     Neg,
@@ -377,7 +353,7 @@ pub enum Instruction {
     },
 
     SetCC {
-        op: SetCC,
+        op: ConditionCode,
         dst: Operand,
     },
 

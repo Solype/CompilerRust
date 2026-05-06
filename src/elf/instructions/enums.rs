@@ -297,6 +297,13 @@ pub enum StringOp {
     Stos,
 }
 
+pub enum Prefix {
+    Lock,
+    Rep,
+    Repe,
+    Repne,
+}
+
 pub enum Instruction {
     Binary {
         op: BinOp,
@@ -376,6 +383,11 @@ pub enum Instruction {
 
     Sys {
         op: SysOp,
+    },
+
+    Prefix {
+        prefix: Vec<Prefix>,
+        ins: Box<Instruction>
     },
 
     LocalSym(String),

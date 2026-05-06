@@ -137,7 +137,7 @@ pub fn emit_size_prefix(v: &mut Vec<u8>, size: Size) {
     }
 }
 
-fn emit_imm(v: &mut Vec<u8>, val: usize, size: Size) {
+fn emit_imm(v: &mut Vec<u8>, val: i64, size: Size) {
     match size {
         Size::U8 => v.push(val as u8),
         Size::U16 => v.extend(&(val as u16).to_le_bytes()),
@@ -148,7 +148,7 @@ fn emit_imm(v: &mut Vec<u8>, val: usize, size: Size) {
 
 fn encode_reg_imm(
     reg: Register,
-    val: usize,
+    val: i64,
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
@@ -230,7 +230,7 @@ fn encode_reg_sym(
 
 fn encode_mem_imm(
     dst: &Operand,
-    val: usize,
+    val: i64,
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {

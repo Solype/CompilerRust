@@ -140,7 +140,7 @@ pub enum MemAddress {
 pub enum Operand {
     NoOperand,
     Reg(Register),
-    Imm(usize),
+    Imm(i64),
     Sym(String),
     MemoryAddress(MemAddress),
 }

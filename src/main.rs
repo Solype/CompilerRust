@@ -658,7 +658,7 @@ fn main() -> std::io::Result<()> {
             op: ComplexBinOp::Imul,
             dst: Operand::Reg(Register::A),
             src: Operand::Reg(Register::B),
-            extra: Some(Operand::Imm(5)),
+            extra: Some(Operand::Imm(-5)),
             size: Some(Size::U32),
         },
 

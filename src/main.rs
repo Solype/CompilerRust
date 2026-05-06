@@ -769,6 +769,7 @@ fn main() -> std::io::Result<()> {
         Instruction::String { op: StringOp::Movs, size: None },
         Instruction::String { op: StringOp::Scas, size: None },
         Instruction::String { op: StringOp::Stos, size: None },
+        Instruction::Ctrl { op: CtrlOp::IRet, target: Operand::NoOperand }
     ];
 
     // =========================================================

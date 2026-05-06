@@ -294,6 +294,7 @@ pub enum CtrlOp {
     Jmp,
     Call,
     Ret,
+    IRet,
     JmpCC(ConditionCode),
     Loop,
     Loope,

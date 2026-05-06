@@ -12,7 +12,10 @@ impl CtrlOp {
                 data: vec![0xC3],
                 relocations: vec![],
             },
-
+            CtrlOp::IRet => EncodeInformation {
+                data: vec![0xCF],
+                relocations: vec![],
+            },
             // =====================================
             // equality / zero flag
             // =====================================

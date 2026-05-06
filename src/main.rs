@@ -191,13 +191,13 @@ fn main() -> std::io::Result<()> {
         Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::B), src: Operand::Imm(0x1234), size: Some(Size::U16), },
         Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::C), src: Operand::Imm(0x12345678), size: Some(Size::U32), },
         Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), size: Some(Size::U32), },
-        // Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::D), src: Operand::Sym("my_data".to_string()), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::D), src: Operand::Sym("my_data".to_string()), size: Some(Size::U32), },
 
-        // Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Imm(0x41), size: Some(Size::U8), },
-        // Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Reg(Register::A), size: Some(Size::U32), },
-        // Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: Some(Size::U32), },
-        // Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: Some(Size::U32), },
-        // Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Reg(Register::A), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Imm(0x41), size: Some(Size::U8), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Reg(Register::A), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::Direct { disp: MemDisplacement::Sym("my_data".to_string()), }), src: Operand::Reg(Register::A), size: Some(Size::U32), },
 
         Instruction::Binary {
             op: BinOp::Mov,
@@ -658,7 +658,7 @@ fn main() -> std::io::Result<()> {
             op: ComplexBinOp::Imul,
             dst: Operand::Reg(Register::A),
             src: Operand::Reg(Register::B),
-            extra: Some(Operand::Imm(-5)),
+            extra: Some(Operand::Imm(-255)),
             size: Some(Size::U32),
         },
 

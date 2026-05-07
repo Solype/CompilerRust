@@ -1,6 +1,8 @@
 pub mod enums;
 pub mod encode;
 pub mod modrm;
+pub mod mem_address;
+pub use mem_address::*;
 pub use enums::*;
 
 mod encode_ctrl;

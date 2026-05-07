@@ -1,3 +1,5 @@
+use crate::elf::instructions::MemAddress;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum Register {
@@ -29,16 +31,6 @@ impl TryFrom<u8> for Register {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
-#[allow(dead_code)]
-pub enum Scale {
-    One = 0,
-    Two = 1,
-    Four = 2,
-    Eight = 3,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum Size {
@@ -59,80 +51,6 @@ impl From<usize> for Size {
 }
 
 
-#[derive(Debug, Clone)]
-pub enum MemDisplacement {
-    Imm(i32),
-    Sym(String),
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub enum MemAddress {
-    /// Absolute memory address: [disp]
-    /// Examples:
-    /// [0x401000]
-    /// [symbol]
-    Direct {
-        disp: MemDisplacement,
-    },
-
-    /// Base register only: [base]
-    /// Examples:
-    /// [eax]
-    /// [rbx]
-    Base {
-        base: Register,
-    },
-
-    /// Base register + displacement: [base + disp]
-    /// Examples:
-    /// [ebp - 4]
-    /// [rbx + symbol]
-    BaseDisp {
-        base: Register,
-        disp: MemDisplacement,
-    },
-
-    /// Index register * scale + displacement: [index * scale + disp]
-    /// Examples:
-    /// [ecx * 4 + 8]
-    /// [rdx * 8 + array]
-    IndexScaleDisp {
-        index: Register,
-        scale: Scale,
-        disp: MemDisplacement,
-    },
-
-    /// Base register + index register: [base + index]
-    /// Examples:
-    /// [eax + ecx]
-    /// [rbx + rsi]
-    BaseIndex {
-        base: Register,
-        index: Register,
-    },
-
-    /// Base register + index register * scale: [base + index * scale]
-    /// Examples:
-    /// [rax + rcx * 4]
-    /// [rbx + rdx * 8]
-    BaseIndexScale {
-        base: Register,
-        index: Register,
-        scale: Scale,
-    },
-
-    /// Full SIB addressing: [base + index * scale + disp]
-    /// Examples:
-    /// [rax + rcx * 4 + 16]
-    /// [rbx + rsi * 8 + symbol]
-    BaseIndexScaleDisp {
-        base: Register,
-        index: Register,
-        scale: Scale,
-        disp: MemDisplacement,
-    },
-}
 
 
 #[derive(Debug, Clone)]

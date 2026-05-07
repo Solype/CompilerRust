@@ -140,10 +140,10 @@ fn encode_base_disp(
 }
 
 
-fn encode_base_index(base: Register, index: Register, data: &mut Vec<u8>) {
-    data[0] = (MEMNODISP << 6) | 0b100;
-    data.push(encode_sib(Scale::One, Some(index), Some(base)));
-}
+// fn encode_base_index(base: Register, index: Register, data: &mut Vec<u8>) {
+//     data[0] = (MEMNODISP << 6) | 0b100;
+//     data.push(encode_sib(Scale::One, Some(index), Some(base)));
+// }
 
 fn encode_index_disp(
     index: Register,

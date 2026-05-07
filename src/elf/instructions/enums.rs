@@ -121,6 +121,7 @@ pub enum BinOp {
     Test,
 }
 
+#[derive(Debug)]
 pub enum ShiftOp {
     // Shifts
     Shl,
@@ -204,11 +205,13 @@ pub enum SysOp {
     Sysenter,
 }
 
+#[derive(Debug)]
 pub enum BitScanOp {
     Bsf,
     Bsr,
 }
 
+#[derive(Debug)]
 pub enum StringOp {
     Movs,
     Cmps,
@@ -217,6 +220,7 @@ pub enum StringOp {
     Stos,
 }
 
+#[derive(Debug)]
 pub enum Prefix {
     Lock,
     Rep,
@@ -224,6 +228,7 @@ pub enum Prefix {
     Repne,
 }
 
+#[derive(Debug)]
 pub enum Instruction {
     Binary {
         op: BinOp,

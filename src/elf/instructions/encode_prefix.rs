@@ -6,9 +6,9 @@ fn is_lock_compatible(ins: &Instruction) -> bool {
         // ==========================================
         // Atomic read-modify-write instructions
         // ==========================================
-        Instruction::ComplexBinary { op, src, .. } => {
+        Instruction::ComplexBinary { op, dst, .. } => {
             matches!(op, ComplexBinOp::Xadd | ComplexBinOp::Cmpxchg)
-                && matches!(src, Operand::MemoryAddress(_))
+                && matches!(dst, Operand::MemoryAddress(_))
         }
 
         // ==========================================
@@ -33,6 +33,7 @@ fn is_lock_compatible(ins: &Instruction) -> bool {
                     | BinOp::And
                     | BinOp::Or
                     | BinOp::Xor
+                    | BinOp::Xchg
             ) && matches!(dst, Operand::MemoryAddress(_))
         }
 

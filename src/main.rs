@@ -148,6 +148,181 @@ fn main() -> std::io::Result<()> {
     // _start : FULL BINOP TEST SUITE
     // =========================================================
     let start_instr: Vec<Instruction> = vec![
+
+        // ========================================================
+        // XCHG TEST
+        // ========================================================
+
+        // eax = 123
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Imm(123),
+            size: Some(Size::U32),
+        },
+
+        // ebx = 456
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::B),
+            src: Operand::Imm(456),
+            size: Some(Size::U32),
+        },
+
+        // xchg eax, ebx
+        //
+        // after:
+        //   eax = 456
+        //   ebx = 123
+        //
+        Instruction::Binary {
+            op: BinOp::Xchg,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Reg(Register::B),
+            size: Some(Size::U32),
+        },
+
+        // ========================================================
+        // SIMPLE MEMORY XCHG
+        // ========================================================
+
+        // eax = 999
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Imm(999),
+            size: Some(Size::U32),
+        },
+
+        // xchg [my_value], eax
+        //
+        // memory gets eax
+        // eax gets old memory value
+        //
+        Instruction::Binary {
+            op: BinOp::Xchg,
+            dst: Operand::MemoryAddress(
+                MemAddress::symbol("my_data")
+            ),
+            src: Operand::Reg(Register::A),
+            size: Some(Size::U32),
+        },
+
+        // ========================================================
+        // CMPXCHG SUCCESS
+        // ========================================================
+
+        // eax = expected old value
+        //
+        // cmpxchg compares:
+        //   eax vs [my_lock]
+        //
+        // if equal:
+        //   [my_lock] = ecx
+        //   ZF = 1
+        //
+        // else:
+        //   eax = [my_lock]
+        //   ZF = 0
+        //
+
+        // eax = 0
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Imm(0),
+            size: Some(Size::U32),
+        },
+
+        // ecx = 1
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::C),
+            src: Operand::Imm(1),
+            size: Some(Size::U32),
+        },
+
+        // lock cmpxchg [my_lock], ecx
+        //
+        // if my_lock == eax (0):
+        //     my_lock = ecx (1)
+        //     ZF = 1
+        //
+        Instruction::Prefix {
+            prefix: vec![Prefix::Lock],
+            ins: Box::new(
+                Instruction::ComplexBinary {
+                    op: ComplexBinOp::Cmpxchg,
+                    dst: Operand::MemoryAddress(
+                        MemAddress::symbol("my_lock")
+                    ),
+                    src: Operand::Reg(Register::C),
+                    extra: None,
+                    size: Some(Size::U32),
+                }
+            ),
+        },
+
+        // ========================================================
+        // CMPXCHG FAILURE
+        // ========================================================
+
+        // eax = 0 again
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Imm(0),
+            size: Some(Size::U32),
+        },
+
+        // edx = 2
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: Operand::Reg(Register::D),
+            src: Operand::Imm(2),
+            size: Some(Size::U32),
+        },
+
+        // lock cmpxchg [my_lock], edx
+        //
+        // now my_lock is already 1
+        //
+        // compare:
+        //   eax (0) vs my_lock (1)
+        //
+        // fail:
+        //   eax = my_lock
+        //   ZF = 0
+        //
+        Instruction::Prefix {
+            prefix: vec![Prefix::Lock],
+            ins: Box::new(
+                Instruction::ComplexBinary {
+                    op: ComplexBinOp::Cmpxchg,
+                    dst: Operand::MemoryAddress(
+                        MemAddress::symbol("my_lock")
+                    ),
+                    src: Operand::Reg(Register::D),
+                    extra: None,
+                    size: Some(Size::U32),
+                }
+            ),
+        },
+
+        // -------------------------------------------------
+        // Syscalls
+        // -------------------------------------------------
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(60), size: None },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Di), src: Operand::Imm(42), size: None },
+
+        Instruction::Sys { op: SysOp::Syscall },
+
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(1), size: None },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::B), src: Operand::Imm(42), size: None },
+
+        Instruction::Sys { op: SysOp::Int(0x80) },
+        Instruction::Sys { op: SysOp::Sysenter },
+
         // -------------------------------------------------
         // MOV
         // -------------------------------------------------
@@ -324,19 +499,6 @@ fn main() -> std::io::Result<()> {
         // Instruction::LocalSym("test_local".to_string()),
         // Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_exit".to_string()) },
-        // -------------------------------------------------
-        // Syscalls
-        // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(60), size: None },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Di), src: Operand::Imm(42), size: None },
-
-        Instruction::Sys { op: SysOp::Syscall },
-
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(1), size: None },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::B), src: Operand::Imm(42), size: None },
-
-        Instruction::Sys { op: SysOp::Int(0x80) },
-        Instruction::Sys { op: SysOp::Sysenter },
 
         Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), size: Some(Size::U32), },
         Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(8)), size: Some(Size::U32) },
@@ -430,8 +592,33 @@ fn main() -> std::io::Result<()> {
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
         Instruction::String { op: StringOp::Cmps, size: None },
         Instruction::String { op: StringOp::Lods, size: None },
-        // Instruction::Prefix { prefix: vec![Prefix::Repne], ins: Box::new(Instruction::String { op: StringOp::Movs, size: None })},
-        // Instruction::Prefix { prefix: vec![Prefix::Repe], ins: Box::new(Instruction::String { op: StringOp::Movs, size: None })},
+        Instruction::Prefix {
+            prefix: vec![Prefix::Repe],
+            ins: Box::new(
+                Instruction::String {
+                    op: StringOp::Cmps,
+                    size: Some(Size::U8),
+                }
+            ),
+        },
+        Instruction::Prefix {
+            prefix: vec![Prefix::Repne],
+            ins: Box::new(
+                Instruction::String {
+                    op: StringOp::Scas,
+                    size: Some(Size::U32),
+                }
+            ),
+        },
+        Instruction::Prefix {
+            prefix: vec![Prefix::Lock],
+            ins: Box::new(Instruction::ComplexBinary {op: ComplexBinOp::Cmpxchg,
+                dst: Operand::MemoryAddress(MemAddress::new().base(Register::A)),
+                src: Operand::Reg(Register::B),
+                extra: None,
+                size: Some(Size::U32),
+            })
+        },
         Instruction::Prefix {
             prefix: vec![Prefix::Lock],
             ins: Box::new(
@@ -497,6 +684,18 @@ fn main() -> std::io::Result<()> {
         make_st_info(elf::elfsym::StBind::Global, elf::elfsym::StType::Object),
         elf::elfsym::StVis::Default as u8,
     );
+
+    elf_file.add_symbol_to_section_raw(
+        section_data,
+        "my_lock".to_string(),
+        &0u32.to_le_bytes().to_vec(),
+        make_st_info(
+            elf::elfsym::StBind::Global,
+            elf::elfsym::StType::Object,
+        ),
+        elf::elfsym::StVis::Default as u8,
+    );
+
     let text_section = elf_file.add_section(
         elf::shdr::SectionName::Text.as_str().to_string(),
         elf::shdr::ElfShdr {

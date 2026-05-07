@@ -10,7 +10,13 @@ enum BinaryEncoding {
     Alu {
         opcode_rm_r: u8,
         opcode_r_rm: u8,
+
+        // imm full size
         opcode_imm: u8,
+
+        // imm8 sign-extended
+        opcode_imm8: Option<u8>,
+
         modrm_ext: u8,
     },
 
@@ -33,13 +39,14 @@ enum BinaryEncoding {
 impl BinOp {
     fn encoding(self, size: Size) -> BinaryEncoding {
         match self {
+
             // --------------------------------------------------
             // MOV
             // --------------------------------------------------
             BinOp::Mov => BinaryEncoding::Mov {
                 opcode_rm_r: if size == Size::U8 { 0x88 } else { 0x89 },
                 opcode_r_rm: if size == Size::U8 { 0x8A } else { 0x8B },
-                opcode_imm: if size == Size::U8 { 0xC6 } else { 0xC7 },
+                opcode_imm:  if size == Size::U8 { 0xC6 } else { 0xC7 },
             },
 
             // --------------------------------------------------
@@ -68,63 +75,90 @@ impl BinOp {
             BinOp::Add => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x00 } else { 0x01 },
                 opcode_r_rm: if size == Size::U8 { 0x02 } else { 0x03 },
-                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
+
                 modrm_ext: 0,
             },
 
             BinOp::Adc => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x10 } else { 0x11 },
                 opcode_r_rm: if size == Size::U8 { 0x12 } else { 0x13 },
-                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
+
                 modrm_ext: 2,
             },
 
             BinOp::Sbb => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x18 } else { 0x19 },
                 opcode_r_rm: if size == Size::U8 { 0x1A } else { 0x1B },
-                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
+
                 modrm_ext: 3,
             },
 
             BinOp::Or => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x08 } else { 0x09 },
                 opcode_r_rm: if size == Size::U8 { 0x0A } else { 0x0B },
-                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
+
                 modrm_ext: 1,
             },
 
             BinOp::And => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x20 } else { 0x21 },
                 opcode_r_rm: if size == Size::U8 { 0x22 } else { 0x23 },
-                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
+
                 modrm_ext: 4,
             },
 
             BinOp::Sub => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x28 } else { 0x29 },
                 opcode_r_rm: if size == Size::U8 { 0x2A } else { 0x2B },
-                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
+
                 modrm_ext: 5,
             },
 
             BinOp::Xor => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x30 } else { 0x31 },
                 opcode_r_rm: if size == Size::U8 { 0x32 } else { 0x33 },
-                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
+
                 modrm_ext: 6,
             },
 
             BinOp::Cmp => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x38 } else { 0x39 },
                 opcode_r_rm: if size == Size::U8 { 0x3A } else { 0x3B },
-                opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
+
+                opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+                opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
+
                 modrm_ext: 7,
             },
 
             BinOp::Test => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x84 } else { 0x85 },
                 opcode_r_rm: if size == Size::U8 { 0x84 } else { 0x85 },
-                opcode_imm: if size == Size::U8 { 0xF6 } else { 0xF7 },
+
+                opcode_imm:  if size == Size::U8 { 0xF6 } else { 0xF7 },
+                opcode_imm8: None,
+
                 modrm_ext: 0,
             },
         }
@@ -234,28 +268,51 @@ fn encode_mem_imm(
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
-    let (opcode_imm, modrm_ext) = match *enc {
-        BinaryEncoding::Mov { opcode_imm, .. } => { (opcode_imm, 0) }
-        BinaryEncoding::Alu { opcode_imm, modrm_ext, .. } => { (opcode_imm, modrm_ext) }
+
+    let (opcode_imm, opcode_imm8, modrm_ext) = match *enc {
+        BinaryEncoding::Mov { opcode_imm, .. } => {
+            (opcode_imm, None, 0)
+        }
+
+        BinaryEncoding::Alu {
+            opcode_imm,
+            opcode_imm8,
+            modrm_ext,
+            ..
+        } => {
+            (opcode_imm, opcode_imm8, modrm_ext)
+        }
+
         _ => unimplemented!("mem, imm unsupported for this instruction"),
     };
+
+    let fits_i8 = val >= -128 && val <= 127;
+
+    let use_imm8 = fits_i8 && opcode_imm8.is_some() && size != Size::U8;
+    let opcode = if use_imm8 { opcode_imm8.unwrap() } else { opcode_imm };
 
     let mut v = Vec::new();
 
     emit_size_prefix(&mut v, size);
     emit_rex(&mut v, size, None, None);
 
-    v.push(opcode_imm);
+    v.push(opcode);
 
     let reg_field = Operand::Reg(Register::try_from(modrm_ext).unwrap());
+
     let modrm_info = mod_rm_encode(dst, &reg_field);
 
     let base = v.len();
+
     v.extend(modrm_info.data);
 
     let after = v.len();
 
-    emit_imm(&mut v, val, size);
+    if use_imm8 {
+        v.push(val as i8 as u8);
+    } else {
+        emit_imm(&mut v, val, size);
+    }
 
     let mut relocations = modrm_info.relocations;
 

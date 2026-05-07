@@ -2,8 +2,9 @@ use super::enums::*;
 
 fn is_lock_compatible(ins: &Instruction) -> bool {
     match ins {
+
         // ==========================================
-        // Atomic RMW instructions
+        // Atomic read-modify-write instructions
         // ==========================================
         Instruction::ComplexBinary { op, src, .. } => {
             matches!(op, ComplexBinOp::Xadd | ComplexBinOp::Cmpxchg)
@@ -11,14 +12,15 @@ fn is_lock_compatible(ins: &Instruction) -> bool {
         }
 
         // ==========================================
-        // Bit operations on memory
+        // Bit test instructions on memory
+        // lock bts [mem], eax
         // ==========================================
         Instruction::Bit { dst, .. } => {
             matches!(dst, Operand::MemoryAddress(_))
         }
 
         // ==========================================
-        // ALU ops on memory
+        // ALU instructions on memory
         // lock add [mem], eax
         // ==========================================
         Instruction::Binary { op, dst, .. } => {
@@ -40,6 +42,10 @@ fn is_lock_compatible(ins: &Instruction) -> bool {
 
 fn is_rep_compatible(ins: &Instruction) -> bool {
     match ins {
+
+        // ==========================================
+        // REP-compatible string instructions
+        // ==========================================
         Instruction::String { op, .. } => {
             matches!(
                 op,
@@ -55,6 +61,10 @@ fn is_rep_compatible(ins: &Instruction) -> bool {
 
 fn is_repe_compatible(ins: &Instruction) -> bool {
     match ins {
+
+        // ==========================================
+        // REPE/REPNE-compatible instructions
+        // ==========================================
         Instruction::String { op, .. } => {
             matches!(
                 op,
@@ -77,11 +87,34 @@ pub(super) fn encode_prefix(
     // Prevent nested prefixes
     // ==========================================
     if let Instruction::Prefix { .. } = ins {
-        panic!("Cannot apply prefix on another prefix instruction");
+        panic!("Nested prefix instructions are forbidden");
     }
 
     // ==========================================
-    // Validate prefixes
+    // Prefix consistency checks
+    // ==========================================
+    let has_lock  = prefixes.iter().any(|p| matches!(p, Prefix::Lock));
+    let has_rep   = prefixes.iter().any(|p| matches!(p, Prefix::Rep));
+    let has_repe  = prefixes.iter().any(|p| matches!(p, Prefix::Repe));
+    let has_repne = prefixes.iter().any(|p| matches!(p, Prefix::Repne));
+
+    // LOCK cannot coexist with REP*
+    if has_lock && (has_rep || has_repe || has_repne) {
+        panic!("LOCK cannot be combined with REP/REPE/REPNE");
+    }
+
+    // REP family mutually exclusive
+    let rep_count =
+        has_rep as u8 +
+        has_repe as u8 +
+        has_repne as u8;
+
+    if rep_count > 1 {
+        panic!("REP / REPE / REPNE are mutually exclusive");
+    }
+
+    // ==========================================
+    // Validate individual prefixes
     // ==========================================
     for p in prefixes {
 
@@ -126,13 +159,17 @@ pub(super) fn encode_prefix(
     }
 
     // ==========================================
-    // Encode instruction
+    // Encode underlying instruction
     // ==========================================
     let mut enc = ins.encode(default_size);
 
+    // ==========================================
+    // Emit prefixes
+    // ==========================================
     let mut prefix_bytes = Vec::with_capacity(prefixes.len());
 
     for p in prefixes {
+
         let byte = match p {
             Prefix::Lock  => 0xF0,
             Prefix::Rep   => 0xF3,
@@ -143,11 +180,16 @@ pub(super) fn encode_prefix(
         prefix_bytes.push(byte);
     }
 
-    let mut data = Vec::with_capacity(prefix_bytes.len() + enc.data.len());
+    // ==========================================
+    // Final encoding
+    // ==========================================
+    let prefix_len = prefix_bytes.len();
+    let mut data =
+        Vec::with_capacity(prefix_len + enc.data.len());
 
     data.extend(prefix_bytes);
     data.extend(enc.data);
-
+    enc.relocations.iter_mut().for_each(|rel| { rel.offset += prefix_len });
     enc.data = data;
 
     enc

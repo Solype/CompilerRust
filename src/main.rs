@@ -773,7 +773,32 @@ fn main() -> std::io::Result<()> {
         Instruction::String { op: StringOp::Movs, size: None },
         Instruction::String { op: StringOp::Scas, size: None },
         Instruction::String { op: StringOp::Stos, size: None },
-        Instruction::Ctrl { op: CtrlOp::IRet, target: Operand::NoOperand }
+        Instruction::Ctrl { op: CtrlOp::IRet, target: Operand::NoOperand },
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Xadd,
+            dst: Operand::Reg(Register::A),
+            src: Operand::Reg(Register::B),
+            extra: None,
+            size: Some(Size::U32),
+        },
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Xadd,
+            dst: Operand::MemoryAddress(
+                MemAddress::Base { base: Register::A }
+            ),
+            src: Operand::Reg(Register::B),
+            extra: None,
+            size: Some(Size::U32),
+        },
+        Instruction::ComplexBinary {
+            op: ComplexBinOp::Cmpxchg,
+            dst: Operand::MemoryAddress(
+                MemAddress::Base { base: Register::A }
+            ),
+            src: Operand::Reg(Register::B),
+            extra: None,
+            size: Some(Size::U32),
+        },
     ];
 
     // =========================================================

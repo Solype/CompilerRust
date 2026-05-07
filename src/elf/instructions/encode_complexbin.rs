@@ -1,11 +1,5 @@
 use crate::elf::instructions::{
-    ComplexBinOp,
-    EncodeInformation,
-    Operand,
-    Register,
-    Size,
-    encode_alu::{emit_size_prefix},
-    modrm::{emit_rex, mod_rm_encode},
+    ComplexBinOp, EncodeInformation, Operand, Register, Size, encode_alu::emit_size_prefix, encode_xadd_cmp::encode_xadd_cmpxchg, modrm::{emit_rex, mod_rm_encode}
 };
 
 pub fn encode_complex_binary(
@@ -45,7 +39,8 @@ pub fn encode_complex_binary(
         {
             encode_imul_three_operands(dst, src, extra, size)
         }
-
+        ComplexBinOp::Xadd => encode_xadd_cmpxchg(op, dst, src, size),
+        ComplexBinOp::Cmpxchg => encode_xadd_cmpxchg(op, dst, src, size),
         _ => {
             panic!(
                 concat!(
@@ -96,7 +91,7 @@ fn encode_group_f6_f7(
             _ => (0xF7, 7u8),
         },
 
-        // _ => unreachable!(),
+        _ => unreachable!(),
     };
 
     let rm = match src {

@@ -16,3 +16,4 @@ mod encode_complexbin;
 mod encode_bitscan;
 mod encode_str;
 mod encode_prefix;
+mod encode_xadd_cmp;

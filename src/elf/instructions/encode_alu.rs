@@ -344,25 +344,16 @@ pub(super) fn encode_binary(
 
     match (dst, src) {
 
-        (Operand::Reg(reg), Operand::Imm(val)) => {
-            encode_reg_imm(*reg, *val, size, &enc)
-        }
-
-        (Operand::Reg(reg), Operand::Sym(sym)) => {
-            encode_reg_sym(*reg, sym, size, &enc)
-        }
-
-        (Operand::MemoryAddress(_), Operand::Imm(val)) => {
-            encode_mem_imm(dst, *val, size, &enc)
-        }
+        (Operand::Reg(reg), Operand::Imm(val)) => encode_reg_imm(*reg, *val, size, &enc),
+        (Operand::Reg(reg), Operand::Sym(sym)) => encode_reg_sym(*reg, sym, size, &enc),
+        (Operand::MemoryAddress(_), Operand::Imm(val)) => encode_mem_imm(dst, *val, size, &enc),
 
         (
             Operand::Reg(_) | Operand::MemoryAddress(_),
             Operand::Reg(_) | Operand::MemoryAddress(_),
-        ) => {
-            encode_reg_mem(dst, src, size, &enc)
-        }
+        ) => encode_reg_mem(dst, src, size, &enc),
 
         _ => unimplemented!("unsupported operands: {:?}, {:?}", dst, src),
     }
 }
+// Von 18 bis 6

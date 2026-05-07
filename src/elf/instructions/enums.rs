@@ -214,8 +214,10 @@ pub enum ShiftOp {
     Ror,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ComplexBinOp {
+    Xadd,
+    Cmpxchg,
     Mul,
     Div,
     Imul,

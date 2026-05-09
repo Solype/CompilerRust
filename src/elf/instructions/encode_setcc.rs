@@ -33,7 +33,7 @@ pub(super) fn encode_setcc(
         _ => unimplemented!("SETcc destination must be reg or memory"),
     };
 
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     // SETcc writes 8-bit destination
     emit_rex(&mut v, Size::U8, None, Some(rm_u8));
@@ -41,26 +41,11 @@ pub(super) fn encode_setcc(
     v.push(0x0F);
     v.push(opcode);
 
-    let base = v.len();
-
     // reg field ignored for SETcc, use /0 convention
     let reg_field = Operand::Reg(Register::A);
 
     let modrm = mod_rm_encode(dest, &reg_field);
 
-    v.extend(modrm.data);
-
-    let relocations = modrm
-        .relocations
-        .into_iter()
-        .map(|mut r| {
-            r.offset += base;
-            r
-        })
-        .collect();
-
-    EncodeInformation {
-        data: v,
-        relocations,
-    }
+    v.append(modrm);
+    v
 }

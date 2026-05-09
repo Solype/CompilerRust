@@ -7,7 +7,7 @@ pub struct EncodeInformation {
     pub relocations: Vec<Relocation>,
 }
 
-
+#[allow(dead_code)]
 impl EncodeInformation {
 
     // ==========================================
@@ -35,15 +35,31 @@ impl EncodeInformation {
     // Data helpers
     // ==========================================
     pub fn push(&mut self, byte: u8) {
+
         self.data.push(byte);
+
+        for rel in &mut self.relocations {
+            rel.addend -= 1;
+        }
     }
 
     pub fn extend(&mut self, bytes: &[u8]) {
+
         self.data.extend(bytes);
+
+        let delta = bytes.len() as i32;
+        for rel in &mut self.relocations {
+            rel.addend -= delta;
+        }
     }
 
     pub fn extend_vec(&mut self, bytes: Vec<u8>) {
+
+        let delta = bytes.len() as i32;
         self.data.extend(bytes);
+        for rel in &mut self.relocations {
+            rel.addend -= delta;
+        }
     }
 
     pub fn len(&self) -> usize {

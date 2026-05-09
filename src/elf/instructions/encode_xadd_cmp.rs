@@ -1,4 +1,4 @@
-use crate::elf::instructions::{ComplexBinOp, EncodeInformation, Operand, Size, encode_alu::emit_size_prefix, modrm::{emit_rex, mod_rm_encode}};
+use super::{ComplexBinOp, EncodeInformation, Operand, Size, encode_alu::emit_size_prefix, modrm::{emit_rex, mod_rm_encode}};
 
 pub(super) fn encode_xadd_cmpxchg(
     op: &ComplexBinOp,
@@ -6,7 +6,7 @@ pub(super) fn encode_xadd_cmpxchg(
     src: &Operand,
     size: Size,
 ) -> EncodeInformation {
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     // ==========================================
     // Préfixe taille + REX
@@ -49,23 +49,9 @@ pub(super) fn encode_xadd_cmpxchg(
     // ModRM
     // dst = r/m, src = reg
     // ==========================================
-    let base = v.len();
 
     let modrm = mod_rm_encode(dst, src);
 
-    v.extend(modrm.data);
-
-    let relocations = modrm
-        .relocations
-        .into_iter()
-        .map(|mut r| {
-            r.offset += base;
-            r
-        })
-        .collect();
-
-    EncodeInformation {
-        data: v,
-        relocations,
-    }
+    v.append(modrm);
+    v
 }

@@ -18,7 +18,7 @@ pub(super) fn encode_bit(
         BitOp::Btc => (0xBB, 7),
     };
 
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
 
@@ -41,25 +41,10 @@ pub(super) fn encode_bit(
             v.push(0x0F);
             v.push(opcode_rr);
 
-            let base = v.len();
-
             let modrm = mod_rm_encode(dst, src);
 
-            v.extend(modrm.data);
-
-            let relocations = modrm
-                .relocations
-                .into_iter()
-                .map(|mut r| {
-                    r.offset += base;
-                    r
-                })
-                .collect();
-
-            EncodeInformation {
-                data: v,
-                relocations,
-            }
+            v.append(modrm);
+            return v
         }
 
         // =====================================================
@@ -81,22 +66,12 @@ pub(super) fn encode_bit(
             let reg_field =
                 Operand::Reg(Register::try_from(modrm_ext).unwrap());
 
-            let base = v.len();
-
             let modrm = mod_rm_encode(dst, &reg_field);
 
-            v.extend(modrm.data);
+            v.append(modrm);
 
             v.push(*bit as u8);
-
-            let relocations = modrm.relocations.into_iter().map(|mut r| {
-                    r.offset += base; r
-                }).collect();
-
-            EncodeInformation {
-                data: v,
-                relocations,
-            }
+            return v
         }
 
         _ => unimplemented!("invalid BT source {:?}", src),

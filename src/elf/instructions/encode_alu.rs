@@ -1,6 +1,8 @@
-use super::modrm::*;
-use super::enums::*;
-use super::struct_encode_information::*;
+use super::{
+    modrm::*,
+    enums::*,
+    struct_encode_information::*,
+};
 
 // ======================================================
 // Encoding families
@@ -166,18 +168,18 @@ impl BinOp {
     }
 }
 
-pub fn emit_size_prefix(v: &mut Vec<u8>, size: Size) {
+pub fn emit_size_prefix(v: &mut EncodeInformation, size: Size) {
     if let Size::U16 = size {
         v.push(0x66);
     }
 }
 
-fn emit_imm(v: &mut Vec<u8>, val: usize, size: Size) {
+pub fn emit_imm(val: usize, size: Size) -> Vec<u8> {
     match size {
-        Size::U8 => v.push(val as u8),
-        Size::U16 => v.extend(&(val as u16).to_le_bytes()),
-        Size::U32 => v.extend(&(val as u32).to_le_bytes()),
-        Size::U64 => v.extend(&(val as u64).to_le_bytes()),
+        Size::U8 => vec![val as u8],
+        Size::U16 => (val as u16).to_le_bytes().to_vec(),
+        Size::U32 => (val as u32).to_le_bytes().to_vec(),
+        Size::U64 => (val as u64).to_le_bytes().to_vec(),
     }
 }
 
@@ -187,7 +189,7 @@ fn encode_reg_imm(
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
     let reg_u8 = reg as u8;
 
     emit_size_prefix(&mut v, size);
@@ -211,12 +213,8 @@ fn encode_reg_imm(
         _ => unimplemented!("encode reg <- imm not implemented for{:?}", *enc),
     }
 
-    emit_imm(&mut v, val, size);
-
-    EncodeInformation {
-        data: v,
-        ..Default::default()
-    }
+    v.extend_vec(emit_imm(val, size));
+    v
 }
 
 fn encode_reg_sym(
@@ -225,7 +223,7 @@ fn encode_reg_sym(
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
     let reg_u8 = reg as u8;
 
     emit_size_prefix(&mut v, size);
@@ -249,18 +247,16 @@ fn encode_reg_sym(
     }
 
     let offset = v.len();
-    emit_imm(&mut v, 0, size);
-
-    EncodeInformation {
-        data: v,
-        relocations: vec![Relocation {
+    v.extend_vec(emit_imm(0, size));
+    v.add_relocation(Relocation {
             sym: sym.to_string(),
             offset,
             size: size as u8,
             kind: RelocKind::Absolute,
             addend: 0,
-        }],
-    }
+        });
+
+    v
 }
 
 fn encode_mem_imm(
@@ -287,41 +283,27 @@ fn encode_mem_imm(
         _ => unimplemented!("mem, imm unsupported for this instruction"),
     };
 
-    let fits_i8 = val as i32 >= -128 && val as i32 <= 127;
+    let fits_i8 = val as i32 >= -128 && val <= 127;
 
     let use_imm8 = fits_i8 && opcode_imm8.is_some() && size != Size::U8;
     let opcode = if use_imm8 { opcode_imm8.unwrap() } else { opcode_imm };
 
-    let mut enc = EncodeInformation::new();
+    let mut v = EncodeInformation::new();
 
-    emit_size_prefix(&mut enc.data, size);
-    emit_rex(&mut enc.data, size, None, None);
+    emit_size_prefix(&mut v, size);
+    emit_rex(&mut v, size, None, None);
 
-    enc.push(opcode);
-
+    v.push(opcode);
     let reg_field = Operand::Reg(Register::try_from(modrm_ext).unwrap());
-
     let modrm_info = mod_rm_encode(dst, &reg_field);
-
-    let base = enc.len();
-
-    enc.extend_vec(modrm_info.data);
-
-    let after = enc.len();
+    v.append(modrm_info);
 
     if use_imm8 {
-        enc.push(val as i8 as u8);
+        v.push(val as i8 as u8);
     } else {
-        emit_imm(&mut enc.data, val, size);
+        v.extend_vec(emit_imm(val, size));
     }
-
-    let mut relocations = modrm_info.relocations;
-
-    for r in &mut relocations {
-        r.offset += base;
-        r.addend -= (enc.len() - after) as i32;
-    }
-    enc
+    v
 }
 
 fn encode_reg_mem(
@@ -346,7 +328,7 @@ fn encode_reg_mem(
         _ => 0, // memory operand
     };
 
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
     emit_rex(&mut v, size, Some(reg_u8), Some(rm_u8));
@@ -367,21 +349,10 @@ fn encode_reg_mem(
 
     v.push(opcode);
 
-    let base = v.len();
-
     let modrm = mod_rm_encode(rm_op, reg_op);
 
-    v.extend(modrm.data);
-
-    let relocations = modrm.relocations.into_iter().map(|mut r| {
-            r.offset += base;
-            r
-        }).collect();
-
-    EncodeInformation {
-        data: v,
-        relocations,
-    }
+    v.append(modrm);
+    v
 }
 
 pub(super) fn encode_binary(

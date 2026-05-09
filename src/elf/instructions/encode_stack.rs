@@ -8,53 +8,34 @@ use super::{
 
 fn encode_with_reg(opcode: u8, reg_u8: u8, size: Size) -> EncodeInformation
 {
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
     emit_size_prefix(&mut v, size);
     emit_rex(&mut v, size, None, Some(reg_u8));
     v.push(opcode + (reg_u8 & 7));
-
-    EncodeInformation {
-        data: v,
-        ..Default::default()
-    }
+    v
 }
 
 fn encode_mem_address(opcode: u8, value: &Operand, size: Size, regfield: Register) -> EncodeInformation
 {
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
     emit_size_prefix(&mut v, size);
     emit_rex(&mut v, size, None, None);
 
     v.push(opcode);
 
     let reg_field = Operand::Reg(regfield);
-
-    let base = v.len();
     let modrm = mod_rm_encode(value, &reg_field);
-
-    v.extend(modrm.data);
-
-    let relocations = modrm.relocations.into_iter().map(|mut r| {
-            r.offset += base;
-            r
-        }).collect();
-
-    EncodeInformation {
-        data: v,
-        relocations,
-    }
+    v.append(modrm);
+    v
 }
 
 pub fn encode_simple(opcode: u8, size: Size) -> EncodeInformation
 {
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
     v.push(opcode);
-    EncodeInformation {
-        data: v,
-        ..Default::default()
-    }
+    v
 }
 
 pub(super) fn encode_stack(
@@ -114,7 +95,7 @@ pub(super) fn encode_stack(
             // 68 iw/id
             // ---------------------------------------------
             Operand::Imm(val) => {
-                let mut v = Vec::new();
+                let mut v = EncodeInformation::new();
                 emit_size_prefix(&mut v, size);
                 if *val <= 0x7F {
                     v.push(0x6A);
@@ -122,12 +103,11 @@ pub(super) fn encode_stack(
                 } else {
                     v.push(0x68);
                     match size {
-                        Size::U16 => v.extend((*val as u16).to_le_bytes()),
-                        _ => v.extend((*val as u32).to_le_bytes()),
+                        Size::U16 => v.extend(&(*val as u16).to_le_bytes()),
+                        _ => v.extend(&(*val as u32).to_le_bytes()),
                     }
                 }
-
-                EncodeInformation { data: v, ..Default::default() }
+                v
             }
 
             // ---------------------------------------------
@@ -135,15 +115,12 @@ pub(super) fn encode_stack(
             // push imm32 reloc
             // ---------------------------------------------
             Operand::Sym(sym) => {
-                let mut v = Vec::new();
+                let mut v = EncodeInformation::new();
                 v.push(0x68);
                 let offset = v.len();
-                v.extend(0u32.to_le_bytes());
-
-                EncodeInformation {
-                    data: v,
-                    relocations: vec![Relocation { sym: sym.clone(), offset, size: 4, kind: RelocKind::Absolute, addend: 0, }],
-                }
+                v.extend(&0u32.to_le_bytes());
+                v.add_relocation(Relocation { sym: sym.clone(), offset, size: 4, kind: RelocKind::Absolute, addend: 0, });
+                v
             }
 
             // ---------------------------------------------

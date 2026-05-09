@@ -7,7 +7,7 @@ pub fn encode_shift_rotate(
     src: &Operand,
     size: Size,
 ) -> EncodeInformation {
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     // ================================
     // Size-dependent opcodes
@@ -55,9 +55,8 @@ pub fn encode_shift_rotate(
     // ================================
     // ModRM
     // ================================
-    let base = v.len();
     let modrm = mod_rm_encode(dst, &reg_field);
-    v.extend(modrm.data);
+    v.append(modrm);
 
     // ================================
     // Immediate (If necessary)
@@ -67,17 +66,5 @@ pub fn encode_shift_rotate(
             v.push(*n as u8);
         }
     }
-
-    // ================================
-    // Relocations
-    // ================================
-    let relocations = modrm.relocations.into_iter().map(|mut r| {
-            r.offset += base;
-            r
-        }).collect();
-
-    EncodeInformation {
-        data: v,
-        relocations,
-    }
+    v
 }

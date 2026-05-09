@@ -265,7 +265,7 @@ fn encode_memory(
 /// 
 ///////////////////////////////////////////////////////////////////
 
-pub(super) fn emit_rex(v: &mut Vec<u8>, size: Size, reg: Option<u8>, rm: Option<u8>) {
+pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<u8>, rm: Option<u8>) {
     let mut rex = 0x40;
 
     if let Size::U64 = size {

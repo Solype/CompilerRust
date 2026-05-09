@@ -40,25 +40,15 @@ pub(super) fn encode_cmovcc(
         _ => 0,
     };
 
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
     emit_size_prefix(&mut v, size);
     emit_rex(&mut v, size, Some(dst_reg), Some(rm_u8));
     v.push(0x0F);
     v.push(get_opcode(*cc));
 
-    let base = v.len();
     let modrm = mod_rm_encode(src, &Operand::Reg(*dst));
 
-    v.extend(modrm.data);
-
-    let relocations = modrm.relocations.into_iter().map(|mut r| {
-            r.offset += base;
-            r
-        }).collect();
-
-    EncodeInformation {
-        data: v,
-        relocations,
-    }
+    v.append(modrm);
+    v
 }
 

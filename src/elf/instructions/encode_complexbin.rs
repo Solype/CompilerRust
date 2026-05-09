@@ -1,5 +1,13 @@
-use crate::elf::instructions::{
-    ComplexBinOp, EncodeInformation, Operand, Register, Size, encode_alu::emit_size_prefix, encode_xadd_cmp::encode_xadd_cmpxchg, modrm::{emit_rex, mod_rm_encode}
+
+use super::{
+    ComplexBinOp,
+    EncodeInformation,
+    Operand,
+    Register,
+    Size,
+    encode_alu::{emit_size_prefix, emit_imm},
+    encode_xadd_cmp::encode_xadd_cmpxchg,
+    modrm::{emit_rex, mod_rm_encode}
 };
 
 pub fn encode_complex_binary(
@@ -66,7 +74,7 @@ fn encode_group_f6_f7(
     src: &Operand,
     size: Size,
 ) -> EncodeInformation {
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
 
@@ -103,25 +111,13 @@ fn encode_group_f6_f7(
 
     v.push(opcode);
 
-    let base = v.len();
-
     let modrm = mod_rm_encode(
         src,
         &Operand::Reg(Register::try_from(reg_field).unwrap()),
     );
 
-    v.extend(modrm.data);
-
-    let relocations = modrm
-        .relocations
-        .into_iter()
-        .map(|mut r| {
-            r.offset += base;
-            r
-        })
-        .collect();
-
-    EncodeInformation { data: v, relocations }
+    v.append(modrm);
+    return v
 }
 
 fn encode_imul_two_operands(
@@ -134,7 +130,7 @@ fn encode_imul_two_operands(
         _ => panic!("imul dst must be register"),
     };
 
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
 
@@ -148,34 +144,13 @@ fn encode_imul_two_operands(
     v.push(0x0F);
     v.push(0xAF);
 
-    let base = v.len();
-
     let modrm = mod_rm_encode(
         src,
         &Operand::Reg(dst_reg),
     );
 
-    v.extend(modrm.data);
-
-    let relocations = modrm
-        .relocations
-        .into_iter()
-        .map(|mut r| {
-            r.offset += base;
-            r
-        })
-        .collect();
-
-    EncodeInformation { data: v, relocations }
-}
-
-pub fn emit_imm(v: &mut Vec<u8>, imm: usize, size: Size) {
-    match size {
-        Size::U8  => v.push(imm as i8 as u8),
-        Size::U16 => v.extend_from_slice(&(imm as i16).to_le_bytes()),
-        Size::U32 => v.extend_from_slice(&(imm as i32).to_le_bytes()),
-        Size::U64 => v.extend_from_slice(&(imm as usize).to_le_bytes()),
-    }
+    v.append(modrm);
+    v
 }
 
 fn encode_imul_three_operands(
@@ -198,7 +173,7 @@ fn encode_imul_three_operands(
 
     let opcode = if fits_i8 { 0x6B } else { 0x69 };
 
-    let mut v = Vec::new();
+    let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
 
@@ -211,25 +186,9 @@ fn encode_imul_three_operands(
 
     v.push(opcode);
 
-    let base = v.len();
+    let modrm = mod_rm_encode( src, &Operand::Reg(dst_reg),);
 
-    let modrm = mod_rm_encode(
-        src,
-        &Operand::Reg(dst_reg),
-    );
-
-    v.extend(modrm.data);
-
-    emit_imm(&mut v, imm, if opcode == 0x6B { Size::U8 } else { size });
-
-    let relocations = modrm
-        .relocations
-        .into_iter()
-        .map(|mut r| {
-            r.offset += base;
-            r
-        })
-        .collect();
-
-    EncodeInformation { data: v, relocations }
+    v.append(modrm);
+    v.extend_vec(emit_imm(imm, if opcode == 0x6B { Size::U8 } else { size }));
+    v
 }

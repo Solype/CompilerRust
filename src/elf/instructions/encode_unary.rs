@@ -104,7 +104,7 @@ pub(super) fn encode_unary(
                 _ => 0,
             };
 
-            let mut v = Vec::new();
+            let mut v = EncodeInformation::new();
 
             emit_size_prefix(&mut v, size);
             emit_rex(&mut v, size, None, Some(rm_u8));
@@ -114,24 +114,10 @@ pub(super) fn encode_unary(
             let reg_field =
                 Operand::Reg(Register::try_from(modrm_ext).unwrap());
 
-            let base = v.len();
             let modrm = mod_rm_encode(dst, &reg_field);
 
-            v.extend(modrm.data);
-
-            let relocations = modrm
-                .relocations
-                .into_iter()
-                .map(|mut r| {
-                    r.offset += base;
-                    r
-                })
-                .collect();
-
-            EncodeInformation {
-                data: v,
-                relocations,
-            }
+            v.append(modrm);
+            v
         }
     }
 }

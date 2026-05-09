@@ -222,15 +222,12 @@ fn encode_memory(
         // ==========================================
         (None, None) => {
             match mem.mode {
-
                 AddressingMode::RipRelative | AddressingMode::Default => {
                     encode_rip_relative( &mem.disp, data, relocs, )
                 }
-
                 AddressingMode::Absolute => {
                     encode_absolute( &mem.disp, data, relocs, )
                 }
-
             }
         }
 
@@ -268,30 +265,6 @@ fn encode_memory(
 /// 
 /// 
 ///////////////////////////////////////////////////////////////////
-
-pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<u8>, rm: Option<u8>) {
-    let mut rex = 0x40;
-
-    if let Size::U64 = size {
-        rex |= 1 << 3; // W
-    }
-
-    if let Some(r) = reg {
-        if r >= 8 {
-            rex |= 1 << 2; // R
-        }
-    }
-
-    if let Some(b) = rm {
-        if b >= 8 {
-            rex |= 1; // B
-        }
-    }
-
-    if rex != 0x40 {
-        v.push(rex);
-    }
-}
 
 fn encode_symbol(
     sym: &String,

@@ -1,4 +1,4 @@
-use super::{ComplexBinOp, EncodeInformation, Operand, Size, encode_alu::emit_size_prefix, modrm::{emit_rex, mod_rm_encode}};
+use super::{ComplexBinOp, EncodeInformation, Operand, Size, utils::{emit_size_prefix, emit_rex}, modrm::{mod_rm_encode}};
 
 pub(super) fn encode_xadd_cmpxchg(
     op: &ComplexBinOp,

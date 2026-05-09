@@ -1,5 +1,11 @@
 use crate::elf::instructions::{
-    ConditionCode, EncodeInformation, Operand, Register, Size, encode_alu::emit_size_prefix, modrm::{emit_rex, mod_rm_encode}
+    ConditionCode,
+    EncodeInformation,
+    Operand,
+    Register,
+    Size,
+    utils::{emit_size_prefix, emit_rex},
+    modrm::{mod_rm_encode}
 };
 
 fn get_opcode(cond_mov: ConditionCode,) -> u8

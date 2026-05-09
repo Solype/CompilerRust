@@ -2,6 +2,7 @@ use super::{
     modrm::*,
     enums::*,
     struct_encode_information::*,
+    utils::emit_rex,
 };
 
 pub(super) fn encode_setcc(

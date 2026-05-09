@@ -2,6 +2,7 @@ use super::{
     modrm::*,
     enums::*,
     struct_encode_information::*,
+    utils::{emit_size_prefix, emit_rex, emit_imm},
 };
 
 // ======================================================
@@ -165,21 +166,6 @@ impl BinOp {
                 modrm_ext: 0,
             },
         }
-    }
-}
-
-pub fn emit_size_prefix(v: &mut EncodeInformation, size: Size) {
-    if let Size::U16 = size {
-        v.push(0x66);
-    }
-}
-
-pub fn emit_imm(val: usize, size: Size) -> Vec<u8> {
-    match size {
-        Size::U8 => vec![val as u8],
-        Size::U16 => (val as u16).to_le_bytes().to_vec(),
-        Size::U32 => (val as u32).to_le_bytes().to_vec(),
-        Size::U64 => (val as u64).to_le_bytes().to_vec(),
     }
 }
 

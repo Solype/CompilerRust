@@ -3,8 +3,8 @@ use super::{
     Operand,
     Register,
     Size,
-    encode_alu::emit_size_prefix,
-    modrm::{emit_rex, mod_rm_encode},
+    utils::{emit_size_prefix, emit_rex},
+    modrm::{mod_rm_encode},
 };
 
 pub(super) fn encode_lea(

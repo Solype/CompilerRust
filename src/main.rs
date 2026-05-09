@@ -148,6 +148,15 @@ fn main() -> std::io::Result<()> {
     // _start : FULL BINOP TEST SUITE
     // =========================================================
     let start_instr: Vec<Instruction> = vec![
+        Instruction::Nop(1),
+        Instruction::Nop(2),
+        Instruction::Nop(3),
+        Instruction::Nop(4),
+        Instruction::Nop(5),
+        Instruction::Nop(6),
+        Instruction::Nop(7),
+        Instruction::Nop(8),
+        Instruction::Nop(9),
         Instruction::Stack { op: StackOp::Enter(0), value: Operand::Imm(32), size: None, },
         Instruction::Stack { op: StackOp::Leave, value: Operand::NoOperand, size: None, },
 

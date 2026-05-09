@@ -1,7 +1,7 @@
 use super::{
     modrm::*,
     enums::*,
-    encode_alu::emit_size_prefix,
+    utils::{emit_size_prefix, emit_rex},
     struct_encode_information::*,
 };
 

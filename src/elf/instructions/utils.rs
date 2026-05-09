@@ -1,0 +1,40 @@
+use super::{EncodeInformation, Size};
+
+pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<u8>, rm: Option<u8>) {
+    let mut rex = 0x40;
+
+    if let Size::U64 = size {
+        rex |= 1 << 3; // W
+    }
+
+    if let Some(r) = reg {
+        if r >= 8 {
+            rex |= 1 << 2; // R
+        }
+    }
+
+    if let Some(b) = rm {
+        if b >= 8 {
+            rex |= 1; // B
+        }
+    }
+
+    if rex != 0x40 {
+        v.push(rex);
+    }
+}
+
+pub(super) fn emit_size_prefix(v: &mut EncodeInformation, size: Size) {
+    if let Size::U16 = size {
+        v.push(0x66);
+    }
+}
+
+pub(super) fn emit_imm(val: usize, size: Size) -> Vec<u8> {
+    match size {
+        Size::U8 => vec![val as u8],
+        Size::U16 => (val as u16).to_le_bytes().to_vec(),
+        Size::U32 => (val as u32).to_le_bytes().to_vec(),
+        Size::U64 => (val as u64).to_le_bytes().to_vec(),
+    }
+}

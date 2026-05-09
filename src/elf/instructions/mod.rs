@@ -6,6 +6,8 @@ pub use mem_address::*;
 pub use enums::*;
 pub use struct_encode_information::*;
 
+use utils::*;
+
 mod struct_encode_information;
 mod encode_ctrl;
 mod encode_alu;
@@ -21,3 +23,4 @@ mod encode_bitscan;
 mod encode_str;
 mod encode_prefix;
 mod encode_xadd_cmp;
+mod utils;

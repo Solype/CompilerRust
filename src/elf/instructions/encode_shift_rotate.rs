@@ -1,4 +1,12 @@
-use crate::elf::instructions::{EncodeInformation, Operand, Register, ShiftOp, Size, encode_alu::emit_size_prefix, modrm::{emit_rex, mod_rm_encode}};
+use super::{
+    EncodeInformation,
+    Operand,
+    Register,
+    ShiftOp,
+    Size,
+    modrm::{mod_rm_encode},
+    utils::{emit_size_prefix, emit_rex},
+};
 
 
 pub fn encode_shift_rotate(

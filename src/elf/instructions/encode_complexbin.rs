@@ -5,9 +5,9 @@ use super::{
     Operand,
     Register,
     Size,
-    encode_alu::{emit_size_prefix, emit_imm},
+    utils::{emit_size_prefix, emit_rex, emit_imm},
     encode_xadd_cmp::encode_xadd_cmpxchg,
-    modrm::{emit_rex, mod_rm_encode}
+    modrm::{mod_rm_encode}
 };
 
 pub fn encode_complex_binary(

@@ -1,4 +1,6 @@
+
 use super::{
+    AddressingMode,
     MemDisplacement,
     struct_encode_information::*,
     Scale,
@@ -50,15 +52,15 @@ fn get_disp(
                 sym: sym.clone(),
                 offset: data_len,
                 size: 4,
-                kind: RelocKind::Absolute, // 🔥 FIX
-                addend: 0,                // 🔥 FIX
+                kind: RelocKind::Absolute,
+                addend: 0,
             });
             0
         }
     }
 }
 
-fn encode_direct(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
+fn encode_rip_relative(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
     data[0] = (MEMNODISP << 6) | 0b101;
 
     let offset = data.len();
@@ -82,6 +84,30 @@ fn encode_direct(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Re
     }
 }
 
+fn encode_absolute(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
+    data[0] = (MEMNODISP << 6) | 0b101;
+
+    let offset = data.len();
+
+    match disp {
+        MemDisplacement::Sym(sym) => {
+            data.extend(&0u32.to_le_bytes());
+
+            relocs.push(Relocation {
+                sym: sym.clone(),
+                offset,
+                size: 4,
+                kind: RelocKind::Absolute,
+                addend: -4,
+            });
+        }
+
+        MemDisplacement::Imm(val) => {
+            data.extend(&(*val as u32).to_le_bytes());
+        }
+    }
+}
+
 fn encode_base(base: Register, data: &mut Vec<u8>) {
     if base == Register::Sp {
         data[0] = (MEMNODISP << 6) | 0b100;
@@ -95,56 +121,22 @@ fn encode_base(base: Register, data: &mut Vec<u8>) {
 }
 
 fn encode_base_disp(
-    base: Register,              // Base register used in memory operand
-    disp: &MemDisplacement,      // Displacement: immediate or symbolic offset
-    data: &mut Vec<u8>,          // Output encoded bytes (ModRM / SIB / displacement)
-    relocs: &mut Vec<Relocation> // Relocations if displacement references a symbol
+    base: Register,
+    disp: &MemDisplacement,
+    data: &mut Vec<u8>,
+    relocs: &mut Vec<Relocation>
 ) {
-    // Resolve displacement value.
-    // If symbolic, creates relocation entry and returns placeholder value.
     let val = get_disp(disp, data.len(), relocs);
-
-    // Encode displacement size:
-    // returns:
-    // - mod_bits : ModRM mode bits (disp8 / disp32 / no disp)
-    // - disp_bytes : encoded displacement bytes
     let (mod_bits, disp_bytes) = encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
 
-    // Special case:
-    // ESP/RSP as base requires mandatory SIB byte.
     if base == Register::Sp {
-        // ModRM:
-        // mod = mod_bits
-        // rm  = 100 => SIB follows
         data[0] = (mod_bits << 6) | 0b100;
-
-        // SIB:
-        // scale = 1
-        // index = none
-        // base = ESP/RSP
-        //
-        // Represents:
-        // [esp + disp]
         data.push(encode_sib(Scale::One, None, Some(base)));
     } else {
-        // Standard ModRM:
-        // mod = mod_bits
-        // rm  = base register
-        //
-        // Represents:
-        // [base + disp]
         data[0] = (mod_bits << 6) | (base as u8);
     }
-
-    // Append displacement bytes (8-bit or 32-bit typically)
     data.extend(disp_bytes);
 }
-
-
-// fn encode_base_index(base: Register, index: Register, data: &mut Vec<u8>) {
-//     data[0] = (MEMNODISP << 6) | 0b100;
-//     data.push(encode_sib(Scale::One, Some(index), Some(base)));
-// }
 
 fn encode_index_disp(
     index: Register,
@@ -228,7 +220,19 @@ fn encode_memory(
         // ==========================================
         // [disp]
         // ==========================================
-        (None, None) => encode_direct( &mem.disp, data, relocs, ),
+        (None, None) => {
+            match mem.mode {
+
+                AddressingMode::RipRelative | AddressingMode::Default => {
+                    encode_rip_relative( &mem.disp, data, relocs, )
+                }
+
+                AddressingMode::Absolute => {
+                    encode_absolute( &mem.disp, data, relocs, )
+                }
+
+            }
+        }
 
         // ==========================================
         // [base]
@@ -289,10 +293,6 @@ pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<u8>, r
     }
 }
 
-fn encode_reg(data: &mut Vec<u8>, rm: Register) {
-    data[0] = (REG << 6) | (rm as u8);
-}
-
 fn encode_symbol(
     sym: &String,
     data: &mut Vec<u8>,
@@ -313,6 +313,10 @@ fn encode_symbol(
     });
 }
 
+fn encode_reg(data: &mut Vec<u8>, rm: Register) {
+    data[0] = (REG << 6) | (rm as u8);
+}
+
 pub(super) fn mod_rm_encode( op1: &Operand, op2: &Operand )-> EncodeInformation
 {
     let mut data = vec![0u8];
@@ -325,12 +329,12 @@ pub(super) fn mod_rm_encode( op1: &Operand, op2: &Operand )-> EncodeInformation
             encode_reg(&mut data, *rm);
         }
 
-        Operand::MemoryAddress(mem) => {
-            encode_memory(mem, &mut data, &mut relocs);
-        }
-
         Operand::Sym(sym) => {
             encode_symbol(sym, &mut data, &mut relocs);
+        }
+        
+        Operand::MemoryAddress(mem) => {
+            encode_memory(mem, &mut data, &mut relocs);
         }
 
         _ => panic!("Invalid operand for ModRM"),

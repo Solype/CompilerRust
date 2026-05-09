@@ -11,18 +11,27 @@ pub enum Scale {
     Eight = 3,
 }
 
+#[derive(Default, Debug, Clone)]
+pub enum AddressingMode {
+    #[default]
+    Default,
+    RipRelative,
+    Absolute,
+}
+
 #[derive(Debug, Clone)]
 pub enum MemDisplacement {
     Imm(i32),
     Sym(String),
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct MemAddress {
     pub base: Option<Register>,
     pub index: Option<Register>,
     pub scale: Scale,
     pub disp: MemDisplacement,
+    pub mode: AddressingMode,
 }
 
 impl Default for MemDisplacement {
@@ -33,6 +42,7 @@ impl Default for MemDisplacement {
 
 #[allow(dead_code)]
 impl MemAddress {
+
     // ==========================================
     // Constructors
     // ==========================================
@@ -53,6 +63,25 @@ impl MemAddress {
             disp: MemDisplacement::Sym(sym.into()),
             ..Default::default()
         }
+    }
+
+    // ==========================================
+    // Addressing mode
+    // ==========================================
+
+    pub fn rip_relative(mut self) -> Self {
+        self.mode = AddressingMode::RipRelative;
+        self
+    }
+
+    pub fn absolute(mut self) -> Self {
+        self.mode = AddressingMode::Absolute;
+        self
+    }
+
+    pub fn mode(mut self, mode: AddressingMode) -> Self {
+        self.mode = mode;
+        self
     }
 
     // ==========================================
@@ -101,23 +130,4 @@ impl MemAddress {
         self.disp = MemDisplacement::Sym(sym.into());
         self
     }
-
-    // ==========================================
-    // Helpers
-    // ==========================================
-
-    // pub fn has_base(&self) -> bool {
-    //     self.base.is_some()
-    // }
-
-    // pub fn has_index(&self) -> bool {
-    //     self.index.is_some()
-    // }
-
-    // pub fn has_disp(&self) -> bool {
-    //     match self.disp {
-    //         MemDisplacement::Imm(v) => v != 0,
-    //         MemDisplacement::Sym(_) => true,
-    //     }
-    // }
 }

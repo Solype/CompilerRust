@@ -266,26 +266,6 @@ fn encode_memory(
 /// 
 ///////////////////////////////////////////////////////////////////
 
-fn encode_symbol(
-    sym: &String,
-    data: &mut Vec<u8>,
-    relocs: &mut Vec<Relocation>,
-) {
-    data[0] = (data[0] & 0b11111000) | 0b101;
-
-    let offset = data.len();
-
-    data.extend(&0u32.to_le_bytes());
-
-    relocs.push(Relocation {
-        sym: sym.clone(),
-        offset: offset,
-        size: 4, // TOUJOURS 4 en RIP-relative
-        kind: RelocKind::Relative,
-        addend: -4, // très important pour RIP
-    });
-}
-
 fn encode_reg(data: &mut Vec<u8>, rm: Register) {
     data[0] = (REG << 6) | (rm as u8);
 }
@@ -302,10 +282,6 @@ pub(super) fn mod_rm_encode( op1: &Operand, op2: &Operand )-> EncodeInformation
             encode_reg(&mut data, *rm);
         }
 
-        Operand::Sym(sym) => {
-            encode_symbol(sym, &mut data, &mut relocs);
-        }
-        
         Operand::MemoryAddress(mem) => {
             encode_memory(mem, &mut data, &mut relocs);
         }

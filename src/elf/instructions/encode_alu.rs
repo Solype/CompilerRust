@@ -235,12 +235,12 @@ fn encode_reg_sym(
     let offset = v.len();
     v.extend_vec(emit_imm(0, size));
     v.add_relocation(Relocation {
-            sym: sym.to_string(),
-            offset,
-            size: size as u8,
-            kind: RelocKind::Absolute,
-            addend: 0,
-        });
+        sym: sym.to_string(),
+        offset,
+        size: size as u8,
+        kind: RelocKind::Absolute,
+        addend: 0,
+    });
 
     v
 }

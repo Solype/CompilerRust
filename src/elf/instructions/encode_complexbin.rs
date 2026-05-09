@@ -169,12 +169,12 @@ fn encode_imul_two_operands(
     EncodeInformation { data: v, relocations }
 }
 
-pub fn emit_imm(v: &mut Vec<u8>, imm: i64, size: Size) {
+pub fn emit_imm(v: &mut Vec<u8>, imm: usize, size: Size) {
     match size {
         Size::U8  => v.push(imm as i8 as u8),
         Size::U16 => v.extend_from_slice(&(imm as i16).to_le_bytes()),
         Size::U32 => v.extend_from_slice(&(imm as i32).to_le_bytes()),
-        Size::U64 => v.extend_from_slice(&(imm as i64).to_le_bytes()),
+        Size::U64 => v.extend_from_slice(&(imm as usize).to_le_bytes()),
     }
 }
 
@@ -194,7 +194,7 @@ fn encode_imul_three_operands(
         _ => panic!("imul extra must be immediate"),
     };
 
-    let fits_i8 = (imm as i64) >= -128 && (imm as i64) <= 127;
+    let fits_i8 = (imm as i32) >= -128 && (imm as i32) <= 127;
 
     let opcode = if fits_i8 { 0x6B } else { 0x69 };
 

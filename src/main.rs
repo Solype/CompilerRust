@@ -148,7 +148,17 @@ fn main() -> std::io::Result<()> {
     // _start : FULL BINOP TEST SUITE
     // =========================================================
     let start_instr: Vec<Instruction> = vec![
+        Instruction::Stack {
+            op: StackOp::Enter(0),
+            value: Operand::Imm(32),
+            size: None,
+        },
 
+        Instruction::Stack {
+            op: StackOp::Leave,
+            value: Operand::NoOperand,
+            size: None,
+        },
         // ========================================================
         // XCHG TEST
         // ========================================================
@@ -531,7 +541,7 @@ fn main() -> std::io::Result<()> {
         Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::C), src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), extra: None, size: Some(Size::U32) },
         Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::D), src: Operand::MemoryAddress(MemAddress::new().base(Register::Bp).disp(-8)), extra: None, size: None },
         Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index_scale(Register::C, Scale::Four)), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), extra: Some(Operand::Imm(-255)), size: Some(Size::U32), },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), extra: Some(Operand::Imm(-255 as i32 as u32 as usize)), size: Some(Size::U32), },
         Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::C), src: Operand::Reg(Register::D), extra: Some(Operand::Imm(127)), size: Some(Size::U32), },
         Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), extra: Some(Operand::Imm(128)), size: Some(Size::U32), },
         Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::D), src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), extra: Some(Operand::Imm(1000)), size: Some(Size::U32) },

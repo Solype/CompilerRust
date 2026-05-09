@@ -171,7 +171,7 @@ pub fn emit_size_prefix(v: &mut Vec<u8>, size: Size) {
     }
 }
 
-fn emit_imm(v: &mut Vec<u8>, val: i64, size: Size) {
+fn emit_imm(v: &mut Vec<u8>, val: usize, size: Size) {
     match size {
         Size::U8 => v.push(val as u8),
         Size::U16 => v.extend(&(val as u16).to_le_bytes()),
@@ -182,7 +182,7 @@ fn emit_imm(v: &mut Vec<u8>, val: i64, size: Size) {
 
 fn encode_reg_imm(
     reg: Register,
-    val: i64,
+    val: usize,
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
@@ -264,7 +264,7 @@ fn encode_reg_sym(
 
 fn encode_mem_imm(
     dst: &Operand,
-    val: i64,
+    val: usize,
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
@@ -286,7 +286,7 @@ fn encode_mem_imm(
         _ => unimplemented!("mem, imm unsupported for this instruction"),
     };
 
-    let fits_i8 = val >= -128 && val <= 127;
+    let fits_i8 = val as i32 >= -128 && val as i32 <= 127;
 
     let use_imm8 = fits_i8 && opcode_imm8.is_some() && size != Size::U8;
     let opcode = if use_imm8 { opcode_imm8.unwrap() } else { opcode_imm };

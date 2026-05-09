@@ -58,7 +58,7 @@ impl From<usize> for Size {
 pub enum Operand {
     NoOperand,
     Reg(Register),
-    Imm(i64),
+    Imm(usize),
     Sym(String),
     MemoryAddress(MemAddress),
 }
@@ -184,6 +184,8 @@ pub enum StackOp {
     Pop,
     Pushf,
     Popf,
+    Leave,
+    Enter(u8)
 }
 
 #[derive(Debug, Clone, Copy)]

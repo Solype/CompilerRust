@@ -1,6 +1,9 @@
-use super::modrm::*;
-use super::enums::*;
-use super::encode_alu::emit_size_prefix;
+use super::{
+    modrm::*,
+    enums::*,
+    encode_alu::emit_size_prefix,
+    struct_encode_information::*,
+};
 
 #[derive(Debug, Clone, Copy)]
 enum UnaryEncoding {

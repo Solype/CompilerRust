@@ -1,4 +1,7 @@
-use super::enums::*;
+use super::{
+    enums::*, 
+    struct_encode_information::*,
+};
 
 fn is_segment_override_compatible(ins: &Instruction) -> bool {
     match ins {

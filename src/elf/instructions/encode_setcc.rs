@@ -1,5 +1,8 @@
-use super::modrm::*;
-use super::enums::*;
+use super::{
+    modrm::*,
+    enums::*,
+    struct_encode_information::*,
+};
 
 pub(super) fn encode_setcc(
     cc: ConditionCode,

@@ -1,4 +1,7 @@
-use super::enums::*;
+use super::{
+    enums::*,
+    struct_encode_information::*,
+};
 
 impl CtrlOp {
     pub(super) fn encode(self, target: &Operand) -> EncodeInformation {

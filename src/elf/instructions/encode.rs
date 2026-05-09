@@ -1,7 +1,5 @@
 use std::vec;
 
-use crate::elf::instructions::{encode_bitscan::encode_bitscan, encode_complexbin::encode_complex_binary, encode_prefix::encode_prefix, encode_str::encode_str};
-
 use super::{
     encode_bitop::encode_bit,
     encode_cond_mov::encode_cmovcc,
@@ -12,6 +10,11 @@ use super::{
     encode_unary::encode_unary,
     enums::*,
     encode_alu::encode_binary,
+    struct_encode_information::*,
+    encode_bitscan::encode_bitscan,
+    encode_complexbin::encode_complex_binary,
+    encode_prefix::encode_prefix,
+    encode_str::encode_str
 };
 
 impl Instruction {
@@ -37,6 +40,7 @@ impl Instruction {
                 SysOp::Syscall => EncodeInformation { data: vec![0x0F, 0x05], ..Default::default() },
                 SysOp::Sysenter => EncodeInformation { data: vec![0x0F, 0x34], ..Default::default() },
             },
+            Instruction::Nop(val) => unimplemented!(),
         }
     }
 }

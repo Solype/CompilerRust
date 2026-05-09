@@ -1,9 +1,10 @@
-use crate::elf::instructions::MemDisplacement;
-use crate::elf::instructions::Scale;
-
-use super::MemAddress;
-
-use super::enums::*;
+use super::{
+    MemDisplacement,
+    struct_encode_information::*,
+    Scale,
+    MemAddress,
+    enums::*,
+};
 
 ///////////////////////////////////////////////////////////////////
 

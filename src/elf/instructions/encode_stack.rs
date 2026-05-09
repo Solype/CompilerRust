@@ -1,6 +1,9 @@
-use super::modrm::*;
-use super::enums::*;
-use super::encode_alu::emit_size_prefix;
+use super::{
+    modrm::*,
+    enums::*,
+    encode_alu::emit_size_prefix,
+    struct_encode_information::*,
+};
 
 
 fn encode_with_reg(opcode: u8, reg_u8: u8, size: Size) -> EncodeInformation

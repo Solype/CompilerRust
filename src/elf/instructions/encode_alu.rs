@@ -1,5 +1,6 @@
 use super::modrm::*;
 use super::enums::*;
+use super::struct_encode_information::*;
 
 // ======================================================
 // Encoding families
@@ -291,40 +292,36 @@ fn encode_mem_imm(
     let use_imm8 = fits_i8 && opcode_imm8.is_some() && size != Size::U8;
     let opcode = if use_imm8 { opcode_imm8.unwrap() } else { opcode_imm };
 
-    let mut v = Vec::new();
+    let mut enc = EncodeInformation::new();
 
-    emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, None);
+    emit_size_prefix(&mut enc.data, size);
+    emit_rex(&mut enc.data, size, None, None);
 
-    v.push(opcode);
+    enc.push(opcode);
 
     let reg_field = Operand::Reg(Register::try_from(modrm_ext).unwrap());
 
     let modrm_info = mod_rm_encode(dst, &reg_field);
 
-    let base = v.len();
+    let base = enc.len();
 
-    v.extend(modrm_info.data);
+    enc.extend_vec(modrm_info.data);
 
-    let after = v.len();
+    let after = enc.len();
 
     if use_imm8 {
-        v.push(val as i8 as u8);
+        enc.push(val as i8 as u8);
     } else {
-        emit_imm(&mut v, val, size);
+        emit_imm(&mut enc.data, val, size);
     }
 
     let mut relocations = modrm_info.relocations;
 
     for r in &mut relocations {
         r.offset += base;
-        r.addend -= (v.len() - after) as i32;
+        r.addend -= (enc.len() - after) as i32;
     }
-
-    EncodeInformation {
-        data: v,
-        relocations,
-    }
+    enc
 }
 
 fn encode_reg_mem(
@@ -376,14 +373,10 @@ fn encode_reg_mem(
 
     v.extend(modrm.data);
 
-    let relocations = modrm
-        .relocations
-        .into_iter()
-        .map(|mut r| {
+    let relocations = modrm.relocations.into_iter().map(|mut r| {
             r.offset += base;
             r
-        })
-        .collect();
+        }).collect();
 
     EncodeInformation {
         data: v,

@@ -2,6 +2,7 @@ use super::{
     modrm::*,
     enums::*,
     encode_alu::emit_size_prefix,
+    struct_encode_information::*,
 };
 
 pub(super) fn encode_bit(

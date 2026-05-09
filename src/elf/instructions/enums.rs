@@ -324,6 +324,8 @@ pub enum Instruction {
         ins: Box<Instruction>
     },
 
+    Nop(u8),
+
     LocalSym(String),
 }
 
@@ -348,11 +350,3 @@ pub const MEMNODISP : u8 = 0b00;
 pub const MEMDISP8 : u8 = 0b01;
 pub const MEMDISP32 : u8 = 0b10;
 pub const REG : u8 = 0b11;
-
-
-#[derive(Default)]
-#[allow(dead_code)]
-pub struct EncodeInformation {
-    pub data: Vec<u8>,
-    pub relocations: Vec<Relocation>,
-}

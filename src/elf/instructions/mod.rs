@@ -4,7 +4,9 @@ pub mod modrm;
 pub mod mem_address;
 pub use mem_address::*;
 pub use enums::*;
+pub use struct_encode_information::*;
 
+mod struct_encode_information;
 mod encode_ctrl;
 mod encode_alu;
 mod encode_unary;

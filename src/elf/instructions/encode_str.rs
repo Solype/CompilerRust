@@ -1,4 +1,7 @@
-use super::enums::*;
+use super::{
+    enums::*,
+    struct_encode_information::*,
+};
 
 pub(super) fn encode_str(op: &StringOp, size: Size) -> EncodeInformation {
     let mut v = Vec::new();

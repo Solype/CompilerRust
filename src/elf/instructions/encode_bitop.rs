@@ -88,14 +88,9 @@ pub(super) fn encode_bit(
 
             v.push(*bit as u8);
 
-            let relocations = modrm
-                .relocations
-                .into_iter()
-                .map(|mut r| {
-                    r.offset += base;
-                    r
-                })
-                .collect();
+            let relocations = modrm.relocations.into_iter().map(|mut r| {
+                    r.offset += base; r
+                }).collect();
 
             EncodeInformation {
                 data: v,

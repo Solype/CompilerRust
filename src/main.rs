@@ -148,17 +148,21 @@ fn main() -> std::io::Result<()> {
     // _start : FULL BINOP TEST SUITE
     // =========================================================
     let start_instr: Vec<Instruction> = vec![
-        Instruction::Stack {
-            op: StackOp::Enter(0),
-            value: Operand::Imm(32),
-            size: None,
+        Instruction::Stack { op: StackOp::Enter(0), value: Operand::Imm(32), size: None, },
+        Instruction::Stack { op: StackOp::Leave, value: Operand::NoOperand, size: None, },
+
+        Instruction::Prefix {
+            prefix: vec![Prefix::Cs, Prefix::Ds, Prefix::Es, Prefix::Ss, Prefix::Gs, Prefix::Fs,],
+            ins: Box::new(
+                Instruction::Binary {
+                    op: BinOp::Mov,
+                    dst: Operand::Reg(Register::A),
+                    src: Operand::MemoryAddress(MemAddress::new().disp(0x28)),
+                    size: Some(Size::U64),
+                }
+            ),
         },
 
-        Instruction::Stack {
-            op: StackOp::Leave,
-            value: Operand::NoOperand,
-            size: None,
-        },
         // ========================================================
         // XCHG TEST
         // ========================================================

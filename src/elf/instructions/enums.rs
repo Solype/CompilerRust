@@ -222,12 +222,19 @@ pub enum StringOp {
     Stos,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Prefix {
     Lock,
     Rep,
     Repe,
     Repne,
+
+    Cs,
+    Ds,
+    Es,
+    Ss,
+    Fs,
+    Gs,
 }
 
 #[derive(Debug)]

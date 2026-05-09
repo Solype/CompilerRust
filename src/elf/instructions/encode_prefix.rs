@@ -1,5 +1,46 @@
 use super::enums::*;
 
+fn is_segment_override_compatible(ins: &Instruction) -> bool {
+    match ins {
+
+        // ==========================================
+        // Any instruction touching memory
+        // ==========================================
+        Instruction::Binary { dst, src, .. } => {
+            matches!(dst, Operand::MemoryAddress(_))
+                || matches!(src, Operand::MemoryAddress(_))
+        }
+
+        Instruction::ComplexBinary { dst, src, .. } => {
+            matches!(dst, Operand::MemoryAddress(_))
+                || matches!(src, Operand::MemoryAddress(_))
+        }
+
+        Instruction::Unary { dst, .. } => {
+            matches!(dst, Operand::MemoryAddress(_))
+        }
+
+        Instruction::Bit { dst, src, .. } => {
+            matches!(dst, Operand::MemoryAddress(_))
+                || matches!(src, Operand::MemoryAddress(_))
+        }
+
+        Instruction::CMovCC { src, .. } => {
+            matches!(src, Operand::MemoryAddress(_))
+        }
+
+        Instruction::Lea { src, .. } => {
+            matches!(src, Operand::MemoryAddress(_))
+        }
+
+        Instruction::Shift { dst, .. } => {
+            matches!(dst, Operand::MemoryAddress(_))
+        }
+
+        _ => false,
+    }
+}
+
 fn is_lock_compatible(ins: &Instruction) -> bool {
     match ins {
 
@@ -24,17 +65,8 @@ fn is_lock_compatible(ins: &Instruction) -> bool {
         // lock add [mem], eax
         // ==========================================
         Instruction::Binary { op, dst, .. } => {
-            matches!(
-                op,
-                BinOp::Add
-                    | BinOp::Sub
-                    | BinOp::Adc
-                    | BinOp::Sbb
-                    | BinOp::And
-                    | BinOp::Or
-                    | BinOp::Xor
-                    | BinOp::Xchg
-            ) && matches!(dst, Operand::MemoryAddress(_))
+            matches!(op, BinOp::Add | BinOp::Sub | BinOp::Adc | BinOp::Sbb | BinOp::And | BinOp::Or | BinOp::Xor | BinOp::Xchg )
+            && matches!(dst, Operand::MemoryAddress(_))
         }
 
         _ => false,
@@ -43,37 +75,18 @@ fn is_lock_compatible(ins: &Instruction) -> bool {
 
 fn is_rep_compatible(ins: &Instruction) -> bool {
     match ins {
-
-        // ==========================================
-        // REP-compatible string instructions
-        // ==========================================
         Instruction::String { op, .. } => {
-            matches!(
-                op,
-                StringOp::Movs
-                    | StringOp::Stos
-                    | StringOp::Lods
-            )
+            matches!( op, StringOp::Movs | StringOp::Stos | StringOp::Lods )
         }
-
         _ => false,
     }
 }
 
 fn is_repe_compatible(ins: &Instruction) -> bool {
     match ins {
-
-        // ==========================================
-        // REPE/REPNE-compatible instructions
-        // ==========================================
         Instruction::String { op, .. } => {
-            matches!(
-                op,
-                StringOp::Cmps
-                    | StringOp::Scas
-            )
+            matches!( op, StringOp::Cmps | StringOp::Scas )
         }
-
         _ => false,
     }
 }
@@ -120,53 +133,31 @@ pub(super) fn encode_prefix(
     for p in prefixes {
 
         match p {
+            Prefix::Cs | Prefix::Ds | Prefix::Es | Prefix::Ss | Prefix::Fs | Prefix::Gs => {
+                if !is_segment_override_compatible(ins) {
+                    panic!("Segment override prefix not valid for instruction: {:?}", ins );
+                }
+            }
 
-            // --------------------------------------
-            // LOCK
-            // --------------------------------------
             Prefix::Lock => {
                 if !is_lock_compatible(ins) {
                     panic!("LOCK prefix not valid for instruction: {:?}", ins);
                 }
             }
-
-            // --------------------------------------
-            // REP
-            // --------------------------------------
             Prefix::Rep => {
                 if !is_rep_compatible(ins) {
                     panic!("REP prefix not valid for instruction: {:?}", ins);
                 }
             }
-
-            // --------------------------------------
-            // REPE / REPZ
-            // --------------------------------------
-            Prefix::Repe => {
+            Prefix::Repe | Prefix::Repne => {
                 if !is_repe_compatible(ins) {
-                    panic!("REPE prefix not valid for instruction: {:?}", ins);
-                }
-            }
-
-            // --------------------------------------
-            // REPNE / REPNZ
-            // --------------------------------------
-            Prefix::Repne => {
-                if !is_repe_compatible(ins) {
-                    panic!("REPNE prefix not valid for instruction: {:?}", ins);
+                    panic!("{:?} prefix not valid for instruction: {:?}", p, ins);
                 }
             }
         }
     }
 
-    // ==========================================
-    // Encode underlying instruction
-    // ==========================================
     let mut enc = ins.encode(default_size);
-
-    // ==========================================
-    // Emit prefixes
-    // ==========================================
     let mut prefix_bytes = Vec::with_capacity(prefixes.len());
 
     for p in prefixes {
@@ -176,14 +167,16 @@ pub(super) fn encode_prefix(
             Prefix::Rep   => 0xF3,
             Prefix::Repe  => 0xF3,
             Prefix::Repne => 0xF2,
+            Prefix::Es => 0x26,
+            Prefix::Cs => 0x2E,
+            Prefix::Ss => 0x36,
+            Prefix::Ds => 0x3E,
+            Prefix::Fs => 0x64,
+            Prefix::Gs => 0x65,
         };
 
         prefix_bytes.push(byte);
     }
-
-    // ==========================================
-    // Final encoding
-    // ==========================================
     let prefix_len = prefix_bytes.len();
     let mut data =
         Vec::with_capacity(prefix_len + enc.data.len());

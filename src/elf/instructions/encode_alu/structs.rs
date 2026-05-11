@@ -150,77 +150,58 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         // --------------------------------------------------
         // SSE scalar double
         // --------------------------------------------------
-        BinOp::Movsd => BinaryEncoding::Sse {
-            prefix: 0xF2,
-            opcode: 0x10,
+        BinOp::MovF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x10, },
+                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x10, },
+            }
         },
 
-        BinOp::Addsd => BinaryEncoding::Sse {
-            prefix: 0xF2,
-            opcode: 0x58,
-        },
+        BinOp::AddF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x58, },
+                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x58, }
+            }
+        }
 
-        BinOp::Subsd => BinaryEncoding::Sse {
-            prefix: 0xF2,
-            opcode: 0x5C,
-        },
+        BinOp::SubF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x5C, },
+                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x5C, }
+            }
+        }
 
-        BinOp::Mulsd => BinaryEncoding::Sse {
-            prefix: 0xF2,
-            opcode: 0x59,
-        },
+        BinOp::MulF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x59, },
+                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x59, }
+            }
+        }
 
-        BinOp::Divsd => BinaryEncoding::Sse {
-            prefix: 0xF2,
-            opcode: 0x5E,
-        },
+        BinOp::DivF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x5E, },
+                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x5E, },
+            }
+        }
 
-        BinOp::Comisd => BinaryEncoding::Sse {
-            prefix: 0x66,
-            opcode: 0x2F,
-        },
+        BinOp::ComiF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0x66, opcode: 0x2F, },
+                _ => BinaryEncoding::Sse { prefix: 0x00, opcode: 0x2F, }
+            }
+        }
 
-        BinOp::Ucomisd => BinaryEncoding::Sse {
-            prefix: 0x66,
-            opcode: 0x2E,
-        },
+        BinOp::UcomiF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0x66, opcode: 0x2E, },
+                _ => BinaryEncoding::Sse { prefix: 0x00, opcode: 0x2E, }
+            }
+        }
 
         // --------------------------------------------------
         // SSE scalar single
         // --------------------------------------------------
-        BinOp::Movss => BinaryEncoding::Sse {
-            prefix: 0xF3,
-            opcode: 0x10,
-        },
 
-        BinOp::Addss => BinaryEncoding::Sse {
-            prefix: 0xF3,
-            opcode: 0x58,
-        },
-
-        BinOp::Subss => BinaryEncoding::Sse {
-            prefix: 0xF3,
-            opcode: 0x5C,
-        },
-
-        BinOp::Mulss => BinaryEncoding::Sse {
-            prefix: 0xF3,
-            opcode: 0x59,
-        },
-
-        BinOp::Divss => BinaryEncoding::Sse {
-            prefix: 0xF3,
-            opcode: 0x5E,
-        },
-
-        BinOp::Comiss => BinaryEncoding::Sse {
-            prefix: 0x00,
-            opcode: 0x2F,
-        },
-
-        BinOp::Ucomiss => BinaryEncoding::Sse {
-            prefix: 0x00,
-            opcode: 0x2E,
-        },
     }
 }

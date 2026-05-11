@@ -91,26 +91,13 @@ pub enum BinOp {
     Test,
 
     // SSE scalar float
-    Movss,
-    Movsd,
-
-    Addss,
-    Addsd,
-
-    Subss,
-    Subsd,
-
-    Mulss,
-    Mulsd,
-
-    Divss,
-    Divsd,
-
-    Comiss,
-    Comisd,
-
-    Ucomiss,
-    Ucomisd,
+    MovF,
+    AddF,
+    SubF,
+    MulF,
+    DivF,
+    ComiF,
+    UcomiF,
 }
 
 #[derive(Debug)]

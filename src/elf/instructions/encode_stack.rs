@@ -97,14 +97,14 @@ pub(super) fn encode_stack(
             let mut v = Vec::new();
 
             let frame_size = match value {
-                Operand::Imm(v) => *v,
+                Operand::Imm(Immediate::Integer(v)) => *v,
 
                 _ => {
                     panic!("ENTER requires immediate frame size")
                 }
             };
 
-            if !(frame_size <= 0xFFFF) {
+            if !(0x0 <= frame_size && frame_size <= 0xFFFF) {
                 panic!("ENTER frame size must fit in imm16");
             }
 
@@ -154,7 +154,7 @@ pub(super) fn encode_stack(
             // push imm
             // -------------------------------------------------
 
-            Operand::Imm(val) => {
+            Operand::Imm(Immediate::Integer(val)) => {
 
                 let mut v = EncodeInformation::new();
 

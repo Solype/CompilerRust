@@ -15,13 +15,8 @@ enum BinaryEncoding {
     Alu {
         opcode_rm_r: u8,
         opcode_r_rm: u8,
-
-        // imm full size
         opcode_imm: u8,
-
-        // imm8 sign-extended
         opcode_imm8: Option<u8>,
-
         modrm_ext: u8,
     },
 
@@ -80,20 +75,16 @@ impl BinOp {
             BinOp::Add => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x00 } else { 0x01 },
                 opcode_r_rm: if size == Size::U8 { 0x02 } else { 0x03 },
-
                 opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
                 opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
-
                 modrm_ext: 0,
             },
 
             BinOp::Adc => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x10 } else { 0x11 },
                 opcode_r_rm: if size == Size::U8 { 0x12 } else { 0x13 },
-
                 opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
                 opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
-
                 modrm_ext: 2,
             },
 
@@ -110,60 +101,48 @@ impl BinOp {
             BinOp::Or => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x08 } else { 0x09 },
                 opcode_r_rm: if size == Size::U8 { 0x0A } else { 0x0B },
-
                 opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
                 opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
-
                 modrm_ext: 1,
             },
 
             BinOp::And => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x20 } else { 0x21 },
                 opcode_r_rm: if size == Size::U8 { 0x22 } else { 0x23 },
-
                 opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
                 opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
-
                 modrm_ext: 4,
             },
 
             BinOp::Sub => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x28 } else { 0x29 },
                 opcode_r_rm: if size == Size::U8 { 0x2A } else { 0x2B },
-
                 opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
                 opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
-
                 modrm_ext: 5,
             },
 
             BinOp::Xor => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x30 } else { 0x31 },
                 opcode_r_rm: if size == Size::U8 { 0x32 } else { 0x33 },
-
                 opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
                 opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
-
                 modrm_ext: 6,
             },
 
             BinOp::Cmp => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x38 } else { 0x39 },
                 opcode_r_rm: if size == Size::U8 { 0x3A } else { 0x3B },
-
                 opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
                 opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
-
                 modrm_ext: 7,
             },
 
             BinOp::Test => BinaryEncoding::Alu {
                 opcode_rm_r: if size == Size::U8 { 0x84 } else { 0x85 },
                 opcode_r_rm: if size == Size::U8 { 0x84 } else { 0x85 },
-
                 opcode_imm:  if size == Size::U8 { 0xF6 } else { 0xF7 },
                 opcode_imm8: None,
-
                 modrm_ext: 0,
             },
         }
@@ -172,7 +151,7 @@ impl BinOp {
 
 fn encode_reg_imm(
     reg: Register,
-    val: usize,
+    val: i64,
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
@@ -318,7 +297,7 @@ fn encode_reg_sym(
 
 fn encode_mem_imm(
     dst: &Operand,
-    val: usize,
+    val: i64,
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
@@ -452,9 +431,9 @@ pub(super) fn encode_binary(
 
     match (dst, src) {
 
-        (Operand::Reg(reg), Operand::Imm(val)) => encode_reg_imm(*reg, *val, size, &enc),
+        (Operand::Reg(reg), Operand::Imm(Immediate::Integer(val))) => encode_reg_imm(*reg, *val, size, &enc),
         (Operand::Reg(reg), Operand::Sym(sym)) => encode_reg_sym(*reg, sym, size, &enc),
-        (Operand::MemoryAddress(_), Operand::Imm(val)) => encode_mem_imm(dst, *val, size, &enc),
+        (Operand::MemoryAddress(_), Operand::Imm(Immediate::Integer(val))) => encode_mem_imm(dst, *val, size, &enc),
 
         (
             Operand::Reg(_) | Operand::MemoryAddress(_),

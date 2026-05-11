@@ -55,6 +55,16 @@ impl Register {
     pub fn rex_bit(self) -> u8 {
         (self.index >> 3) & 1
     }
+
+    #[inline]
+    pub fn is_gpr(self) -> bool {
+        matches!(self.class, RegisterClass::Gpr)
+    }
+
+    #[inline]
+    pub fn is_xmm(self) -> bool {
+        matches!(self.class, RegisterClass::Xmm)
+    }
 }
 
 impl From<Gpr> for Register {

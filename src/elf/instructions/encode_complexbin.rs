@@ -164,11 +164,11 @@ fn encode_imul_three_operands(
     };
 
     let imm = match extra {
-        Some(Operand::Imm(v)) => *v,
+        Some(Operand::Imm(super::Immediate::Integer(v))) => *v,
         _ => panic!("imul extra must be immediate"),
     };
 
-    let fits_i8 = (imm as i32) >= -128 && (imm as i32) <= 127;
+    let fits_i8 = (imm) >= -128 && (imm) <= 127;
 
     let opcode = if fits_i8 { 0x6B } else { 0x69 };
 

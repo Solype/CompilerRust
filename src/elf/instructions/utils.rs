@@ -26,7 +26,7 @@ pub(super) fn emit_size_prefix(v: &mut EncodeInformation, size: Size) {
     }
 }
 
-pub(super) fn emit_imm(val: usize, size: Size) -> Vec<u8> {
+pub(super) fn emit_imm(val: i64, size: Size) -> Vec<u8> {
     match size {
         Size::U8 => vec![val as u8],
         Size::U16 => (val as u16).to_le_bytes().to_vec(),

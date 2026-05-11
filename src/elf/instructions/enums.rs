@@ -23,14 +23,19 @@ impl From<usize> for Size {
     }
 }
 
-
+#[derive(Debug, Clone)]
+pub enum Immediate
+{
+    Integer(i64),
+    Float(f64),
+}
 
 
 #[derive(Debug, Clone)]
 pub enum Operand {
     NoOperand,
     Reg(Register),
-    Imm(usize),
+    Imm(Immediate),
     Sym(String),
     MemoryAddress(MemAddress),
 }

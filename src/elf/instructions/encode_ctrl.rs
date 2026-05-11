@@ -82,17 +82,13 @@ fn encode_rel32_with_prefix(
             }
         }
 
-        Operand::Imm(val) => {
-            let mut v = Vec::new();
+        Operand::Imm(Immediate::Integer(val)) => {
+            let mut v: Vec<u8> = Vec::new();
 
-            if let Some(p) = prefix {
-                v.push(p);
-            }
+            if let Some(p) = prefix { v.push(p); }
 
             v.push(opcode);
-
-            let rel = *val as i32; // attention : doit être validé ailleurs
-            v.extend(&rel.to_le_bytes());
+            v.extend((*val as i32).to_le_bytes());
 
             EncodeInformation {
                 data: v,
@@ -129,7 +125,7 @@ fn encode_rel8(
             }
         }
 
-        Operand::Imm(val) => {
+        Operand::Imm(Immediate::Integer(val)) => {
             let mut v = Vec::with_capacity(2);
 
             v.push(opcode);

@@ -1,8 +1,10 @@
+
 use super::{
     modrm::*,
     enums::*,
     utils::{emit_size_prefix, emit_rex},
     struct_encode_information::*,
+    register::*,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -99,20 +101,22 @@ pub(super) fn encode_unary(
         // ModRM unary ops (inc/dec/not/neg)
         // ==================================================
         UnaryEncoding::ModRm { opcode, modrm_ext } => {
-            let rm_u8 = match dst {
-                Operand::Reg(r) => *r as u8,
-                _ => 0,
+            let rm = match dst {
+                Operand::Reg(r) => Some(*r),
+                _ => None,
             };
 
             let mut v = EncodeInformation::new();
 
             emit_size_prefix(&mut v, size);
-            emit_rex(&mut v, size, None, Some(rm_u8));
+            emit_rex(&mut v, size, None, rm);
 
             v.push(opcode);
 
-            let reg_field =
-                Operand::Reg(Register::try_from(modrm_ext).unwrap());
+            let reg_field = Operand::Reg(Register {
+                class: RegisterClass::Gpr,
+                index: modrm_ext,
+            });
 
             let modrm = mod_rm_encode(dst, &reg_field);
 

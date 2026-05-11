@@ -3,7 +3,7 @@ use super::{
     ComplexBinOp,
     EncodeInformation,
     Operand,
-    Register,
+    register::*,
     Size,
     utils::{emit_size_prefix, emit_rex, emit_imm},
     encode_xadd_cmp::encode_xadd_cmpxchg,
@@ -103,19 +103,18 @@ fn encode_group_f6_f7(
     };
 
     let rm = match src {
-        Operand::Reg(r) => *r as u8,
-        _ => 0,
+        Operand::Reg(r) => Some(*r),
+        _ => None,
     };
 
-    emit_rex(&mut v, size, None, Some(rm));
+    emit_rex(&mut v, size, None, rm);
 
     v.push(opcode);
 
     let modrm = mod_rm_encode(
         src,
-        &Operand::Reg(Register::try_from(reg_field).unwrap()),
+        &Operand::Reg(Register { class: RegisterClass::Gpr, index: reg_field, }),
     );
-
     v.append(modrm);
     return v
 }
@@ -135,11 +134,11 @@ fn encode_imul_two_operands(
     emit_size_prefix(&mut v, size);
 
     let rm = match src {
-        Operand::Reg(r) => *r as u8,
-        _ => 0,
+        Operand::Reg(r) => Some(*r),
+        _ => None,
     };
 
-    emit_rex(&mut v, size, Some(dst_reg as u8), Some(rm));
+    emit_rex(&mut v, size, None, rm);
 
     v.push(0x0F);
     v.push(0xAF);
@@ -178,11 +177,11 @@ fn encode_imul_three_operands(
     emit_size_prefix(&mut v, size);
 
     let rm = match src {
-        Operand::Reg(r) => *r as u8,
-        _ => 0,
+        Operand::Reg(r) => Some(*r),
+        _ => None,
     };
 
-    emit_rex(&mut v, size, Some(dst_reg as u8), Some(rm));
+    emit_rex(&mut v, size, None, rm);
 
     v.push(opcode);
 

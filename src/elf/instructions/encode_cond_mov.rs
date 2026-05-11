@@ -2,7 +2,7 @@ use crate::elf::instructions::{
     ConditionCode,
     EncodeInformation,
     Operand,
-    Register,
+    register::*,
     Size,
     utils::{emit_size_prefix, emit_rex},
     modrm::{mod_rm_encode}
@@ -39,16 +39,16 @@ pub(super) fn encode_cmovcc(
     src: &Operand,
     size: Size,
 ) -> EncodeInformation {
-    let dst_reg = (*dst) as u8;
 
-    let rm_u8 = match src {
-        Operand::Reg(r) => *r as u8,
-        _ => 0,
+    let rm = match src {
+        Operand::Reg(r) => Some(*r),
+        _ => None,
     };
+
 
     let mut v = EncodeInformation::new();
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, Some(dst_reg), Some(rm_u8));
+    emit_rex(&mut v, size, Some(*dst), rm);
     v.push(0x0F);
     v.push(get_opcode(*cc));
 

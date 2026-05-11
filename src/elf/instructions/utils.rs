@@ -1,6 +1,6 @@
-use super::{EncodeInformation, Size};
+use super::{EncodeInformation, Size, register::Register};
 
-pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<u8>, rm: Option<u8>) {
+pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<Register>, rm: Option<Register>) {
     let mut rex = 0x40;
 
     if let Size::U64 = size {
@@ -8,15 +8,11 @@ pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<u8>, r
     }
 
     if let Some(r) = reg {
-        if r >= 8 {
-            rex |= 1 << 2; // R
-        }
+        rex |= r.rex_bit() << 2; // R
     }
 
     if let Some(b) = rm {
-        if b >= 8 {
-            rex |= 1; // B
-        }
+        rex |= b.rex_bit(); // B
     }
 
     if rex != 0x40 {

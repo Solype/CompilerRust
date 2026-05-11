@@ -3,50 +3,63 @@ use super::{
     enums::*,
     struct_encode_information::*,
     utils::emit_rex,
+    register::{Register, RegisterClass, Gpr},
 };
 
 pub(super) fn encode_setcc(
     cc: ConditionCode,
     dest: &Operand,
 ) -> EncodeInformation {
+
     let opcode = match cc {
         ConditionCode::O   => 0x90,
         ConditionCode::NO  => 0x91,
-        ConditionCode::B   => 0x92, // CF=1   (setc/setnae/setb)
-        ConditionCode::AE  => 0x93, // CF=0   (setnc/setae/setnb)
-        ConditionCode::E   => 0x94, // ZF=1
-        ConditionCode::NE  => 0x95, // ZF=0
-        ConditionCode::BE  => 0x96, // CF=1 || ZF=1
-        ConditionCode::A   => 0x97, // CF=0 && ZF=0
-        ConditionCode::S   => 0x98, // SF=1
-        ConditionCode::NS  => 0x99, // SF=0
-        ConditionCode::P   => 0x9A, // PF=1
-        ConditionCode::NP  => 0x9B, // PF=0
-        ConditionCode::L   => 0x9C, // SF!=OF
-        ConditionCode::GE  => 0x9D, // SF==OF
-        ConditionCode::LE  => 0x9E, // ZF=1 || SF!=OF
-        ConditionCode::G   => 0x9F, // ZF=0 && SF==OF
+        ConditionCode::B   => 0x92,
+        ConditionCode::AE  => 0x93,
+        ConditionCode::E   => 0x94,
+        ConditionCode::NE  => 0x95,
+        ConditionCode::BE  => 0x96,
+        ConditionCode::A   => 0x97,
+        ConditionCode::S   => 0x98,
+        ConditionCode::NS  => 0x99,
+        ConditionCode::P   => 0x9A,
+        ConditionCode::NP  => 0x9B,
+        ConditionCode::L   => 0x9C,
+        ConditionCode::GE  => 0x9D,
+        ConditionCode::LE  => 0x9E,
+        ConditionCode::G   => 0x9F,
     };
 
-    let rm_u8 = match dest {
-        Operand::Reg(r) => *r as u8,
-        Operand::MemoryAddress(_) => 0,
-        _ => unimplemented!("SETcc destination must be reg or memory"),
+    let rm = match dest {
+        Operand::Reg(r) => Some(*r),
+
+        Operand::MemoryAddress(_) => None,
+
+        _ => {
+            unimplemented!(
+                "SETcc destination must be reg or memory"
+            )
+        }
     };
 
     let mut v = EncodeInformation::new();
 
-    // SETcc writes 8-bit destination
-    emit_rex(&mut v, Size::U8, None, Some(rm_u8));
+    // SETcc always writes 8-bit
+    emit_rex(&mut v, Size::U8, None, rm);
 
     v.push(0x0F);
     v.push(opcode);
 
-    // reg field ignored for SETcc, use /0 convention
-    let reg_field = Operand::Reg(Register::A);
+    // /0 extension
+    let reg_field = Operand::Reg(Register {
+        class: RegisterClass::Gpr,
+        index: Gpr::A as u8,
+    });
 
-    let modrm = mod_rm_encode(dest, &reg_field);
+    let modrm =
+        mod_rm_encode(dest, &reg_field);
 
     v.append(modrm);
+
     v
 }

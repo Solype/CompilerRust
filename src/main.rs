@@ -1,11 +1,14 @@
 use crate::elf::elfsym::make_st_info;
 mod elf;
+use elf::instructions::register as Register;
+
+
 fn main() -> std::io::Result<()> {
     use std::fs::File;
     use elf::instructions::*;
     let mut file = File::create("output.elf")?;
     let _my_data = Operand::MemoryAddress(MemAddress::new().sym("my_data"));
-    let mem = Operand::MemoryAddress(MemAddress::new().base(Register::B));
+    let mem = Operand::MemoryAddress(MemAddress::new().base(Register::RBX));
     // =========================================================
     // FUNCTION: my_func
     // =========================================================
@@ -19,38 +22,38 @@ fn main() -> std::io::Result<()> {
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::L), target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::GE), target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::LE), target: Operand::Sym("my_func".to_string()) },
-        Instruction::CMovCC { cc: ConditionCode::E,  dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::NE, dst: Register::C, src: Operand::Reg(Register::D), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::G,  dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), size: Some(Size::U32)},
-        Instruction::CMovCC { cc: ConditionCode::L,  dst: Register::B, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(4)), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::GE, dst: Register::D, src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::LE, dst: Register::C, src: Operand::Reg(Register::B), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::E,  dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::NE, dst: Register::RCX, src: Operand::Reg(Register::RDX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::G,  dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), size: Some(Size::U32)},
+        Instruction::CMovCC { cc: ConditionCode::L,  dst: Register::RBX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(4)), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::GE, dst: Register::RDX, src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::LE, dst: Register::RCX, src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
         // =====================================================
         // BIT OPS : reg + imm
         // =====================================================
-        Instruction::Bit { op: BitOp::Bt,  dst: Operand::Reg(Register::A), src: Operand::Imm(3), size: Some(Size::U32) },
-        Instruction::Bit { op: BitOp::Bts, dst: Operand::Reg(Register::B), src: Operand::Imm(5), size: Some(Size::U32) },
-        Instruction::Bit { op: BitOp::Btr, dst: Operand::Reg(Register::C), src: Operand::Imm(7), size: Some(Size::U32) },
-        Instruction::Bit { op: BitOp::Btc, dst: Operand::Reg(Register::D), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Bt,  dst: Operand::Reg(Register::RAX), src: Operand::Imm(3), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Bts, dst: Operand::Reg(Register::RBX), src: Operand::Imm(5), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Btr, dst: Operand::Reg(Register::RCX), src: Operand::Imm(7), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Btc, dst: Operand::Reg(Register::RDX), src: Operand::Imm(1), size: Some(Size::U32) },
         // =====================================================
         // BIT OPS : reg + reg
         // =====================================================
-        Instruction::Bit { op: BitOp::Bt,  dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::Bit { op: BitOp::Bts, dst: Operand::Reg(Register::C), src: Operand::Reg(Register::D), size: Some(Size::U32) },
-        Instruction::Bit { op: BitOp::Btr, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::Bit { op: BitOp::Btc, dst: Operand::Reg(Register::D), src: Operand::Reg(Register::C), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Bt,  dst: Operand::Reg(Register::RAX), src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Bts, dst: Operand::Reg(Register::RCX), src: Operand::Reg(Register::RDX), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Btr, dst: Operand::Reg(Register::RBX), src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::Bit { op: BitOp::Btc, dst: Operand::Reg(Register::RDX), src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
         // =====================================================
         // BIT OPS : mem + imm
         // =====================================================
         Instruction::Bit {
             op: BitOp::Bt,
-            dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(8)),
+            dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(8)),
             src: Operand::Imm(2),
             size: Some(Size::U32),
         },
         Instruction::Bit {
             op: BitOp::Bts,
-            dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(12)),
+            dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(12)),
             src: Operand::Imm(4),
             size: Some(Size::U32),
         },
@@ -59,89 +62,89 @@ fn main() -> std::io::Result<()> {
         // =====================================================
         Instruction::Bit {
             op: BitOp::Btr,
-            dst: Operand::MemoryAddress(MemAddress::new().base(Register::C).disp(16)),
-            src: Operand::Reg(Register::A),
+            dst: Operand::MemoryAddress(MemAddress::new().base(Register::RCX).disp(16)),
+            src: Operand::Reg(Register::RAX),
             size: Some(Size::U32),
         },
         Instruction::Bit {
             op: BitOp::Btc,
-            dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(20)),
-            src: Operand::Reg(Register::B),
+            dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(20)),
+            src: Operand::Reg(Register::RBX),
             size: Some(Size::U32),
         },
         // Instruction::LocalSym("test_local2".to_string()),
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];
     let unary_instr: Vec<Instruction> = vec![
-        Instruction::Unary { op: UnaryOp::Inc, dst: Operand::Reg(Register::A), size: Some(Size::U8) },
-        Instruction::Unary { op: UnaryOp::Inc, dst: Operand::Reg(Register::B), size: Some(Size::U16) },
-        Instruction::Unary { op: UnaryOp::Inc, dst: Operand::Reg(Register::C), size: Some(Size::U32) },
-        Instruction::Unary { op: UnaryOp::Inc, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B)), size: Some(Size::U32) },
-        Instruction::Unary { op: UnaryOp::Dec, dst: Operand::Reg(Register::D), size: Some(Size::U8) },
-        Instruction::Unary { op: UnaryOp::Dec, dst: Operand::Reg(Register::A), size: Some(Size::U16) },
-        Instruction::Unary { op: UnaryOp::Dec, dst: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::Unary { op: UnaryOp::Dec, dst: Operand::MemoryAddress(MemAddress::new().base(Register::C).disp(4)), size: Some(Size::U32) },
-        Instruction::Unary { op: UnaryOp::Neg, dst: Operand::Reg(Register::C), size: Some(Size::U8) },
-        Instruction::Unary { op: UnaryOp::Neg, dst: Operand::Reg(Register::D), size: Some(Size::U16) },
-        Instruction::Unary { op: UnaryOp::Neg, dst: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::Unary { op: UnaryOp::Neg, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(8)), size: Some(Size::U32) },
-        Instruction::Unary { op: UnaryOp::Not, dst: Operand::Reg(Register::B), size: Some(Size::U8) },
-        Instruction::Unary { op: UnaryOp::Not, dst: Operand::Reg(Register::C), size: Some(Size::U16) },
-        Instruction::Unary { op: UnaryOp::Not, dst: Operand::Reg(Register::D), size: Some(Size::U32) },
-        Instruction::Unary { op: UnaryOp::Not, dst: Operand::MemoryAddress(MemAddress::new().base(Register::A).disp(12)), size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Inc, dst: Operand::Reg(Register::RAX), size: Some(Size::U8) },
+        Instruction::Unary { op: UnaryOp::Inc, dst: Operand::Reg(Register::RBX), size: Some(Size::U16) },
+        Instruction::Unary { op: UnaryOp::Inc, dst: Operand::Reg(Register::RCX), size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Inc, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Dec, dst: Operand::Reg(Register::RDX), size: Some(Size::U8) },
+        Instruction::Unary { op: UnaryOp::Dec, dst: Operand::Reg(Register::RAX), size: Some(Size::U16) },
+        Instruction::Unary { op: UnaryOp::Dec, dst: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Dec, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RCX).disp(4)), size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Neg, dst: Operand::Reg(Register::RCX), size: Some(Size::U8) },
+        Instruction::Unary { op: UnaryOp::Neg, dst: Operand::Reg(Register::RDX), size: Some(Size::U16) },
+        Instruction::Unary { op: UnaryOp::Neg, dst: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Neg, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(8)), size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Not, dst: Operand::Reg(Register::RBX), size: Some(Size::U8) },
+        Instruction::Unary { op: UnaryOp::Not, dst: Operand::Reg(Register::RCX), size: Some(Size::U16) },
+        Instruction::Unary { op: UnaryOp::Not, dst: Operand::Reg(Register::RDX), size: Some(Size::U32) },
+        Instruction::Unary { op: UnaryOp::Not, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RAX).disp(12)), size: Some(Size::U32) },
         // =====================================================
         // PUSH reg
         // =====================================================
-        Instruction::Stack { op: StackOp::Push, value: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::Stack { op: StackOp::Push, value: Operand::Reg(Register::B), size: Some(Size::U32) },
+        Instruction::Stack { op: StackOp::Push, value: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::Stack { op: StackOp::Push, value: Operand::Reg(Register::RBX), size: Some(Size::U32) },
         // PUSH imm
         Instruction::Stack { op: StackOp::Push, value: Operand::Imm(5), size: Some(Size::U32) },
         Instruction::Stack { op: StackOp::Push, value: Operand::Imm(0x12345678), size: Some(Size::U32) },
         // PUSH symbol
         // Instruction::Stack { op: StackOp::Push, value: Operand::Sym("my_data".to_string()), size: Some(Size::U32) },
         // PUSH memory
-        Instruction::Stack { op: StackOp::Push, value: Operand::MemoryAddress(MemAddress::new().base(Register::C).disp(16)), size: Some(Size::U32), },
+        Instruction::Stack { op: StackOp::Push, value: Operand::MemoryAddress(MemAddress::new().base(Register::RCX).disp(16)), size: Some(Size::U32), },
         // =====================================================
         // POP reg
         // =====================================================
-        Instruction::Stack { op: StackOp::Pop, value: Operand::Reg(Register::C), size: Some(Size::U32) },
-        Instruction::Stack { op: StackOp::Pop, value: Operand::Reg(Register::D), size: Some(Size::U32) },
+        Instruction::Stack { op: StackOp::Pop, value: Operand::Reg(Register::RCX), size: Some(Size::U32) },
+        Instruction::Stack { op: StackOp::Pop, value: Operand::Reg(Register::RDX), size: Some(Size::U32) },
         // POP memory
         Instruction::Stack {
             op: StackOp::Pop,
-            value: Operand::MemoryAddress(MemAddress::new().base(Register::A).disp(20)),
+            value: Operand::MemoryAddress(MemAddress::new().base(Register::RAX).disp(20)),
             size: Some(Size::U32),
         },
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];
 
     let setcc_instr: Vec<Instruction> = vec![
-        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::SetCC { op: ConditionCode::E, dst: Operand::Reg(Register::A) }, Instruction::SetCC { op: ConditionCode::NE, dst: Operand::Reg(Register::B) }, Instruction::SetCC { op: ConditionCode::G, dst: Operand::Reg(Register::C) }, Instruction::SetCC { op: ConditionCode::L, dst: Operand::Reg(Register::D) }, Instruction::SetCC { op: ConditionCode::GE, dst: Operand::Reg(Register::A) }, Instruction::SetCC { op: ConditionCode::LE, dst: Operand::Reg(Register::B) }, Instruction::SetCC { op: ConditionCode::A, dst: Operand::Reg(Register::C) }, Instruction::SetCC { op: ConditionCode::B, dst: Operand::Reg(Register::D) },
-        Instruction::SetCC { op: ConditionCode::AE, dst: Operand::Reg(Register::A) },
-        Instruction::SetCC { op: ConditionCode::BE, dst: Operand::Reg(Register::B) }, 
-        Instruction::SetCC { op: ConditionCode::S, dst: Operand::Reg(Register::C) },
-        Instruction::SetCC { op: ConditionCode::NS, dst: Operand::Reg(Register::D) },
-        Instruction::SetCC { op: ConditionCode::O, dst: Operand::Reg(Register::A) },
-        Instruction::SetCC { op: ConditionCode::NO, dst: Operand::Reg(Register::B) },
-        Instruction::SetCC { op: ConditionCode::P, dst: Operand::Reg(Register::C) },
-        Instruction::SetCC { op: ConditionCode::NP, dst: Operand::Reg(Register::D) },
-        Instruction::SetCC { op: ConditionCode::E, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(0))},
-        Instruction::SetCC { op: ConditionCode::NE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(1))},
-        Instruction::SetCC { op: ConditionCode::G, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(2))},
-        Instruction::SetCC { op: ConditionCode::L, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(3))},
-        Instruction::SetCC { op: ConditionCode::GE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(4))},
-        Instruction::SetCC { op: ConditionCode::LE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(5))},
-        Instruction::SetCC { op: ConditionCode::A, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(6))},
-        Instruction::SetCC { op: ConditionCode::B, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(7))},
-        Instruction::SetCC { op: ConditionCode::AE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(8))},
-        Instruction::SetCC { op: ConditionCode::BE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(9))},
-        Instruction::SetCC { op: ConditionCode::S, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(10))},
-        Instruction::SetCC { op: ConditionCode::NS, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(11))},
-        Instruction::SetCC { op: ConditionCode::O, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(12))},
-        Instruction::SetCC { op: ConditionCode::NO, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(13))},
-        Instruction::SetCC { op: ConditionCode::P, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(14))},
-        Instruction::SetCC { op: ConditionCode::NP, dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(15))},
+        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::RAX), src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::SetCC { op: ConditionCode::E, dst: Operand::Reg(Register::RAX) }, Instruction::SetCC { op: ConditionCode::NE, dst: Operand::Reg(Register::RBX) }, Instruction::SetCC { op: ConditionCode::G, dst: Operand::Reg(Register::RCX) }, Instruction::SetCC { op: ConditionCode::L, dst: Operand::Reg(Register::RDX) }, Instruction::SetCC { op: ConditionCode::GE, dst: Operand::Reg(Register::RAX) }, Instruction::SetCC { op: ConditionCode::LE, dst: Operand::Reg(Register::RBX) }, Instruction::SetCC { op: ConditionCode::A, dst: Operand::Reg(Register::RCX) }, Instruction::SetCC { op: ConditionCode::B, dst: Operand::Reg(Register::RDX) },
+        Instruction::SetCC { op: ConditionCode::AE, dst: Operand::Reg(Register::RAX) },
+        Instruction::SetCC { op: ConditionCode::BE, dst: Operand::Reg(Register::RBX) }, 
+        Instruction::SetCC { op: ConditionCode::S, dst: Operand::Reg(Register::RCX) },
+        Instruction::SetCC { op: ConditionCode::NS, dst: Operand::Reg(Register::RDX) },
+        Instruction::SetCC { op: ConditionCode::O, dst: Operand::Reg(Register::RAX) },
+        Instruction::SetCC { op: ConditionCode::NO, dst: Operand::Reg(Register::RBX) },
+        Instruction::SetCC { op: ConditionCode::P, dst: Operand::Reg(Register::RCX) },
+        Instruction::SetCC { op: ConditionCode::NP, dst: Operand::Reg(Register::RDX) },
+        Instruction::SetCC { op: ConditionCode::E, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(0))},
+        Instruction::SetCC { op: ConditionCode::NE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(1))},
+        Instruction::SetCC { op: ConditionCode::G, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(2))},
+        Instruction::SetCC { op: ConditionCode::L, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(3))},
+        Instruction::SetCC { op: ConditionCode::GE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(4))},
+        Instruction::SetCC { op: ConditionCode::LE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(5))},
+        Instruction::SetCC { op: ConditionCode::A, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(6))},
+        Instruction::SetCC { op: ConditionCode::B, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(7))},
+        Instruction::SetCC { op: ConditionCode::AE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(8))},
+        Instruction::SetCC { op: ConditionCode::BE, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(9))},
+        Instruction::SetCC { op: ConditionCode::S, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(10))},
+        Instruction::SetCC { op: ConditionCode::NS, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(11))},
+        Instruction::SetCC { op: ConditionCode::O, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(12))},
+        Instruction::SetCC { op: ConditionCode::NO, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(13))},
+        Instruction::SetCC { op: ConditionCode::P, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(14))},
+        Instruction::SetCC { op: ConditionCode::NP, dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(15))},
         Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand },
     ];
     // =========================================================
@@ -165,7 +168,7 @@ fn main() -> std::io::Result<()> {
             ins: Box::new(
                 Instruction::Binary {
                     op: BinOp::Mov,
-                    dst: Operand::Reg(Register::A),
+                    dst: Operand::Reg(Register::RAX),
                     src: Operand::MemoryAddress(MemAddress::new().disp(0x28)),
                     size: Some(Size::U64),
                 }
@@ -179,7 +182,7 @@ fn main() -> std::io::Result<()> {
         // eax = 123
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
+            dst: Operand::Reg(Register::RAX),
             src: Operand::Imm(123),
             size: Some(Size::U32),
         },
@@ -187,7 +190,7 @@ fn main() -> std::io::Result<()> {
         // ebx = 456
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::B),
+            dst: Operand::Reg(Register::RBX),
             src: Operand::Imm(456),
             size: Some(Size::U32),
         },
@@ -200,8 +203,8 @@ fn main() -> std::io::Result<()> {
         //
         Instruction::Binary {
             op: BinOp::Xchg,
-            dst: Operand::Reg(Register::A),
-            src: Operand::Reg(Register::B),
+            dst: Operand::Reg(Register::RAX),
+            src: Operand::Reg(Register::RBX),
             size: Some(Size::U32),
         },
 
@@ -212,7 +215,7 @@ fn main() -> std::io::Result<()> {
         // eax = 999
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
+            dst: Operand::Reg(Register::RAX),
             src: Operand::Imm(999),
             size: Some(Size::U32),
         },
@@ -227,7 +230,7 @@ fn main() -> std::io::Result<()> {
             dst: Operand::MemoryAddress(
                 MemAddress::symbol("my_data")
             ),
-            src: Operand::Reg(Register::A),
+            src: Operand::Reg(Register::RAX),
             size: Some(Size::U32),
         },
 
@@ -252,7 +255,7 @@ fn main() -> std::io::Result<()> {
         // eax = 0
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
+            dst: Operand::Reg(Register::RAX),
             src: Operand::Imm(0),
             size: Some(Size::U32),
         },
@@ -260,7 +263,7 @@ fn main() -> std::io::Result<()> {
         // ecx = 1
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::C),
+            dst: Operand::Reg(Register::RCX),
             src: Operand::Imm(1),
             size: Some(Size::U32),
         },
@@ -279,7 +282,7 @@ fn main() -> std::io::Result<()> {
                     dst: Operand::MemoryAddress(
                         MemAddress::symbol("my_lock")
                     ),
-                    src: Operand::Reg(Register::C),
+                    src: Operand::Reg(Register::RCX),
                     extra: None,
                     size: Some(Size::U32),
                 }
@@ -293,7 +296,7 @@ fn main() -> std::io::Result<()> {
         // eax = 0 again
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
+            dst: Operand::Reg(Register::RAX),
             src: Operand::Imm(0),
             size: Some(Size::U32),
         },
@@ -301,7 +304,7 @@ fn main() -> std::io::Result<()> {
         // edx = 2
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::D),
+            dst: Operand::Reg(Register::RDX),
             src: Operand::Imm(2),
             size: Some(Size::U32),
         },
@@ -325,7 +328,7 @@ fn main() -> std::io::Result<()> {
                     dst: Operand::MemoryAddress(
                         MemAddress::symbol("my_lock")
                     ),
-                    src: Operand::Reg(Register::D),
+                    src: Operand::Reg(Register::RDX),
                     extra: None,
                     size: Some(Size::U32),
                 }
@@ -335,13 +338,13 @@ fn main() -> std::io::Result<()> {
         // -------------------------------------------------
         // Syscalls
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(60), size: None },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::Di), src: Operand::Imm(42), size: None },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::RAX), src: Operand::Imm(60), size: None },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::RDI), src: Operand::Imm(42), size: None },
 
         Instruction::Sys { op: SysOp::Syscall },
 
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(1), size: None },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::B), src: Operand::Imm(42), size: None },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::RAX), src: Operand::Imm(1), size: None },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::RBX), src: Operand::Imm(42), size: None },
 
         Instruction::Sys { op: SysOp::Int(0x80) },
         Instruction::Sys { op: SysOp::Sysenter },
@@ -349,105 +352,105 @@ fn main() -> std::io::Result<()> {
         // -------------------------------------------------
         // MOV
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Imm(0x12), size: Some(Size::U8), },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::B), src: Operand::Imm(0x1234), size: Some(Size::U16), },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::C), src: Operand::Imm(0x12345678), size: Some(Size::U32), },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), size: Some(Size::U32), },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::D), src: Operand::Sym("my_data".to_string()), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::R8), src: Operand::Imm(0x12), size: Some(Size::U8), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::R9), src: Operand::Imm(0x1234), size: Some(Size::U16), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::R10), src: Operand::Imm(0x12345678), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::R11), src: Operand::Reg(Register::RBX), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::R12), src: Operand::Sym("my_data".to_string()), size: Some(Size::U32), },
         Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::new().sym("my_data")), src: Operand::Imm(0x41), size: Some(Size::U8), },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::new().sym("my_data")), src: Operand::Reg(Register::A), size: Some(Size::U32), },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::new().sym("my_data")), size: Some(Size::U32), },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::new().sym("my_data")), size: Some(Size::U32), },
-        Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::new().sym("my_data")), src: Operand::Reg(Register::A), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::new().sym("my_data")), src: Operand::Reg(Register::RAX), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::R13), src: Operand::MemoryAddress(MemAddress::new().sym("my_data")), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::Reg(Register::R14), src: Operand::MemoryAddress(MemAddress::new().sym("my_data")), size: Some(Size::U32), },
+        Instruction::Binary { op: BinOp::Mov, dst: Operand::MemoryAddress(MemAddress::new().sym("my_data")), src: Operand::Reg(Register::R15), size: Some(Size::U32), },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
-            src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index(Register::C)),
+            dst: Operand::Reg(Register::RAX),
+            src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index(Register::RCX)),
             size: Some(Size::U32),
         },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
-            src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index(Register::C).scale(Scale::Four)),
+            dst: Operand::Reg(Register::RAX),
+            src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index(Register::RCX).scale(Scale::Four)),
             size: Some(Size::U32),
         },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::MemoryAddress(MemAddress::new().base(Register::B).index(Register::C).scale(Scale::Eight).disp(16)),
-            src: Operand::Reg(Register::A),
+            dst: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index(Register::RCX).scale(Scale::Eight).disp(16)),
+            src: Operand::Reg(Register::RAX),
             size: Some(Size::U32),
         },
         Instruction::Binary {
             op: BinOp::Movzx,
-            dst: Operand::Reg(Register::A),
-            src: Operand::Reg(Register::B),
+            dst: Operand::Reg(Register::RAX),
+            src: Operand::Reg(Register::RBX),
             size: Some(Size::U8),
         },
         Instruction::Binary {
             op: BinOp::Movsx,
-            dst: Operand::Reg(Register::C),
-            src: Operand::MemoryAddress(MemAddress::new().base(Register::B)),
+            dst: Operand::Reg(Register::RCX),
+            src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)),
             size: Some(Size::U8),
         },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::A),
+            dst: Operand::Reg(Register::RAX),
             src: Operand::Imm(0x123456789abcdef0),
             size: None,
         },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: Operand::Reg(Register::D),
+            dst: Operand::Reg(Register::RDX),
             src: Operand::Imm(0x401000),
             size: None,
         },
         // -------------------------------------------------
         // MOVZX / MOVSX
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Movzx, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), size: Some(Size::U8) },
-        Instruction::Binary { op: BinOp::Movzx, dst: Operand::Reg(Register::C), src: mem.clone(), size: Some(Size::U8) },
-        Instruction::Binary { op: BinOp::Movsx, dst: Operand::Reg(Register::D), src: Operand::Reg(Register::A), size: Some(Size::U8) },
-        Instruction::Binary { op: BinOp::Movsx, dst: Operand::Reg(Register::B), src: mem.clone(), size: Some(Size::U16) },
+        Instruction::Binary { op: BinOp::Movzx, dst: Operand::Reg(Register::RAX), src: Operand::Reg(Register::RBX), size: Some(Size::U8) },
+        Instruction::Binary { op: BinOp::Movzx, dst: Operand::Reg(Register::RCX), src: mem.clone(), size: Some(Size::U8) },
+        Instruction::Binary { op: BinOp::Movsx, dst: Operand::Reg(Register::RDX), src: Operand::Reg(Register::RAX), size: Some(Size::U8) },
+        Instruction::Binary { op: BinOp::Movsx, dst: Operand::Reg(Register::RBX), src: mem.clone(), size: Some(Size::U16) },
         // -------------------------------------------------
         // XCHG
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Xchg, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Xchg, dst: Operand::Reg(Register::C), src: mem.clone(), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Xchg, dst: Operand::Reg(Register::RAX), src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Xchg, dst: Operand::Reg(Register::RCX), src: mem.clone(), size: Some(Size::U32) },
         // -------------------------------------------------
         // ADD
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Add, dst: Operand::Reg(Register::A), src: Operand::Imm(5), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Add, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Add, dst: Operand::Reg(Register::RAX), src: Operand::Imm(5), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Add, dst: Operand::Reg(Register::RBX), src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::Add, dst: mem.clone(), src: Operand::Imm(3), size: Some(Size::U32) },
 
-        Instruction::Binary { op: BinOp::Adc, dst: Operand::Reg(Register::A), src: Operand::Imm(5), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Adc, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Adc, dst: Operand::Reg(Register::RAX), src: Operand::Imm(5), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Adc, dst: Operand::Reg(Register::RBX), src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::Adc, dst: mem.clone(), src: Operand::Imm(3), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Sbb, dst: Operand::Reg(Register::A), src: Operand::Imm(5), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Sbb, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Sbb, dst: Operand::Reg(Register::RAX), src: Operand::Imm(5), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Sbb, dst: Operand::Reg(Register::RBX), src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::Sbb, dst: mem.clone(), src: Operand::Imm(3), size: Some(Size::U32) },
         // ===== BSF =====
-        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U64), },
-        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::C, src: Operand::Reg(Register::D), size: Some(Size::U64), },
-        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32), },
-        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U16), },
+        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U64), },
+        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::RCX, src: Operand::Reg(Register::RDX), size: Some(Size::U64), },
+        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U32), },
+        Instruction::BitScan { op: BitScanOp::Bsf, dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U16), },
         // mémoire
         Instruction::BitScan {
             op: BitScanOp::Bsf,
-            dst: Register::A,
-            src: Operand::MemoryAddress(MemAddress::new().base(Register::B)),
+            dst: Register::RAX,
+            src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)),
             size: Some(Size::U64),
         },
         // ===== BSR =====
-        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U64), },
-        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::C, src: Operand::Reg(Register::D), size: Some(Size::U64), },
-        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32), },
-        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U16), },
+        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U64), },
+        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::RCX, src: Operand::Reg(Register::RDX), size: Some(Size::U64), },
+        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U32), },
+        Instruction::BitScan { op: BitScanOp::Bsr, dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U16), },
         // mémoire
         Instruction::BitScan {
             op: BitScanOp::Bsr,
-            dst: Register::A,
-            src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index(Register::C)),
+            dst: Register::RAX,
+            src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index(Register::RCX)),
             size: Some(Size::U64),
         },
         Instruction::Stack { op: StackOp::Pushf, value: Operand::NoOperand, size: Some(Size::U16) },
@@ -467,55 +470,55 @@ fn main() -> std::io::Result<()> {
         // -------------------------------------------------
         // SUB
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Sub, dst: Operand::Reg(Register::C), src: Operand::Imm(10), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Sub, dst: Operand::Reg(Register::D), src: Operand::Reg(Register::C), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Sub, dst: Operand::Reg(Register::RCX), src: Operand::Imm(10), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Sub, dst: Operand::Reg(Register::RDX), src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::Sub, dst: mem.clone(), src: Operand::Imm(1), size: Some(Size::U32) },
         // -------------------------------------------------
         // AND
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::And, dst: Operand::Reg(Register::A), src: Operand::Imm(0xFF), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::And, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::And, dst: mem.clone(), src: Operand::Reg(Register::B), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::And, dst: Operand::Reg(Register::RAX), src: Operand::Imm(0xFF), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::And, dst: Operand::Reg(Register::RBX), src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::And, dst: mem.clone(), src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
         // -------------------------------------------------
         // OR
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Or, dst: Operand::Reg(Register::C), src: Operand::Imm(0x10), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Or, dst: Operand::Reg(Register::D), src: Operand::Reg(Register::C), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Or, dst: Operand::Reg(Register::RCX), src: Operand::Imm(0x10), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Or, dst: Operand::Reg(Register::RDX), src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
         // -------------------------------------------------
         // XOR
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Xor, dst: Operand::Reg(Register::A), src: Operand::Imm(0xFF), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Xor, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Xor, dst: Operand::Reg(Register::C), src: mem.clone(), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Xor, dst: Operand::Reg(Register::RAX), src: Operand::Imm(0xFF), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Xor, dst: Operand::Reg(Register::RBX), src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Xor, dst: Operand::Reg(Register::RCX), src: mem.clone(), size: Some(Size::U32) },
         // -------------------------------------------------
         // CMP
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::A), src: Operand::Imm(42), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::C), src: mem.clone(), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::RAX), src: Operand::Imm(42), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::RBX), src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Cmp, dst: Operand::Reg(Register::RCX), src: mem.clone(), size: Some(Size::U32) },
         // -------------------------------------------------
         // TEST
         // -------------------------------------------------
-        Instruction::Binary { op: BinOp::Test, dst: Operand::Reg(Register::A), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::Test, dst: Operand::Reg(Register::B), src: Operand::Reg(Register::A), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Test, dst: Operand::Reg(Register::RAX), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::Test, dst: Operand::Reg(Register::RBX), src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::Test, dst: mem.clone(), src: Operand::Imm(0xFF), size: Some(Size::U32) },
         // -------------------------------------------------
         // SHL / SHR / SAR
         // -------------------------------------------------
-        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::A), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::B), src: Operand::Imm(3), size: Some(Size::U32) },
-        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::C), src: Operand::Reg(Register::C), size: Some(Size::U32) },
-        Instruction::Shift{ op: ShiftOp::Shr, dst: Operand::Reg(Register::D), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::RAX), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::RBX), src: Operand::Imm(3), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shl, dst: Operand::Reg(Register::RCX), src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Shr, dst: Operand::Reg(Register::RDX), src: Operand::Imm(1), size: Some(Size::U32) },
         Instruction::Shift{ op: ShiftOp::Shr, dst: mem.clone(), src: Operand::Imm(2), size: Some(Size::U32) },
-        Instruction::Shift{ op: ShiftOp::Sar, dst: Operand::Reg(Register::A), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Shift{ op: ShiftOp::Sar, dst: mem.clone(), src: Operand::Reg(Register::C), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Sar, dst: Operand::Reg(Register::RAX), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift{ op: ShiftOp::Sar, dst: mem.clone(), src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
         // -------------------------------------------------
         // ROL / ROR
         // -------------------------------------------------
-        Instruction::Shift { op: ShiftOp::Rol, dst: Operand::Reg(Register::B), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Shift { op: ShiftOp::Rol, dst: Operand::Reg(Register::C), src: Operand::Imm(4), size: Some(Size::U32) },
-        Instruction::Shift { op: ShiftOp::Ror, dst: Operand::Reg(Register::D), src: Operand::Imm(1), size: Some(Size::U32) },
-        Instruction::Shift { op: ShiftOp::Ror, dst: mem.clone(), src: Operand::Reg(Register::C), size: Some(Size::U32) },
+        Instruction::Shift { op: ShiftOp::Rol, dst: Operand::Reg(Register::RBX), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift { op: ShiftOp::Rol, dst: Operand::Reg(Register::RCX), src: Operand::Imm(4), size: Some(Size::U32) },
+        Instruction::Shift { op: ShiftOp::Ror, dst: Operand::Reg(Register::RDX), src: Operand::Imm(1), size: Some(Size::U32) },
+        Instruction::Shift { op: ShiftOp::Ror, dst: mem.clone(), src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
         // -------------------------------------------------
         // Labels / Calls
         // -------------------------------------------------
@@ -523,42 +526,42 @@ fn main() -> std::io::Result<()> {
         // Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_func".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Call, target: Operand::Sym("my_exit".to_string()) },
 
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), size: Some(Size::U32), },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(8)), size: Some(Size::U32) },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::Bp).disp(-16)), size: Some(Size::U32) },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::C).index_scale(Register::C, Scale::Four)), size: Some(Size::U32) },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::symbol("my_data")), size: None },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), size: Some(Size::U32) },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(8)), size: Some(Size::U32) },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::Bp).disp(-16)), size: Some(Size::U32) },
-        Instruction::Lea { dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::C).index_scale(Register::C, Scale::Four)), size: Some(Size::U32) },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), size: Some(Size::U32), },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(8)), size: Some(Size::U32) },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBP).disp(-16)), size: Some(Size::U32) },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RCX).index_scale(Register::RCX, Scale::Four)), size: Some(Size::U32) },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::symbol("my_data")), size: None },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), size: Some(Size::U32) },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(8)), size: Some(Size::U32) },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBP).disp(-16)), size: Some(Size::U32) },
+        Instruction::Lea { dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RCX).index_scale(Register::RCX, Scale::Four)), size: Some(Size::U32) },
     
-        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::Reg(Register::C), extra: None, size: Some(Size::U32), },
-        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(8)), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::Bp).disp(-16)), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index(Register::C)), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index_scale(Register::C, Scale::Four)), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index_scale(Register::C, Scale::Eight).disp(16)), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::Reg(Register::B), extra: None, size: None },
-        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), extra: None, size: None },
+        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::Reg(Register::RCX), extra: None, size: Some(Size::U32), },
+        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(8)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBP).disp(-16)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index(Register::RCX)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index_scale(Register::RCX, Scale::Four)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index_scale(Register::RCX, Scale::Eight).disp(16)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::Reg(Register::RBX), extra: None, size: None },
+        Instruction::ComplexBinary { op: ComplexBinOp::Div, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), extra: None, size: None },
 
-        Instruction::ComplexBinary { op: ComplexBinOp::Idiv, dst: Operand::NoOperand, src: Operand::Reg(Register::B), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Idiv, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).disp(4)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Idiv, dst: Operand::NoOperand, src: Operand::Reg(Register::RBX), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Idiv, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).disp(4)), extra: None, size: Some(Size::U32) },
 
-        Instruction::ComplexBinary { op: ComplexBinOp::Mul, dst: Operand::NoOperand, src: Operand::Reg(Register::B), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Mul, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Mul, dst: Operand::NoOperand, src: Operand::Reg(Register::RBX), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Mul, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), extra: None, size: Some(Size::U32) },
 
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::NoOperand, src: Operand::Reg(Register::B), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index_scale(Register::C, Scale::Two)), extra: None, size: None },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::C), src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::D), src: Operand::MemoryAddress(MemAddress::new().base(Register::Bp).disp(-8)), extra: None, size: None },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index_scale(Register::C, Scale::Four)), extra: None, size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), extra: Some(Operand::Imm(-255 as i32 as u32 as usize)), size: Some(Size::U32), },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::C), src: Operand::Reg(Register::D), extra: Some(Operand::Imm(127)), size: Some(Size::U32), },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::Reg(Register::B), extra: Some(Operand::Imm(128)), size: Some(Size::U32), },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::D), src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), extra: Some(Operand::Imm(1000)), size: Some(Size::U32) },
-        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::A), src: Operand::MemoryAddress(MemAddress::new().base(Register::B).index_scale(Register::C, Scale::Eight).disp(16)), extra: Some(Operand::Imm(9)), size: None },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::NoOperand, src: Operand::Reg(Register::RBX), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::NoOperand, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index_scale(Register::RCX, Scale::Two)), extra: None, size: None },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RAX), src: Operand::Reg(Register::RBX), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RCX), src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RDX), src: Operand::MemoryAddress(MemAddress::new().base(Register::RBP).disp(-8)), extra: None, size: None },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RAX), src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index_scale(Register::RCX, Scale::Four)), extra: None, size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RAX), src: Operand::Reg(Register::RBX), extra: Some(Operand::Imm(-255 as i32 as u32 as usize)), size: Some(Size::U32), },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RCX), src: Operand::Reg(Register::RDX), extra: Some(Operand::Imm(127)), size: Some(Size::U32), },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RAX), src: Operand::Reg(Register::RBX), extra: Some(Operand::Imm(128)), size: Some(Size::U32), },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RDX), src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), extra: Some(Operand::Imm(1000)), size: Some(Size::U32) },
+        Instruction::ComplexBinary { op: ComplexBinOp::Imul, dst: Operand::Reg(Register::RAX), src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX).index_scale(Register::RCX, Scale::Eight).disp(16)), extra: Some(Operand::Imm(9)), size: None },
     ];
 
     let func_instr2: Vec<Instruction> = vec![
@@ -588,21 +591,21 @@ fn main() -> std::io::Result<()> {
         Instruction::Ctrl { op: CtrlOp::Loope, target: Operand::Sym("loop1".to_string()) },
         Instruction::Ctrl { op: CtrlOp::Loopne, target: Operand::Sym("loop1".to_string()) },
 
-        Instruction::CMovCC { cc: ConditionCode::E,   dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::NE,  dst: Register::C, src: Operand::Reg(Register::D), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::G, dst: Register::A, src: Operand::MemoryAddress(MemAddress::new().base(Register::B)), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::L, dst: Register::B, src: Operand::MemoryAddress(MemAddress::new().base(Register::C).disp(4)), size: Some(Size::U32) },        Instruction::CMovCC { cc: ConditionCode::GE,  dst: Register::D, src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::LE,  dst: Register::C, src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::A,   dst: Register::A, src: Operand::Reg(Register::C), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::AE,  dst: Register::B, src: Operand::Reg(Register::D), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::B,   dst: Register::C, src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::BE,  dst: Register::D, src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::S,   dst: Register::A, src: Operand::Reg(Register::D), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::NS,  dst: Register::B, src: Operand::Reg(Register::C), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::O,   dst: Register::C, src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::NO,  dst: Register::D, src: Operand::Reg(Register::A), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::P,   dst: Register::A, src: Operand::Reg(Register::B), size: Some(Size::U32) },
-        Instruction::CMovCC { cc: ConditionCode::NP,  dst: Register::B, src: Operand::Reg(Register::C), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::E,   dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::NE,  dst: Register::RCX, src: Operand::Reg(Register::RDX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::G, dst: Register::RAX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RBX)), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::L, dst: Register::RBX, src: Operand::MemoryAddress(MemAddress::new().base(Register::RCX).disp(4)), size: Some(Size::U32) },        Instruction::CMovCC { cc: ConditionCode::GE,  dst: Register::RDX, src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::LE,  dst: Register::RCX, src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::A,   dst: Register::RAX, src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::AE,  dst: Register::RBX, src: Operand::Reg(Register::RDX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::B,   dst: Register::RCX, src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::BE,  dst: Register::RDX, src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::S,   dst: Register::RAX, src: Operand::Reg(Register::RDX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::NS,  dst: Register::RBX, src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::O,   dst: Register::RCX, src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::NO,  dst: Register::RDX, src: Operand::Reg(Register::RAX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::P,   dst: Register::RAX, src: Operand::Reg(Register::RBX), size: Some(Size::U32) },
+        Instruction::CMovCC { cc: ConditionCode::NP,  dst: Register::RBX, src: Operand::Reg(Register::RCX), size: Some(Size::U32) },
         Instruction::Unary { op: UnaryOp::Nop, dst: Operand::NoOperand, size: None },
         Instruction::Unary { op: UnaryOp::Cwd, dst: Operand::NoOperand, size: Some(Size::U16) },
         Instruction::Unary { op: UnaryOp::Cdq, dst: Operand::NoOperand, size: Some(Size::U32) },
@@ -636,8 +639,8 @@ fn main() -> std::io::Result<()> {
         Instruction::Prefix {
             prefix: vec![Prefix::Lock],
             ins: Box::new(Instruction::ComplexBinary {op: ComplexBinOp::Cmpxchg,
-                dst: Operand::MemoryAddress(MemAddress::new().base(Register::A)),
-                src: Operand::Reg(Register::B),
+                dst: Operand::MemoryAddress(MemAddress::new().base(Register::RAX)),
+                src: Operand::Reg(Register::RBX),
                 extra: None,
                 size: Some(Size::U32),
             })
@@ -666,22 +669,22 @@ fn main() -> std::io::Result<()> {
         Instruction::Ctrl { op: CtrlOp::IRet, target: Operand::NoOperand },
         Instruction::ComplexBinary {
             op: ComplexBinOp::Xadd,
-            dst: Operand::Reg(Register::A),
-            src: Operand::Reg(Register::B),
+            dst: Operand::Reg(Register::RAX),
+            src: Operand::Reg(Register::RBX),
             extra: None,
             size: Some(Size::U32),
         },
         Instruction::ComplexBinary {
             op: ComplexBinOp::Xadd,
-            dst: Operand::MemoryAddress(MemAddress::new().base(Register::A)),
-            src: Operand::Reg(Register::B),
+            dst: Operand::MemoryAddress(MemAddress::new().base(Register::RAX)),
+            src: Operand::Reg(Register::RBX),
             extra: None,
             size: Some(Size::U32),
         },
         Instruction::ComplexBinary {
             op: ComplexBinOp::Cmpxchg,
-            dst: Operand::MemoryAddress(MemAddress::new().base(Register::A)),
-            src: Operand::Reg(Register::B),
+            dst: Operand::MemoryAddress(MemAddress::new().base(Register::RAX)),
+            src: Operand::Reg(Register::RBX),
             extra: None,
             size: Some(Size::U32),
         },

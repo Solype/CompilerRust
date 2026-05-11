@@ -3,6 +3,7 @@ use super::{
     enums::*,
     utils::{emit_size_prefix, emit_rex},
     struct_encode_information::*,
+    register::*,
 };
 
 pub(super) fn encode_bit(
@@ -28,15 +29,14 @@ pub(super) fn encode_bit(
         // 0F A3/AB/B3/BB /r
         // =====================================================
         Operand::Reg(reg) => {
-            let reg_u8 = *reg as u8;
 
-            let rm_u8 = match dst {
-                Operand::Reg(r) => *r as u8,
-                Operand::MemoryAddress(_) => 0,
+            let rm = match dst {
+                Operand::Reg(r) => Some(*r),
+                Operand::MemoryAddress(_) => None,
                 _ => unimplemented!("invalid BT destination"),
             };
 
-            emit_rex(&mut v, size, Some(reg_u8), Some(rm_u8));
+            emit_rex(&mut v, size, Some(*reg), rm);
 
             v.push(0x0F);
             v.push(opcode_rr);
@@ -52,26 +52,34 @@ pub(super) fn encode_bit(
         // 0F BA /4..7 ib
         // =====================================================
         Operand::Imm(bit) => {
-            let rm_u8 = match dst {
-                Operand::Reg(r) => *r as u8,
-                Operand::MemoryAddress(_) => 0,
-                _ => unimplemented!("invalid BT destination"),
+
+            let rm = match dst {
+                Operand::Reg(r) => Some(*r),
+                Operand::MemoryAddress(_) => None,
+
+                _ => {
+                    unimplemented!("invalid BT destination")
+                }
             };
 
-            emit_rex(&mut v, size, None, Some(rm_u8));
+            emit_rex(&mut v, size, None, rm);
 
             v.push(0x0F);
             v.push(0xBA);
 
-            let reg_field =
-                Operand::Reg(Register::try_from(modrm_ext).unwrap());
+            let reg_field = Operand::Reg(Register {
+                class: RegisterClass::Gpr,
+                index: modrm_ext,
+            });
 
-            let modrm = mod_rm_encode(dst, &reg_field);
+            let modrm =
+                mod_rm_encode(dst, &reg_field);
 
             v.append(modrm);
 
             v.push(*bit as u8);
-            return v
+
+            return v;
         }
 
         _ => unimplemented!("invalid BT source {:?}", src),

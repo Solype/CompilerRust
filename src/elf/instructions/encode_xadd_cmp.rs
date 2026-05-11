@@ -1,4 +1,10 @@
-use super::{ComplexBinOp, EncodeInformation, Operand, Size, utils::{emit_size_prefix, emit_rex}, modrm::{mod_rm_encode}};
+use super::{
+    ComplexBinOp,
+    EncodeInformation,
+    Operand,
+    Size,
+    utils::{emit_size_prefix, emit_rex}, modrm::{mod_rm_encode}
+};
 
 pub(super) fn encode_xadd_cmpxchg(
     op: &ComplexBinOp,
@@ -14,17 +20,17 @@ pub(super) fn encode_xadd_cmpxchg(
     emit_size_prefix(&mut v, size);
 
     let reg = match src {
-        Operand::Reg(r) => *r as u8,
+        Operand::Reg(r) => *r,
         _ => panic!("src must be a register"),
     };
 
     let rm = match dst {
-        Operand::Reg(r) => *r as u8,
-        Operand::MemoryAddress(_) => 0,
+        Operand::Reg(r) => Some(*r),
+        Operand::MemoryAddress(_) => None,
         _ => panic!("invalid dst for xadd/cmpxchg"),
     };
 
-    emit_rex(&mut v, size, Some(reg), Some(rm));
+    emit_rex(&mut v, size, Some(reg), rm);
 
     // ==========================================
     // Opcode

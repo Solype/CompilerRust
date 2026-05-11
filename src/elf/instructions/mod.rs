@@ -5,6 +5,7 @@ pub mod mem_address;
 pub use mem_address::*;
 pub use enums::*;
 pub use struct_encode_information::*;
+pub mod register;
 
 mod struct_encode_information;
 mod encode_ctrl;

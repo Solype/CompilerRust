@@ -1,35 +1,8 @@
-use crate::elf::instructions::MemAddress;
+use super::{
+    MemAddress,
+    register::*,
+};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[repr(u8)]
-pub enum Register {
-    A = 0,
-    C = 1,
-    D = 2,
-    B = 3,
-    Sp = 4,
-    Bp = 5,
-    Si = 6,
-    Di = 7,
-}
-
-impl TryFrom<u8> for Register {
-    type Error = ();
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Register::A),
-            1 => Ok(Register::C),
-            2 => Ok(Register::D),
-            3 => Ok(Register::B),
-            4 => Ok(Register::Sp),
-            5 => Ok(Register::Bp),
-            6 => Ok(Register::Si),
-            7 => Ok(Register::Di),
-            _ => Err(()),
-        }
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
@@ -54,7 +27,6 @@ impl From<usize> for Size {
 
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub enum Operand {
     NoOperand,
     Reg(Register),

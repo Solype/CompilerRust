@@ -1,4 +1,4 @@
-use super::enums::{Register};
+use super::register::{Register};
 
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(u8)]

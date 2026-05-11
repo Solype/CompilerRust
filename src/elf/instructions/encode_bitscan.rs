@@ -3,6 +3,7 @@ use super::{
     enums::*,
     modrm::mod_rm_encode,
     struct_encode_information::*,
+    register::*,
 };
 
 pub(super) fn encode_bitscan(

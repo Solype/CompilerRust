@@ -1,7 +1,7 @@
 use super::{
     EncodeInformation,
     Operand,
-    Register,
+    register::*,
     ShiftOp,
     Size,
     modrm::{mod_rm_encode},
@@ -42,7 +42,10 @@ pub fn encode_shift_rotate(
     emit_size_prefix(&mut v, size);
 
     // REX (important pour registres étendus + 64-bit)
-    let reg_field = Operand::Reg(Register::try_from(ext).unwrap());
+    let reg_field = Operand::Reg(Register {
+        class: RegisterClass::Gpr,
+        index: ext,
+    });
     emit_rex(&mut v, size, None, None);
 
     // ================================
@@ -53,9 +56,10 @@ pub fn encode_shift_rotate(
 
         Operand::Imm(_) => v.push(opcode_imm),
 
-        Operand::Reg(reg) if *reg == Register::C => {
-            v.push(opcode_cl)
-        }
+    Operand::Reg(reg) if reg.class == RegisterClass::Gpr && reg.index == Gpr::C as u8 =>
+    {
+        v.push(opcode_cl)
+    }
 
         _ => panic!("Invalid shift count: must be 1, imm8, or CL"),
     }

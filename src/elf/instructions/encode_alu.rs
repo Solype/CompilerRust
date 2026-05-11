@@ -3,6 +3,7 @@ use super::{
     enums::*,
     struct_encode_information::*,
     utils::{emit_size_prefix, emit_rex, emit_imm},
+    register::*,
 };
 
 // ======================================================
@@ -176,32 +177,78 @@ fn encode_reg_imm(
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
     let mut v = EncodeInformation::new();
-    let reg_u8 = reg as u8;
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, Some(reg_u8));
+    emit_rex(&mut v, size, None, Some(reg));
 
     match *enc {
+
+        // --------------------------------------------------
+        // MOV reg, imm
+        // --------------------------------------------------
         BinaryEncoding::Mov { .. } => {
             let base = match size {
                 Size::U8 => 0xB0,
                 _ => 0xB8,
             };
-            v.push(base + (reg_u8 & 7));
+
+            v.push(base + reg.low3());
         }
 
-        BinaryEncoding::Alu { opcode_imm, modrm_ext, .. } => {
-            v.push(opcode_imm);
-            let modrm = 0b11_000_000 | ((modrm_ext & 7) << 3) | (reg_u8 & 7);
+        // --------------------------------------------------
+        // ALU reg, imm
+        // --------------------------------------------------
+        BinaryEncoding::Alu {
+            opcode_imm,
+            opcode_imm8,
+            modrm_ext,
+            ..
+        } => {
+
+            let fits_i8 =
+                (val as i64) >= -128 &&
+                (val as i64) <= 127;
+
+            let use_imm8 =
+                fits_i8 &&
+                opcode_imm8.is_some() &&
+                size != Size::U8;
+
+            let opcode = if use_imm8 {
+                opcode_imm8.unwrap()
+            } else {
+                opcode_imm
+            };
+
+            v.push(opcode);
+
+            let modrm =
+                0b11_000_000 |
+                ((modrm_ext & 7) << 3) |
+                reg.low3();
+
             v.push(modrm);
+
+            if use_imm8 {
+                v.push(val as i8 as u8);
+                return v;
+            }
         }
 
-        _ => unimplemented!("encode reg <- imm not implemented for{:?}", *enc),
+        _ => {
+            unimplemented!(
+                "encode reg <- imm not implemented for {:?}",
+                *enc
+            )
+        }
     }
 
     v.extend_vec(emit_imm(val, size));
+
     v
 }
+
+///////////////////////////////////////////////////////////////////
 
 fn encode_reg_sym(
     reg: Register,
@@ -209,31 +256,53 @@ fn encode_reg_sym(
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
+
     let mut v = EncodeInformation::new();
-    let reg_u8 = reg as u8;
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, Some(reg_u8));
+    emit_rex(&mut v, size, None, Some(reg));
 
-    match enc {
+    match *enc {
+
+        // --------------------------------------------------
+        // MOV reg, sym
+        // --------------------------------------------------
         BinaryEncoding::Mov { .. } => {
+
             let base = match size {
                 Size::U8 => 0xB0,
                 _ => 0xB8,
             };
-            v.push(base + (reg_u8 & 7));
+
+            v.push(base + reg.low3());
         }
 
-        BinaryEncoding::Alu { opcode_imm, modrm_ext , .. } => {
-            v.push(*opcode_imm);
-            let modrm = 0b11_000_000 | ((modrm_ext & 7) << 3) | (reg_u8 & 7);
+        // --------------------------------------------------
+        // ALU reg, sym
+        // --------------------------------------------------
+        BinaryEncoding::Alu {
+            opcode_imm,
+            modrm_ext,
+            ..
+        } => {
+
+            v.push(opcode_imm);
+
+            let modrm =
+                0b11_000_000 |
+                ((modrm_ext & 7) << 3) |
+                reg.low3();
+
             v.push(modrm);
         }
-        _ => unimplemented!()
+
+        _ => unimplemented!(),
     }
 
     let offset = v.len();
+
     v.extend_vec(emit_imm(0, size));
+
     v.add_relocation(Relocation {
         sym: sym.to_string(),
         offset,
@@ -245,6 +314,8 @@ fn encode_reg_sym(
     v
 }
 
+///////////////////////////////////////////////////////////////////
+
 fn encode_mem_imm(
     dst: &Operand,
     val: usize,
@@ -253,7 +324,11 @@ fn encode_mem_imm(
 ) -> EncodeInformation {
 
     let (opcode_imm, opcode_imm8, modrm_ext) = match *enc {
-        BinaryEncoding::Mov { opcode_imm, .. } => {
+
+        BinaryEncoding::Mov {
+            opcode_imm,
+            ..
+        } => {
             (opcode_imm, None, 0)
         }
 
@@ -263,16 +338,34 @@ fn encode_mem_imm(
             modrm_ext,
             ..
         } => {
-            (opcode_imm, opcode_imm8, modrm_ext)
+            (
+                opcode_imm,
+                opcode_imm8,
+                modrm_ext,
+            )
         }
 
-        _ => unimplemented!("mem, imm unsupported for this instruction"),
+        _ => {
+            unimplemented!(
+                "mem, imm unsupported for this instruction"
+            )
+        }
     };
 
-    let fits_i8 = val as i32 >= -128 && val <= 127;
+    let fits_i8 =
+        (val as i64) >= -128 &&
+        (val as i64) <= 127;
 
-    let use_imm8 = fits_i8 && opcode_imm8.is_some() && size != Size::U8;
-    let opcode = if use_imm8 { opcode_imm8.unwrap() } else { opcode_imm };
+    let use_imm8 =
+        fits_i8 &&
+        opcode_imm8.is_some() &&
+        size != Size::U8;
+
+    let opcode = if use_imm8 {
+        opcode_imm8.unwrap()
+    } else {
+        opcode_imm
+    };
 
     let mut v = EncodeInformation::new();
 
@@ -280,15 +373,23 @@ fn encode_mem_imm(
     emit_rex(&mut v, size, None, None);
 
     v.push(opcode);
-    let reg_field = Operand::Reg(Register::try_from(modrm_ext).unwrap());
+
+    let reg_field = Operand::Reg(Register {
+        class: RegisterClass::Gpr,
+        index: modrm_ext,
+    });
+
     let modrm_info = mod_rm_encode(dst, &reg_field);
+
     v.append(modrm_info);
 
     if use_imm8 {
         v.push(val as i8 as u8);
+
     } else {
         v.extend_vec(emit_imm(val, size));
     }
+
     v
 }
 
@@ -304,20 +405,20 @@ fn encode_reg_mem(
         _ => unreachable!(),
     };
 
-    let reg_u8 = match reg_op {
-        Operand::Reg(r) => *r as u8,
+    let reg = match reg_op {
+        Operand::Reg(r) => r,
         _ => unreachable!(),
     };
 
-    let rm_u8 = match rm_op {
-        Operand::Reg(r) => *r as u8,
-        _ => 0, // memory operand
+    let rm = match rm_op {
+        Operand::Reg(r) => Some(*r),
+        _ => None, // memory operand
     };
 
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, Some(reg_u8), Some(rm_u8));
+    emit_rex(&mut v, size, Some(*reg), rm);
 
     let opcode = match *enc {
         BinaryEncoding::Mov { opcode_rm_r, opcode_r_rm, .. }

@@ -51,7 +51,7 @@ pub(super) fn encode_bit(
         // bit r/m, imm8
         // 0F BA /4..7 ib
         // =====================================================
-        Operand::Imm(Immediate::Integer(bit)) => {
+        Operand::Imm(bit) => {
 
             let rm = match dst {
                 Operand::Reg(r) => Some(*r),

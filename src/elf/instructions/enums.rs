@@ -10,7 +10,7 @@ pub enum Size {
     U8 = 1,
     U16 = 2,
     U32 = 4,
-    U64 = 8
+    U64 = 8,
 }
 
 impl From<usize> for Size {
@@ -23,19 +23,12 @@ impl From<usize> for Size {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Immediate
-{
-    Integer(i64),
-    Float(f64),
-}
-
 
 #[derive(Debug, Clone)]
 pub enum Operand {
     NoOperand,
     Reg(Register),
-    Imm(Immediate),
+    Imm(i64),
     Sym(String),
     MemoryAddress(MemAddress),
 }
@@ -96,6 +89,23 @@ pub enum BinOp {
     // Comparaison
     Cmp,
     Test,
+
+    // SSE scalar float
+    Movss,
+    Movsd,
+
+    Addss,
+    Addsd,
+
+    Subss,
+    Subsd,
+
+    Mulss,
+    Mulsd,
+
+    Divss,
+    Divsd,
+
 }
 
 #[derive(Debug)]

@@ -52,9 +52,9 @@ pub fn encode_shift_rotate(
     // Opcode selection
     // ================================
     match src {
-        Operand::Imm(super::Immediate::Integer(1)) => v.push(opcode_1),
+        Operand::Imm(1) => v.push(opcode_1),
 
-        Operand::Imm(super::Immediate::Integer(_)) => v.push(opcode_imm),
+        Operand::Imm(_) => v.push(opcode_imm),
 
         Operand::Reg(reg) if reg.class == RegisterClass::Gpr && reg.index == Gpr::C as u8 =>
         {
@@ -73,7 +73,7 @@ pub fn encode_shift_rotate(
     // ================================
     // Immediate (If necessary)
     // ================================
-    if let Operand::Imm(super::Immediate::Integer(n)) = src {
+    if let Operand::Imm(n) = src {
         if *n != 1 {
             v.push(*n as u8);
         }

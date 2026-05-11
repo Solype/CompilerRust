@@ -9,7 +9,6 @@ pub mod register;
 
 mod struct_encode_information;
 mod encode_ctrl;
-mod encode_alu;
 mod encode_unary;
 mod encode_stack;
 mod encode_setcc;
@@ -23,3 +22,4 @@ mod encode_str;
 mod encode_prefix;
 mod encode_xadd_cmp;
 mod utils;
+mod encode_alu;

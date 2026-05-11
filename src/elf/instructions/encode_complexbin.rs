@@ -164,7 +164,7 @@ fn encode_imul_three_operands(
     };
 
     let imm = match extra {
-        Some(Operand::Imm(super::Immediate::Integer(v))) => *v,
+        Some(Operand::Imm(v)) => *v,
         _ => panic!("imul extra must be immediate"),
     };
 

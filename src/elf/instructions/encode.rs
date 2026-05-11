@@ -9,12 +9,12 @@ use super::{
     encode_stack::encode_stack,
     encode_unary::encode_unary,
     enums::*,
-    encode_alu::encode_binary,
     struct_encode_information::*,
     encode_bitscan::encode_bitscan,
     encode_complexbin::encode_complex_binary,
     encode_prefix::encode_prefix,
-    encode_str::encode_str
+    encode_str::encode_str,
+    encode_alu::encode_binary
 };
 
 impl Instruction {

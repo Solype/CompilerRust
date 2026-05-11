@@ -82,7 +82,7 @@ fn encode_rel32_with_prefix(
             }
         }
 
-        Operand::Imm(Immediate::Integer(val)) => {
+        Operand::Imm(val) => {
             let mut v: Vec<u8> = Vec::new();
 
             if let Some(p) = prefix { v.push(p); }
@@ -125,7 +125,7 @@ fn encode_rel8(
             }
         }
 
-        Operand::Imm(Immediate::Integer(val)) => {
+        Operand::Imm(val) => {
             let mut v = Vec::with_capacity(2);
 
             v.push(opcode);

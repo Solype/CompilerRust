@@ -1,4 +1,4 @@
-use crate::elf::elfsym::make_st_info;
+use crate::elf::{elfsym::make_st_info, instructions::register::XMM0};
 mod elf;
 use elf::instructions::register as Register;
 
@@ -151,6 +151,7 @@ fn main() -> std::io::Result<()> {
     // _start : FULL BINOP TEST SUITE
     // =========================================================
     let start_instr: Vec<Instruction> = vec![
+        Instruction::Binary { op: BinOp::Addsd, dst: Operand::Reg(XMM0), src: Operand::Imm(Immediate::Float(0.1)), size: None },
         Instruction::Nop(1),
         Instruction::Nop(2),
         Instruction::Nop(3),

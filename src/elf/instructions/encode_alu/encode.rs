@@ -126,56 +126,6 @@ fn encode_mem_imm(
     v
 }
 
-fn encode_reg_mem(
-    dst: &Operand,
-    src: &Operand,
-    size: Size,
-    enc: &BinaryEncoding,
-) -> EncodeInformation {
-    let (is_reg_dst, reg_op, rm_op) = match (dst, src) {
-        (Operand::Reg(_), _) => (true, dst, src),
-        (_, Operand::Reg(_)) => (false, src, dst),
-        _ => unreachable!(),
-    };
-
-    let reg = match reg_op {
-        Operand::Reg(r) => r,
-        _ => unreachable!(),
-    };
-
-    let rm = match rm_op {
-        Operand::Reg(r) => Some(*r),
-        _ => None, // memory operand
-    };
-
-    let mut v = EncodeInformation::new();
-
-    emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, Some(*reg), rm);
-
-    let opcode = match *enc {
-        BinaryEncoding::Mov { opcode_rm_r, opcode_r_rm, .. }
-        | BinaryEncoding::Alu { opcode_rm_r, opcode_r_rm, .. } => {
-            if is_reg_dst {  opcode_r_rm } else { opcode_rm_r }
-        }
-
-        BinaryEncoding::Xchg { opcode } => opcode,
-
-        BinaryEncoding::MovExtend { prefix, opcode } => {
-            v.push(prefix);
-            opcode
-        }
-        _ => unimplemented!()
-    };
-
-    v.push(opcode);
-
-    let modrm = mod_rm_encode(rm_op, reg_op);
-
-    v.append(modrm);
-    v
-}
-
 pub(in super::super) fn encode_binary(
     op: BinOp,
     dst: &Operand,

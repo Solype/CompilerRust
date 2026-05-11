@@ -175,15 +175,15 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
             opcode: 0x5E,
         },
 
-        // BinOp::Comisd => BinaryEncoding::Sse {
-        //     prefix: 0x66,
-        //     opcode: 0x2F,
-        // },
+        BinOp::Comisd => BinaryEncoding::Sse {
+            prefix: 0x66,
+            opcode: 0x2F,
+        },
 
-        // BinOp::Ucomisd => BinaryEncoding::Sse {
-        //     prefix: 0x66,
-        //     opcode: 0x2E,
-        // },
+        BinOp::Ucomisd => BinaryEncoding::Sse {
+            prefix: 0x66,
+            opcode: 0x2E,
+        },
 
         // --------------------------------------------------
         // SSE scalar single
@@ -213,14 +213,14 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
             opcode: 0x5E,
         },
 
-        // BinOp::Comiss => BinaryEncoding::Sse {
-        //     prefix: 0x00,
-        //     opcode: 0x2F,
-        // },
+        BinOp::Comiss => BinaryEncoding::Sse {
+            prefix: 0x00,
+            opcode: 0x2F,
+        },
 
-        // BinOp::Ucomiss => BinaryEncoding::Sse {
-        //     prefix: 0x00,
-        //     opcode: 0x2E,
-        // },
+        BinOp::Ucomiss => BinaryEncoding::Sse {
+            prefix: 0x00,
+            opcode: 0x2E,
+        },
     }
 }

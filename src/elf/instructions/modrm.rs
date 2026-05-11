@@ -285,9 +285,8 @@ fn encode_memory(
 
 ///////////////////////////////////////////////////////////////////
 
-fn encode_reg(data: &mut Vec<u8>, rm: Register) {
-    assert!(rm.class == RegisterClass::Gpr);
-
+fn encode_reg(data: &mut Vec<u8>, rm: Register)
+{
     data[0] = (REG << 6) | rm.low3();
 }
 

@@ -106,6 +106,11 @@ pub enum BinOp {
     Divss,
     Divsd,
 
+    Comiss,
+    Comisd,
+
+    Ucomiss,
+    Ucomisd,
 }
 
 #[derive(Debug)]

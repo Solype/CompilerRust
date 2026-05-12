@@ -150,12 +150,19 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         // --------------------------------------------------
         // SSE scalar double
         // --------------------------------------------------
-        BinOp::MovF => {
+        BinOp::LoadF => {
             match size {
                 Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x10, },
                 _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x10, },
             }
         },
+
+        BinOp::StoreF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x11 },
+                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x11 },
+            }
+        }
 
         BinOp::AddF => {
             match size {

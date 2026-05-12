@@ -91,7 +91,8 @@ pub enum BinOp {
     Test,
 
     // SSE scalar float
-    MovF,
+    LoadF,
+    StoreF,
     AddF,
     SubF,
     MulF,

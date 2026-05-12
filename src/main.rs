@@ -151,8 +151,9 @@ fn main() -> std::io::Result<()> {
     // _start : FULL BINOP TEST SUITE
     // =========================================================
     let start_instr: Vec<Instruction> = vec![
-        Instruction::Binary { op: BinOp::MovF, dst: Operand::Reg(XMM0), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: None },
-        Instruction::Binary { op: BinOp::MovF, dst: Operand::Reg(XMM1), src: Operand::Reg(XMM0), size: None },
+        Instruction::Binary { op: BinOp::LoadF, dst: Operand::Reg(XMM0), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: None },
+        Instruction::Binary { op: BinOp::LoadF, dst: Operand::Reg(XMM1), src: Operand::Reg(XMM0), size: None },
+        Instruction::Binary { op: BinOp::StoreF, dst: Operand::Reg(XMM0), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: None },
         Instruction::Binary { op: BinOp::AddF, dst: Operand::Reg(XMM0), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: None },
         Instruction::Binary { op: BinOp::AddF, dst: Operand::Reg(XMM1), src: Operand::Reg(XMM0), size: None },
         Instruction::Binary { op: BinOp::SubF, dst: Operand::Reg(XMM2), src: Operand::Reg(XMM1), size: None },
@@ -166,8 +167,9 @@ fn main() -> std::io::Result<()> {
         Instruction::Binary { op: BinOp::UcomiF, dst: Operand::Reg(XMM6), src: Operand::Reg(XMM5), size: None },
         Instruction::Binary { op: BinOp::UcomiF, dst: Operand::Reg(XMM6), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: None },
         
-        Instruction::Binary { op: BinOp::MovF, dst: Operand::Reg(XMM0), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: Some(Size::U32) },
-        Instruction::Binary { op: BinOp::MovF, dst: Operand::Reg(XMM1), src: Operand::Reg(XMM0), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::LoadF, dst: Operand::Reg(XMM0), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::StoreF, dst: Operand::Reg(XMM0), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: Some(Size::U32) },
+        Instruction::Binary { op: BinOp::LoadF, dst: Operand::Reg(XMM1), src: Operand::Reg(XMM0), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::AddF, dst: Operand::Reg(XMM0), src: Operand::MemoryAddress(MemAddress::symbol("my_float")), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::AddF, dst: Operand::Reg(XMM1), src: Operand::Reg(XMM0), size: Some(Size::U32) },
         Instruction::Binary { op: BinOp::SubF, dst: Operand::Reg(XMM2), src: Operand::Reg(XMM1), size: Some(Size::U32) },

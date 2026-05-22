@@ -64,11 +64,18 @@ impl UnaryOp {
             UnaryOp::Cwde => UnaryEncoding::Simple { opcode: &[0x98], },
             UnaryOp::Cdqe => UnaryEncoding::Simple { opcode: &[0x48, 0x98], },
 
+            UnaryOp::Ud2 => UnaryEncoding::Simple { opcode: &[0x0F, 0x0B], },
+            UnaryOp::Hlt => UnaryEncoding::Simple { opcode: &[0xF4], },
+            UnaryOp::Pause => UnaryEncoding::Simple { opcode: &[0xF3, 0x90], },
+            UnaryOp::Fwait => UnaryEncoding::Simple { opcode: &[0x9B], },
+
             // ==========================================
             // carry flag ops
             // ==========================================
             UnaryOp::Clc => UnaryEncoding::Simple { opcode: &[0xF8], },
             UnaryOp::Stc => UnaryEncoding::Simple { opcode: &[0xF9], },
+            UnaryOp::Cld => UnaryEncoding::Simple { opcode: &[0xFC], },
+            UnaryOp::Std => UnaryEncoding::Simple { opcode: &[0xFD], },
             UnaryOp::Cmc => UnaryEncoding::Simple { opcode: &[0xF5], },
             UnaryOp::Cli => UnaryEncoding::Simple { opcode: &[0xFA], },
             UnaryOp::Sti => UnaryEncoding::Simple { opcode: &[0xFB], },

@@ -144,8 +144,15 @@ pub enum UnaryOp {
     Cwd,
 
     Clc,
+    Cld,
     Stc,
+    Std,
     Cmc,
+
+    Ud2,
+    Hlt,
+    Pause,
+    Fwait,
 
     Cli,
     Sti,

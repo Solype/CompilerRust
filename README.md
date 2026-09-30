@@ -8,11 +8,11 @@ This project is an early-stage compiler written in Rust, developed as part of th
 ⚠️ This project is a work in progress.
 
 - No command-line arguments are supported yet — everything is currently hardcoded.
-- The instructions to encode are defined as large enums directly in `main.rs`.
+- The instructions to encode are hardcoded test programs in `src/samples/`; `main.rs` only builds the ELF file.
 - Running the program generates an ELF object file, which can then be linked with `ld` to produce an executable.
 
 ## How it works
-1. Instructions are represented as Rust enum variants (hardcoded in `main`).
+1. Instructions are represented as Rust enum variants (hardcoded in `src/samples/`).
 2. These instructions are encoded into machine code.
 3. The encoded bytes are written into a properly structured ELF object file.
 4. The resulting `.elf` (equivalent to `.o`) file can be linked with standard tools (e.g. `ld`) to produce a runnable binary.

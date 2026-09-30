@@ -1,8 +1,4 @@
-use super::{
-    MemAddress,
-    register::*,
-};
-
+use super::{MemAddress, register::*};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
@@ -22,7 +18,6 @@ impl From<usize> for Size {
         }
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub enum Operand {
@@ -72,7 +67,6 @@ pub enum BinOp {
     Movsx,
     Xchg,
 
-
     // Arithmetic
     Add,
     Sub,
@@ -101,7 +95,7 @@ pub enum BinOp {
     UcomiF,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ShiftOp {
     // Shifts
     Shl,
@@ -172,7 +166,7 @@ pub enum StackOp {
     Pushf,
     Popf,
     Leave,
-    Enter(u8)
+    Enter(u8),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -194,7 +188,7 @@ pub enum SysOp {
     Sysenter,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum BitScanOp {
     Bsf,
     Bsr,
@@ -237,13 +231,13 @@ pub enum Instruction {
         cc: ConditionCode,
         dst: Register,
         src: Operand,
-        size: Option<Size>
+        size: Option<Size>,
     },
 
     Lea {
         src: Operand,
         dst: Register,
-        size: Option<Size>
+        size: Option<Size>,
     },
 
     Shift {
@@ -277,7 +271,7 @@ pub enum Instruction {
         op: BitOp,
         dst: Operand,
         src: Operand,
-        size: Option<Size>
+        size: Option<Size>,
     },
 
     SetCC {
@@ -299,7 +293,7 @@ pub enum Instruction {
 
     String {
         op: StringOp,
-        size: Option<Size>
+        size: Option<Size>,
     },
 
     Sys {
@@ -308,14 +302,13 @@ pub enum Instruction {
 
     Prefix {
         prefix: Vec<Prefix>,
-        ins: Box<Instruction>
+        ins: Box<Instruction>,
     },
 
     Nop(u8),
 
     LocalSym(String),
 }
-
 
 #[derive(Debug, Clone, Default)]
 pub struct Relocation {
@@ -330,10 +323,10 @@ pub struct Relocation {
 pub enum RelocKind {
     Relative,
     #[default]
-    Absolute
+    Absolute,
 }
 
-pub const MEMNODISP : u8 = 0b00;
-pub const MEMDISP8 : u8 = 0b01;
-pub const MEMDISP32 : u8 = 0b10;
-pub const REG : u8 = 0b11;
+pub const MEMNODISP: u8 = 0b00;
+pub const MEMDISP8: u8 = 0b01;
+pub const MEMDISP32: u8 = 0b10;
+pub const REG: u8 = 0b11;

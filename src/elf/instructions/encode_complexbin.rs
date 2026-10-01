@@ -3,7 +3,7 @@ use super::{
     encode_xadd_cmp::encode_xadd_cmpxchg,
     modrm::mod_rm_encode,
     register::*,
-    utils::{emit_imm, emit_rex, emit_size_prefix},
+    utils::{emit_imm_sx32, emit_rex, emit_size_prefix},
 };
 
 pub fn encode_complex_binary(
@@ -151,6 +151,9 @@ fn encode_imul_three_operands(
     let modrm = mod_rm_encode(src, &Operand::Reg(dst_reg));
 
     v.append(modrm);
-    v.extend_vec(emit_imm(imm, if opcode == 0x6B { Size::U8 } else { size }));
+    v.extend_vec(emit_imm_sx32(
+        imm,
+        if opcode == 0x6B { Size::U8 } else { size },
+    ));
     v
 }

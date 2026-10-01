@@ -2,7 +2,7 @@ use super::super::{
     enums::*,
     register::*,
     struct_encode_information::*,
-    utils::{emit_imm, emit_rex, emit_size_prefix},
+    utils::{emit_imm, emit_imm_sx32, emit_rex, emit_size_prefix},
 };
 use super::structs::*;
 
@@ -70,7 +70,11 @@ pub(super) fn encode_reg_int(
         }
     }
 
-    v.extend_vec(emit_imm(val, size));
+    let imm = match *enc {
+        BinaryEncoding::Mov { .. } => emit_imm(val, size), // B8+r : movabs, imm64 légal
+        _ => emit_imm_sx32(val, size),                     // 81 /x : imm32 seulement
+    };
+    v.extend_vec(imm);
 
     v
 }

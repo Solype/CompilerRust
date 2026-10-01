@@ -123,11 +123,13 @@ fn encode_absolute(
 fn encode_base(base: Register, data: &mut Vec<u8>) {
     assert!(base.class == RegisterClass::Gpr);
 
-    if base.index == Gpr::Sp as u8 {
+    // ModRM ne voit que les 3 bits bas : r12 se comporte comme rsp (SIB
+    // obligatoire) et r13 comme rbp (pas de mode sans déplacement)
+    if base.low3() == Gpr::Sp as u8 {
         data[0] = (MEMNODISP << 6) | 0b100;
         data.push(encode_sib(Scale::One, None, Some(base)));
 
-    } else if base.index == Gpr::Bp as u8 {
+    } else if base.low3() == Gpr::Bp as u8 {
         data[0] = (MEMDISP8 << 6) | base.low3();
         data.push(0);
 
@@ -149,7 +151,7 @@ fn encode_base_disp(
     let (mod_bits, disp_bytes) =
         encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
 
-    if base.index == Gpr::Sp as u8 {
+    if base.low3() == Gpr::Sp as u8 {
         data[0] = (mod_bits << 6) | 0b100;
         data.push(encode_sib(Scale::One, None, Some(base)));
 
@@ -193,9 +195,17 @@ fn encode_base_index_scale(
 
     assert!(index.index != Gpr::Sp as u8);
 
-    data[0] = (MEMNODISP << 6) | 0b100;
+    // Avec un SIB, base = 101 et mod = 00 signifie « pas de base + disp32 » :
+    // rbp / r13 en base exigent donc un disp8 à 0
+    if base.low3() == Gpr::Bp as u8 {
+        data[0] = (MEMDISP8 << 6) | 0b100;
+        data.push(encode_sib(scale, Some(index), Some(base)));
+        data.push(0);
 
-    data.push(encode_sib(scale, Some(index), Some(base)));
+    } else {
+        data[0] = (MEMNODISP << 6) | 0b100;
+        data.push(encode_sib(scale, Some(index), Some(base)));
+    }
 }
 
 fn encode_base_index_scale_disp(

@@ -35,8 +35,7 @@ cases! {
     /// pop qword ptr [rbx+8]
     pop_qword_rbx_plus_8: stack(StackOp::Pop, mem(at(RBX).disp(8)), None) => [0x8F, 0x43, 0x08] | [0x48, 0x8F, 0x43, 0x08];
     /// push qword ptr [r12]
-    #[ignore = "BUG: produit `rex.W; .byte 0xff; .byte 0x34`"]
-    push_qword_r12: stack(StackOp::Push, mem(at(R12)), None) => [0x41, 0xFF, 0x34, 0x24];
+    push_qword_r12: stack(StackOp::Push, mem(at(R12)), None) => [0x41, 0xFF, 0x34, 0x24] | [0x49, 0xFF, 0x34, 0x24];
     /// push qword ptr [rip+my_data]
     push_qword_rip_plus_my_data: stack(StackOp::Push, mem(MemAddress::symbol("my_data")), None) => [0xFF, 0x35, 0x00, 0x00, 0x00, 0x00] | [0x48, 0xFF, 0x35, 0x00, 0x00, 0x00, 0x00];
     /// pushfq

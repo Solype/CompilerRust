@@ -75,7 +75,6 @@ fn mem_extended_xmm() {
 }
 
 #[test]
-#[ignore = "BUG: ni REX.B ni SIB pour une base r12 (causes 2 et 4)"]
 fn mem_extended_base() {
     assert_eq!(encode(XMM1, mem(at(R12)), Size::U64), [0xF2, 0x49, 0x0F, 0x2A, 0x0C, 0x24]);
 }

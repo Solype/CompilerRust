@@ -1,9 +1,5 @@
 use super::{
-    enums::*,
-    modrm::mod_rm_encode,
-    register::*,
-    struct_encode_information::*,
-    utils::emit_rex,
+    enums::*, modrm::mod_rm_encode, register::*, struct_encode_information::*, utils::emit_rex,
 };
 
 /// (mandatory prefix, opcode after 0x0F)

@@ -1,19 +1,14 @@
 use super::{
-    modrm::*,
     enums::*,
-    utils::{emit_size_prefix, emit_rex},
+    modrm::*,
+    register::{RAX, RSI, Register},
     struct_encode_information::*,
-    register::{Register, RAX, RSI},
+    utils::{emit_rex, emit_size_prefix},
 };
 
 ///////////////////////////////////////////////////////////////////
 
-fn encode_with_reg(
-    opcode: u8,
-    reg: Register,
-    size: Size,
-) -> EncodeInformation {
-
+fn encode_with_reg(opcode: u8, reg: Register, size: Size) -> EncodeInformation {
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
@@ -32,7 +27,6 @@ fn encode_mem_address(
     size: Size,
     regfield: Register,
 ) -> EncodeInformation {
-
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
@@ -42,8 +36,7 @@ fn encode_mem_address(
 
     let reg_field = Operand::Reg(regfield);
 
-    let modrm =
-        mod_rm_encode(value, &reg_field);
+    let modrm = mod_rm_encode(value, &reg_field);
 
     v.append(modrm);
 
@@ -52,11 +45,7 @@ fn encode_mem_address(
 
 ///////////////////////////////////////////////////////////////////
 
-pub fn encode_simple(
-    opcode: u8,
-    size: Size,
-) -> EncodeInformation {
-
+pub fn encode_simple(opcode: u8, size: Size) -> EncodeInformation {
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
@@ -68,32 +57,19 @@ pub fn encode_simple(
 
 ///////////////////////////////////////////////////////////////////
 
-pub(super) fn encode_stack(
-    op: StackOp,
-    value: &Operand,
-    size: Size,
-) -> EncodeInformation {
-
+pub(super) fn encode_stack(op: StackOp, value: &Operand, size: Size) -> EncodeInformation {
     match op {
-
         // =====================================================
         // PUSHF / POPF
         // =====================================================
+        StackOp::Pushf => encode_simple(0x9C, size),
 
-        StackOp::Pushf => {
-            encode_simple(0x9C, size)
-        }
-
-        StackOp::Popf => {
-            encode_simple(0x9D, size)
-        }
+        StackOp::Popf => encode_simple(0x9D, size),
 
         // =====================================================
         // ENTER
         // =====================================================
-
         StackOp::Enter(nesting_lv) => {
-
             let mut v = Vec::new();
 
             let frame_size = match value {
@@ -127,9 +103,7 @@ pub(super) fn encode_stack(
         // =====================================================
         // LEAVE
         // =====================================================
-
         StackOp::Leave => {
-
             return EncodeInformation {
                 data: vec![0xC9],
                 ..Default::default()
@@ -139,23 +113,16 @@ pub(super) fn encode_stack(
         // =====================================================
         // PUSH
         // =====================================================
-
         StackOp::Push => match value {
-
             // -------------------------------------------------
             // push reg
             // -------------------------------------------------
-
-            Operand::Reg(reg) => {
-                encode_with_reg(0x50, *reg, size)
-            }
+            Operand::Reg(reg) => encode_with_reg(0x50, *reg, size),
 
             // -------------------------------------------------
             // push imm
             // -------------------------------------------------
-
             Operand::Imm(val) => {
-
                 let mut v = EncodeInformation::new();
 
                 emit_size_prefix(&mut v, size);
@@ -164,11 +131,10 @@ pub(super) fn encode_stack(
                     v.push(0x6A);
                     v.push(*val as u8);
                 } else {
-
                     v.push(0x68);
                     match size {
                         Size::U16 => v.extend(&(*val as u16).to_le_bytes()),
-                        _ => v.extend( &(*val as u32).to_le_bytes()),
+                        _ => v.extend(&(*val as u32).to_le_bytes()),
                     }
                 }
                 v
@@ -177,9 +143,7 @@ pub(super) fn encode_stack(
             // -------------------------------------------------
             // push symbol
             // -------------------------------------------------
-
             Operand::Sym(sym) => {
-
                 let mut v = EncodeInformation::new();
 
                 v.push(0x68);
@@ -203,45 +167,30 @@ pub(super) fn encode_stack(
             // push r/m
             // FF /6
             // -------------------------------------------------
-
-            Operand::MemoryAddress(_) => {
-                encode_mem_address( 0xFF, value, size, RSI, )
-            }
+            Operand::MemoryAddress(_) => encode_mem_address(0xFF, value, size, RSI),
 
             _ => {
-                panic!(
-                    "unsupported PUSH operand {:?}",
-                    value
-                )
+                panic!("unsupported PUSH operand {:?}", value)
             }
         },
 
         // =====================================================
         // POP
         // =====================================================
-
         StackOp::Pop => match value {
-
             // -------------------------------------------------
             // pop reg
             // -------------------------------------------------
-
             Operand::Reg(reg) => encode_with_reg(0x58, *reg, size),
 
             // -------------------------------------------------
             // pop r/m
             // 8F /0
             // -------------------------------------------------
-
-            Operand::MemoryAddress(_) => {
-                encode_mem_address( 0x8F, value, size, RAX, )
-            }
+            Operand::MemoryAddress(_) => encode_mem_address(0x8F, value, size, RAX),
 
             _ => {
-                panic!(
-                    "unsupported POP operand {:?}",
-                    value
-                )
+                panic!("unsupported POP operand {:?}", value)
             }
         },
     }

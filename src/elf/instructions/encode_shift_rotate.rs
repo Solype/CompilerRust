@@ -1,13 +1,9 @@
 use super::{
-    EncodeInformation,
-    Operand,
+    EncodeInformation, Operand, ShiftOp, Size,
+    modrm::mod_rm_encode,
     register::*,
-    ShiftOp,
-    Size,
-    modrm::{mod_rm_encode},
-    utils::{emit_size_prefix, emit_rex},
+    utils::{emit_rex, emit_size_prefix},
 };
-
 
 pub fn encode_shift_rotate(
     op: &ShiftOp,
@@ -22,7 +18,7 @@ pub fn encode_shift_rotate(
     // ================================
     let (opcode_1, opcode_cl, opcode_imm) = match size {
         Size::U8 => (0xD0, 0xD2, 0xC0),
-        _        => (0xD1, 0xD3, 0xC1),
+        _ => (0xD1, 0xD3, 0xC1),
     };
 
     // ================================
@@ -56,8 +52,7 @@ pub fn encode_shift_rotate(
 
         Operand::Imm(_) => v.push(opcode_imm),
 
-        Operand::Reg(reg) if reg.class == RegisterClass::Gpr && reg.index == Gpr::C as u8 =>
-        {
+        Operand::Reg(reg) if reg.class == RegisterClass::Gpr && reg.index == Gpr::C as u8 => {
             v.push(opcode_cl)
         }
 

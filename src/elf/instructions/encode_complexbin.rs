@@ -1,13 +1,9 @@
-
 use super::{
-    ComplexBinOp,
-    EncodeInformation,
-    Operand,
-    register::*,
-    Size,
-    utils::{emit_size_prefix, emit_rex, emit_imm},
+    ComplexBinOp, EncodeInformation, Operand, Size,
     encode_xadd_cmp::encode_xadd_cmpxchg,
-    modrm::{mod_rm_encode}
+    modrm::mod_rm_encode,
+    register::*,
+    utils::{emit_imm, emit_rex, emit_size_prefix},
 };
 
 pub fn encode_complex_binary(
@@ -19,32 +15,24 @@ pub fn encode_complex_binary(
 ) -> EncodeInformation {
     match op {
         // MUL / DIV / IDIV unary
-        ComplexBinOp::Mul
-        | ComplexBinOp::Div
-        | ComplexBinOp::Idiv
+        ComplexBinOp::Mul | ComplexBinOp::Div | ComplexBinOp::Idiv
             if matches!(dst, Operand::NoOperand) && extra.is_none() =>
         {
             encode_group_f6_f7(op, src, size)
         }
 
         // IMUL unary (implicit AX/EAX/RAX)
-        ComplexBinOp::Imul
-            if matches!(dst, Operand::NoOperand) && extra.is_none() =>
-        {
+        ComplexBinOp::Imul if matches!(dst, Operand::NoOperand) && extra.is_none() => {
             encode_group_f6_f7(op, src, size)
         }
 
         // IMUL r, r/m
-        ComplexBinOp::Imul
-            if !matches!(dst, Operand::NoOperand) && extra.is_none() =>
-        {
+        ComplexBinOp::Imul if !matches!(dst, Operand::NoOperand) && extra.is_none() => {
             encode_imul_two_operands(dst, src, size)
         }
 
         // IMUL r, r/m, imm
-        ComplexBinOp::Imul
-            if !matches!(dst, Operand::NoOperand) && extra.is_some() =>
-        {
+        ComplexBinOp::Imul if !matches!(dst, Operand::NoOperand) && extra.is_some() => {
             encode_imul_three_operands(dst, src, extra, size)
         }
         ComplexBinOp::Xadd => encode_xadd_cmpxchg(op, dst, src, size),
@@ -69,11 +57,7 @@ pub fn encode_complex_binary(
     }
 }
 
-fn encode_group_f6_f7(
-    op: &ComplexBinOp,
-    src: &Operand,
-    size: Size,
-) -> EncodeInformation {
+fn encode_group_f6_f7(op: &ComplexBinOp, src: &Operand, size: Size) -> EncodeInformation {
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
@@ -113,17 +97,16 @@ fn encode_group_f6_f7(
 
     let modrm = mod_rm_encode(
         src,
-        &Operand::Reg(Register { class: RegisterClass::Gpr, index: reg_field, }),
+        &Operand::Reg(Register {
+            class: RegisterClass::Gpr,
+            index: reg_field,
+        }),
     );
     v.append(modrm);
-    return v
+    return v;
 }
 
-fn encode_imul_two_operands(
-    dst: &Operand,
-    src: &Operand,
-    size: Size,
-) -> EncodeInformation {
+fn encode_imul_two_operands(dst: &Operand, src: &Operand, size: Size) -> EncodeInformation {
     let dst_reg = match dst {
         Operand::Reg(r) => *r,
         _ => panic!("imul dst must be register"),
@@ -143,10 +126,7 @@ fn encode_imul_two_operands(
     v.push(0x0F);
     v.push(0xAF);
 
-    let modrm = mod_rm_encode(
-        src,
-        &Operand::Reg(dst_reg),
-    );
+    let modrm = mod_rm_encode(src, &Operand::Reg(dst_reg));
 
     v.append(modrm);
     v
@@ -185,7 +165,7 @@ fn encode_imul_three_operands(
 
     v.push(opcode);
 
-    let modrm = mod_rm_encode( src, &Operand::Reg(dst_reg),);
+    let modrm = mod_rm_encode(src, &Operand::Reg(dst_reg));
 
     v.append(modrm);
     v.extend_vec(emit_imm(imm, if opcode == 0x6B { Size::U8 } else { size }));

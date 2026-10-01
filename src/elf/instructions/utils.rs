@@ -1,6 +1,11 @@
 use super::{EncodeInformation, Size, register::Register};
 
-pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<Register>, rm: Option<Register>) {
+pub(super) fn emit_rex(
+    v: &mut EncodeInformation,
+    size: Size,
+    reg: Option<Register>,
+    rm: Option<Register>,
+) {
     let mut rex = 0x40;
 
     if let Size::U64 = size {

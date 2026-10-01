@@ -1,24 +1,16 @@
-
 use super::super::{
-    modrm::*,
     enums::*,
-    struct_encode_information::*,
-    utils::{emit_size_prefix, emit_rex, emit_imm},
+    modrm::*,
     register::*,
+    struct_encode_information::*,
+    utils::{emit_imm, emit_rex, emit_size_prefix},
 };
 
 use super::*;
 
-
-
 ///////////////////////////////////////////////////////////////////
 
-fn encode_reg_sym(
-    reg: Register,
-    sym: &str,
-    size: Size,
-    enc: &BinaryEncoding,
-) -> EncodeInformation {
+fn encode_reg_sym(reg: Register, sym: &str, size: Size, enc: &BinaryEncoding) -> EncodeInformation {
     if !matches!(reg.class, RegisterClass::Gpr) {
         panic!("registre invalide");
     }
@@ -28,12 +20,10 @@ fn encode_reg_sym(
     emit_rex(&mut v, size, None, Some(reg));
 
     match *enc {
-
         // --------------------------------------------------
         // MOV reg, sym
         // --------------------------------------------------
         BinaryEncoding::Mov { .. } => {
-
             let base = match size {
                 Size::U8 => 0xB0,
                 _ => 0xB8,
@@ -50,13 +40,9 @@ fn encode_reg_sym(
             modrm_ext,
             ..
         } => {
-
             v.push(opcode_imm);
 
-            let modrm =
-                0b11_000_000 |
-                ((modrm_ext & 7) << 3) |
-                reg.low3();
+            let modrm = 0b11_000_000 | ((modrm_ext & 7) << 3) | reg.low3();
 
             v.push(modrm);
         }
@@ -81,26 +67,29 @@ fn encode_reg_sym(
 
 ///////////////////////////////////////////////////////////////////
 
-fn encode_mem_imm(
-    dst: &Operand,
-    val: i64,
-    size: Size,
-    enc: &BinaryEncoding,
-) -> EncodeInformation {
-
+fn encode_mem_imm(dst: &Operand, val: i64, size: Size, enc: &BinaryEncoding) -> EncodeInformation {
     let (opcode_imm, opcode_imm8, modrm_ext) = match *enc {
-
         BinaryEncoding::Mov { opcode_imm, .. } => (opcode_imm, None, 0),
 
-        BinaryEncoding::Alu { opcode_imm, opcode_imm8, modrm_ext, .. } =>
-            ( opcode_imm, opcode_imm8, modrm_ext, ),
+        BinaryEncoding::Alu {
+            opcode_imm,
+            opcode_imm8,
+            modrm_ext,
+            ..
+        } => (opcode_imm, opcode_imm8, modrm_ext),
 
-        _ => {unimplemented!("mem, imm unsupported for this instruction")}
+        _ => {
+            unimplemented!("mem, imm unsupported for this instruction")
+        }
     };
 
     let fits_i8 = (val as i64) >= -128 && (val as i64) <= 127;
     let use_imm8 = fits_i8 && opcode_imm8.is_some() && size != Size::U8;
-    let opcode = if use_imm8 { opcode_imm8.unwrap() } else { opcode_imm };
+    let opcode = if use_imm8 {
+        opcode_imm8.unwrap()
+    } else {
+        opcode_imm
+    };
 
     let mut v = EncodeInformation::new();
 
@@ -132,10 +121,9 @@ pub(in super::super) fn encode_binary(
     src: &Operand,
     size: Size,
 ) -> EncodeInformation {
-    let enc = get_op_codes(op,size);
+    let enc = get_op_codes(op, size);
 
     match (dst, src) {
-
         (Operand::Reg(reg), Operand::Imm(val)) => encode_reg_int(reg, *val, size, &enc),
         (Operand::Reg(reg), Operand::Sym(sym)) => encode_reg_sym(*reg, sym, size, &enc),
         (Operand::MemoryAddress(_), Operand::Imm(val)) => encode_mem_imm(dst, *val, size, &enc),

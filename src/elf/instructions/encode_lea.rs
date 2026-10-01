@@ -1,23 +1,15 @@
 use super::{
-    EncodeInformation,
-    Operand,
+    EncodeInformation, Operand, Size,
+    modrm::mod_rm_encode,
     register::*,
-    Size,
-    utils::{emit_size_prefix, emit_rex},
-    modrm::{mod_rm_encode},
+    utils::{emit_rex, emit_size_prefix},
 };
 
-pub(super) fn encode_lea(
-    dst: &Register,
-    src: &Operand,
-    size: Size,
-) -> EncodeInformation {
-
+pub(super) fn encode_lea(dst: &Register, src: &Operand, size: Size) -> EncodeInformation {
     let rm = match src {
         Operand::Reg(r) => Some(*r),
         _ => None,
     };
-
 
     let mut v = EncodeInformation::new();
 

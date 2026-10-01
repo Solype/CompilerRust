@@ -1,24 +1,18 @@
-
 use super::{
-    modrm::*,
     enums::*,
-    utils::{emit_size_prefix, emit_rex},
-    struct_encode_information::*,
+    modrm::*,
     register::*,
+    struct_encode_information::*,
+    utils::{emit_rex, emit_size_prefix},
 };
 
 #[derive(Debug, Clone, Copy)]
 enum UnaryEncoding {
     /// opcode simple sans ModRM
-    Simple {
-        opcode: &'static [u8],
-    },
+    Simple { opcode: &'static [u8] },
 
     /// opcode + ModRM /digit
-    ModRm {
-        opcode: u8,
-        modrm_ext: u8,
-    },
+    ModRm { opcode: u8, modrm_ext: u8 },
 }
 
 impl UnaryOp {
@@ -50,59 +44,60 @@ impl UnaryOp {
             // ==========================================
             // no operand
             // ==========================================
-            UnaryOp::Nop => UnaryEncoding::Simple {
-                opcode: &[0x90],
-            },
+            UnaryOp::Nop => UnaryEncoding::Simple { opcode: &[0x90] },
 
             // ==========================================
             // sign extension accumulator -> high regs
             // ==========================================
-            UnaryOp::Cwd => UnaryEncoding::Simple { opcode: &[0x99], }, // AX -> DX:AX (16-bit)
-            UnaryOp::Cdq => UnaryEncoding::Simple { opcode: &[0x99], }, // EAX -> EDX:EAX (32-bit)
-            UnaryOp::Cqo => UnaryEncoding::Simple { opcode: &[0x48, 0x99], }, // REX.W + CQO
-            UnaryOp::Cbw => UnaryEncoding::Simple { opcode: &[0x66, 0x98], },
-            UnaryOp::Cwde => UnaryEncoding::Simple { opcode: &[0x98], },
-            UnaryOp::Cdqe => UnaryEncoding::Simple { opcode: &[0x48, 0x98], },
+            UnaryOp::Cwd => UnaryEncoding::Simple { opcode: &[0x99] }, // AX -> DX:AX (16-bit)
+            UnaryOp::Cdq => UnaryEncoding::Simple { opcode: &[0x99] }, // EAX -> EDX:EAX (32-bit)
+            UnaryOp::Cqo => UnaryEncoding::Simple {
+                opcode: &[0x48, 0x99],
+            }, // REX.W + CQO
+            UnaryOp::Cbw => UnaryEncoding::Simple {
+                opcode: &[0x66, 0x98],
+            },
+            UnaryOp::Cwde => UnaryEncoding::Simple { opcode: &[0x98] },
+            UnaryOp::Cdqe => UnaryEncoding::Simple {
+                opcode: &[0x48, 0x98],
+            },
 
-            UnaryOp::Ud2 => UnaryEncoding::Simple { opcode: &[0x0F, 0x0B], },
-            UnaryOp::Hlt => UnaryEncoding::Simple { opcode: &[0xF4], },
-            UnaryOp::Pause => UnaryEncoding::Simple { opcode: &[0xF3, 0x90], },
-            UnaryOp::Fwait => UnaryEncoding::Simple { opcode: &[0x9B], },
+            UnaryOp::Ud2 => UnaryEncoding::Simple {
+                opcode: &[0x0F, 0x0B],
+            },
+            UnaryOp::Hlt => UnaryEncoding::Simple { opcode: &[0xF4] },
+            UnaryOp::Pause => UnaryEncoding::Simple {
+                opcode: &[0xF3, 0x90],
+            },
+            UnaryOp::Fwait => UnaryEncoding::Simple { opcode: &[0x9B] },
 
             // ==========================================
             // carry flag ops
             // ==========================================
-            UnaryOp::Clc => UnaryEncoding::Simple { opcode: &[0xF8], },
-            UnaryOp::Stc => UnaryEncoding::Simple { opcode: &[0xF9], },
-            UnaryOp::Cld => UnaryEncoding::Simple { opcode: &[0xFC], },
-            UnaryOp::Std => UnaryEncoding::Simple { opcode: &[0xFD], },
-            UnaryOp::Cmc => UnaryEncoding::Simple { opcode: &[0xF5], },
-            UnaryOp::Cli => UnaryEncoding::Simple { opcode: &[0xFA], },
-            UnaryOp::Sti => UnaryEncoding::Simple { opcode: &[0xFB], },
-            UnaryOp::Lahf => UnaryEncoding::Simple { opcode: &[0x9F], },
-            UnaryOp::Sahf => UnaryEncoding::Simple { opcode: &[0x9E], },
+            UnaryOp::Clc => UnaryEncoding::Simple { opcode: &[0xF8] },
+            UnaryOp::Stc => UnaryEncoding::Simple { opcode: &[0xF9] },
+            UnaryOp::Cld => UnaryEncoding::Simple { opcode: &[0xFC] },
+            UnaryOp::Std => UnaryEncoding::Simple { opcode: &[0xFD] },
+            UnaryOp::Cmc => UnaryEncoding::Simple { opcode: &[0xF5] },
+            UnaryOp::Cli => UnaryEncoding::Simple { opcode: &[0xFA] },
+            UnaryOp::Sti => UnaryEncoding::Simple { opcode: &[0xFB] },
+            UnaryOp::Lahf => UnaryEncoding::Simple { opcode: &[0x9F] },
+            UnaryOp::Sahf => UnaryEncoding::Simple { opcode: &[0x9E] },
         }
     }
 }
 
-pub(super) fn encode_unary(
-    op: UnaryOp,
-    dst: &Operand,
-    size: Size,
-) -> EncodeInformation {
-
+pub(super) fn encode_unary(op: UnaryOp, dst: &Operand, size: Size) -> EncodeInformation {
     let enc = op.encoding(size);
 
     match enc {
         // ==================================================
         // Simple opcodes (nop, cdq, cqo, clc, stc, cmc...)
         // ==================================================
-        UnaryEncoding::Simple { opcode } => {
-            EncodeInformation {
-                data: opcode.to_vec(),
-                ..Default::default()
-            }
-        }
+        UnaryEncoding::Simple { opcode } => EncodeInformation {
+            data: opcode.to_vec(),
+            ..Default::default()
+        },
 
         // ==================================================
         // ModRM unary ops (inc/dec/not/neg)

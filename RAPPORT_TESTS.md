@@ -1,12 +1,12 @@
 # Rapport de tests de l'encodeur x86-64
 
-1er octobre 2026 · version en ligne : https://claude.ai/code/artifact/5f97e6cd-52b8-4205-bc58-d1c65b70267f
+1er octobre 2026, mis à jour après la correction des sauts · version en ligne : https://claude.ai/code/artifact/5f97e6cd-52b8-4205-bc58-d1c65b70267f
 
 ## Résumé
 
-779 tests unitaires couvrent maintenant toutes les familles d'instructions de l'encodeur : ils ont trouvé **76 encodages faux**, dus à **12 causes**. Les plus graves : les sauts `jg`/`jl`/`jle` sont permutés, et les registres `r8`–`r15` utilisés comme base ou index d'une adresse mémoire sont silencieusement remplacés par `rax`–`rdi`.
+779 tests unitaires couvrent maintenant toutes les familles d'instructions de l'encodeur : ils ont trouvé **76 encodages faux**, dus à **12 causes**. Les sauts `jg`/`jl`/`jle`, qui étaient permutés, sont corrigés depuis : **il reste 73 cas faux, dus à 11 causes**. Le plus grave restant : les registres `r8`–`r15` utilisés comme base ou index d'une adresse mémoire sont silencieusement remplacés par `rax`–`rdi`.
 
-`cargo test` passe (703 tests OK, 0 échec) parce que chaque cas faux est marqué `#[ignore = "BUG: produit ..."]`. `cargo test -- --ignored` les fait tous échouer, ce qui donne la liste de travail.
+`cargo test` passe (706 tests OK, 0 échec) parce que chaque cas faux restant est marqué `#[ignore = "BUG: produit ..."]`. `cargo test -- --ignored` fait échouer les 73, ce qui donne la liste de travail.
 
 Cinq causes sont dans le code d'adressage commun (`utils.rs` / `modrm.rs`) et représentent à elles seules 42 des 76 cas.
 
@@ -30,7 +30,7 @@ Sur 767 cas d'encodage, 612 produisent exactement les octets de GNU `as`, 79 un 
 - **Adressage :** 19 modes, dont `[rsp]`, `[rbp]`, `[r12]`, `[r13]`, `[rbp+rcx]`, `[rbx+r8*2]`, `[rcx*4+16]` sans base, `[rip+sym]` et l'adresse absolue avec segment `fs:`.
 - **Relocations :** offset, type et addend des sauts, de `loop`, et des accès `[rip+sym]` suivis d'une immédiate ou précédés de `lock`.
 
-Résultats par famille, triés par nombre de cas faux :
+Résultats par famille à la première exécution, triés par nombre de cas faux (les 3 cas faux de `ctrl` sont corrigés depuis) :
 
 | Famille | Identiques à `as` | Équivalents valides | Faux |
 | --- | ---: | ---: | ---: |
@@ -57,11 +57,11 @@ En proportion, `lea` (5 sur 17) et `bitscan` (4 sur 14) sont les familles les pl
 
 ## Bugs trouvés
 
-Les 76 cas faux se répartissent en 12 causes, classées de la plus grave à la moins grave. Les causes 2, 4, 6, 8 et 9 sont dans le code d'adressage commun et touchent donc toutes les familles.
+Les 76 cas faux se répartissaient en 12 causes, classées de la plus grave à la moins grave. La cause 1 est corrigée. Les causes 2, 4, 6, 8 et 9 sont dans le code d'adressage commun et touchent donc toutes les familles.
 
 | # | Cause | Cas | Exemple (attendu → produit) | Fichier |
 | --- | --- | --- | --- | --- |
-| 1 | Opcodes de `jg`, `jl` et `jle` permutés | 3 | `jg` → `jl` | `encode_ctrl.rs` |
+| 1 | **Corrigé.** Opcodes de `jg`, `jl` et `jle` permutés | 3 | `jg` → `jl` | `encode_ctrl.rs` |
 | 2 | `REX.B`/`REX.X` jamais émis pour la base ou l'index d'une adresse mémoire | 19 | `[r9]` → `[rcx]`, `[rbx+r8*2]` → `[rbx+rax*2]` | `utils.rs` (`emit_rex`) |
 | 3 | Immédiate 64 bits émise là où x86 n'accepte que 32 bits : 4 octets parasites décalent la suite du code | 11 | `add qword [rbx+8], 0x1000`, `test r9, 1` | `encode_alu` |
 | 4 | `r12`/`r13` comme base : SIB et disp8 oubliés (test sur `index` au lieu de `low3()`) | 9 | `[r12]`, `[r13]` → octets invalides | `modrm.rs` |
@@ -99,8 +99,8 @@ Modifications ailleurs : `src/elf/instructions/mod.rs` déclare `#[cfg(test)] mo
 Pour lancer :
 
 ```bash
-cargo test                      # 703 OK, 76 ignorés
-cargo test -- --ignored         # les 76 bugs, tous en échec
+cargo test                      # 706 OK, 73 ignorés
+cargo test -- --ignored         # les 73 bugs restants, tous en échec
 cargo test encode_tests::mov    # une seule famille
 ```
 
@@ -108,9 +108,9 @@ Quand un bug est corrigé, il suffit de retirer le `#[ignore]` du cas correspond
 
 ## Prochaines étapes
 
-Corriger d'abord `jg`/`jl`/`jle` (3 lignes), puis le code d'adressage commun, qui débloque 42 cas d'un coup.
+Les sauts sont corrigés ; la suite est le code d'adressage commun, qui débloque 42 cas d'un coup.
 
-- [ ] Remettre les opcodes de `jg` (`0x8F`), `jl` (`0x8C`) et `jle` (`0x8E`) dans `encode_ctrl.rs`
+- [x] Remettre les opcodes de `jg` (`0x8F`), `jl` (`0x8C`) et `jle` (`0x8E`) dans `encode_ctrl.rs`
 - [ ] Faire calculer à `emit_rex` les bits `REX.B`/`REX.X` depuis la base et l'index des opérandes mémoire, et émettre un REX nu pour `spl`/`bpl`/`sil`/`dil` (causes 2 et 6)
 - [ ] Dans `modrm.rs`, tester `low3()` au lieu de `index` pour `rsp`/`r12` et `rbp`/`r13`, et corriger `[rbp+index]`, `[index*scale+disp]` et `.absolute()` (causes 4, 7, 8, 9)
 - [ ] Limiter les immédiates à 32 bits signés pour l'ALU et `mov` vers la mémoire en 64 bits (cause 3)

@@ -9,15 +9,12 @@ cases! {
     /// jne target
     jne_target: jcc(ConditionCode::NE, "target") => [0x0F, 0x85, 0x00, 0x00, 0x00, 0x00];
     /// jg target
-    #[ignore = "BUG: produit `jl 0x6`"]
     jg_target: jcc(ConditionCode::G, "target") => [0x0F, 0x8F, 0x00, 0x00, 0x00, 0x00];
     /// jge target
     jge_target: jcc(ConditionCode::GE, "target") => [0x0F, 0x8D, 0x00, 0x00, 0x00, 0x00];
     /// jl target
-    #[ignore = "BUG: produit `jle 0x6`"]
     jl_target: jcc(ConditionCode::L, "target") => [0x0F, 0x8C, 0x00, 0x00, 0x00, 0x00];
     /// jle target
-    #[ignore = "BUG: produit `jg 0x6`"]
     jle_target: jcc(ConditionCode::LE, "target") => [0x0F, 0x8E, 0x00, 0x00, 0x00, 0x00];
     /// ja target
     ja_target: jcc(ConditionCode::A, "target") => [0x0F, 0x87, 0x00, 0x00, 0x00, 0x00];

@@ -94,7 +94,7 @@ fn encode_mem_imm(dst: &Operand, val: i64, size: Size, enc: &BinaryEncoding) -> 
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, &Operand::NoOperand);
+    emit_rex(&mut v, size, None, &dst);
 
     v.push(opcode);
 

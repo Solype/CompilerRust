@@ -1,9 +1,9 @@
-use std::vec;
 use super::{
     enums::*,
     modrm::mod_rm_encode,
-    struct_encode_information::*,
     register::*,
+    struct_encode_information::*,
+    utils::{emit_rex, emit_size_prefix},
 };
 
 pub(super) fn encode_bitscan(
@@ -12,36 +12,27 @@ pub(super) fn encode_bitscan(
     src: &Operand,
     size: Size,
 ) -> EncodeInformation {
-    let mut buf: Vec<u8> = vec![];
-
-    // Préfixes selon la taille
-    match size {
-        Size::U16 => buf.push(0x66),
-        Size::U32 => {}
-        Size::U64 => {
-            // REX.W = 0x48 (minimum)
-            // ⚠️ à adapter si tu gères REX dynamiquement (R/X/B bits)
-            buf.push(0x48);
-        }
-        Size::U8 => panic!("BSF/BSR n'existent pas en 8 bits"),
+    if let Size::U8 = size {
+        panic!("BSF/BSR n'existent pas en 8 bits");
     }
 
-    // Préfixe 0x0F obligatoire
-    buf.push(0x0F);
+    let mut v = EncodeInformation::new();
 
-    // Opcode
+    emit_size_prefix(&mut v, size);
+    emit_rex(&mut v, size, Some(*dst), src);
+
+    // Préfixe 0x0F obligatoire
+    v.push(0x0F);
+
     let opcode = match op {
         BitScanOp::Bsf => 0xBC,
         BitScanOp::Bsr => 0xBD,
     };
-    buf.push(opcode);
+    v.push(opcode);
 
     // ModRM (reg = dst, r/m = src)
-    let modrm = mod_rm_encode(&src, &Operand::Reg(*dst));
-    buf.extend(modrm.data);
+    let modrm = mod_rm_encode(src, &Operand::Reg(*dst));
+    v.append(modrm);
 
-    EncodeInformation {
-        data: buf,
-        ..Default::default()
-    }
+    v
 }

@@ -23,3 +23,4 @@ mod encode_prefix;
 mod encode_xadd_cmp;
 mod utils;
 mod encode_alu;
+mod encode_conversion;

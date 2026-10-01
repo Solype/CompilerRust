@@ -2,7 +2,7 @@
 //! Une fonction par famille d'instructions, dans un fichier du même nom ;
 //! chaque famille devient une fonction globale du même nom dans le binaire.
 
-mod helpers;
+pub(crate) mod helpers;
 mod start;
 
 pub use start::start;
@@ -39,4 +39,5 @@ families!(
     atomics,
     prefixes,
     sse_float,
+    conversions,
 );

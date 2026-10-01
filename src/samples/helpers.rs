@@ -80,6 +80,10 @@ pub fn bitscan(op: BitScanOp, dst: Register, src: Operand, size: Option<Size>) -
     Instruction::BitScan { op, dst, src, size }
 }
 
+pub fn convert(op: ConvOp, dst: Register, src: Operand, size: Option<Size>) -> Instruction {
+    Instruction::Convert { op, dst, src, size }
+}
+
 pub fn shift(op: ShiftOp, dst: Operand, src: Operand, size: Option<Size>) -> Instruction {
     Instruction::Shift { op, dst, src, size }
 }

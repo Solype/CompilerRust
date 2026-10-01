@@ -23,11 +23,6 @@ pub(super) fn encode_reg_mem(
         _ => unreachable!(),
     };
 
-    let rm = match rm_op {
-        Operand::Reg(r) => Some(*r),
-        _ => None,
-    };
-
     let mut v = EncodeInformation::new();
 
     match *enc {
@@ -45,7 +40,7 @@ pub(super) fn encode_reg_mem(
             ..
         } => {
             emit_size_prefix(&mut v, size);
-            emit_rex(&mut v, size, Some(*reg), rm);
+            emit_rex(&mut v, size, Some(*reg), rm_op);
 
             let opcode = if is_reg_dst { opcode_r_rm } else { opcode_rm_r };
 
@@ -57,7 +52,7 @@ pub(super) fn encode_reg_mem(
         // --------------------------------------------------
         BinaryEncoding::Xchg { opcode } => {
             emit_size_prefix(&mut v, size);
-            emit_rex(&mut v, size, Some(*reg), rm);
+            emit_rex(&mut v, size, Some(*reg), rm_op);
 
             v.push(opcode);
         }
@@ -67,7 +62,7 @@ pub(super) fn encode_reg_mem(
         // --------------------------------------------------
         BinaryEncoding::MovExtend { prefix, opcode } => {
             emit_size_prefix(&mut v, size);
-            emit_rex(&mut v, size, Some(*reg), rm);
+            emit_rex(&mut v, size, Some(*reg), rm_op);
 
             v.push(prefix);
             v.push(opcode);
@@ -87,7 +82,7 @@ pub(super) fn encode_reg_mem(
             //
             // We only emit extension bits.
             //
-            emit_rex(&mut v, Size::U8, Some(*reg), rm);
+            emit_rex(&mut v, Size::U8, Some(*reg), rm_op);
 
             // SSE escape opcode
             v.push(0x0F);

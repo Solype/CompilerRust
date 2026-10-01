@@ -35,14 +35,9 @@ pub(super) fn encode_cmovcc(
     src: &Operand,
     size: Size,
 ) -> EncodeInformation {
-    let rm = match src {
-        Operand::Reg(r) => Some(*r),
-        _ => None,
-    };
-
     let mut v = EncodeInformation::new();
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, Some(*dst), rm);
+    emit_rex(&mut v, size, Some(*dst), src);
     v.push(0x0F);
     v.push(get_opcode(*cc));
 

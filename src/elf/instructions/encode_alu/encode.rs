@@ -17,7 +17,7 @@ fn encode_reg_sym(reg: Register, sym: &str, size: Size, enc: &BinaryEncoding) ->
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, Some(reg));
+    emit_rex(&mut v, size, None, &Operand::Reg(reg));
 
     match *enc {
         // --------------------------------------------------
@@ -94,7 +94,7 @@ fn encode_mem_imm(dst: &Operand, val: i64, size: Size, enc: &BinaryEncoding) -> 
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, None);
+    emit_rex(&mut v, size, None, &Operand::NoOperand);
 
     v.push(opcode);
 

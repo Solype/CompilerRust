@@ -103,15 +103,10 @@ pub(super) fn encode_unary(op: UnaryOp, dst: &Operand, size: Size) -> EncodeInfo
         // ModRM unary ops (inc/dec/not/neg)
         // ==================================================
         UnaryEncoding::ModRm { opcode, modrm_ext } => {
-            let rm = match dst {
-                Operand::Reg(r) => Some(*r),
-                _ => None,
-            };
-
             let mut v = EncodeInformation::new();
 
             emit_size_prefix(&mut v, size);
-            emit_rex(&mut v, size, None, rm);
+            emit_rex(&mut v, size, None, dst);
 
             v.push(opcode);
 

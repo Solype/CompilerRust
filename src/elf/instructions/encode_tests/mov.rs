@@ -105,7 +105,6 @@ cases! {
     #[ignore = "BUG: produit `.byte 0x8b; .byte 0x5`"]
     mov_eax_dword_r13: bin(BinOp::Mov, reg(RAX), mem(at(R13)), DWORD) => [0x41, 0x8B, 0x45, 0x00];
     /// mov eax, dword ptr [r9]
-    #[ignore = "BUG: produit `mov eax,DWORD PTR [rcx]`"]
     mov_eax_dword_r9: bin(BinOp::Mov, reg(RAX), mem(at(R9)), DWORD) => [0x41, 0x8B, 0x01];
     /// mov eax, dword ptr [rbx+rcx*4]
     mov_eax_dword_rbx_plus_rcx_x_4: bin(BinOp::Mov, reg(RAX), mem(at(RBX).index_scale(RCX, Scale::Four)), DWORD) => [0x8B, 0x04, 0x8B];
@@ -115,10 +114,8 @@ cases! {
     #[ignore = "BUG: produit `.byte 0x8b; add al,0xd`"]
     mov_eax_dword_rbp_plus_rcx: bin(BinOp::Mov, reg(RAX), mem(at(RBP).index(RCX)), DWORD) => [0x8B, 0x44, 0x0D, 0x00];
     /// mov eax, dword ptr [rbx+r8*2]
-    #[ignore = "BUG: produit `mov eax,DWORD PTR [rbx+rax*2]`"]
     mov_eax_dword_rbx_plus_r8_x_2: bin(BinOp::Mov, reg(RAX), mem(at(RBX).index_scale(R8, Scale::Two)), DWORD) => [0x42, 0x8B, 0x04, 0x43];
     /// mov eax, dword ptr [r10+rax]
-    #[ignore = "BUG: produit `mov eax,DWORD PTR [rdx+rax*1]`"]
     mov_eax_dword_r10_plus_rax: bin(BinOp::Mov, reg(RAX), mem(at(R10).index(RAX)), DWORD) => [0x41, 0x8B, 0x04, 0x02];
     /// mov eax, dword ptr [rcx*4+16]
     #[ignore = "BUG: produit `mov eax,DWORD PTR [rbp+rcx*4+0x10]`"]

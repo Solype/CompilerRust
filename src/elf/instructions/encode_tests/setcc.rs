@@ -44,6 +44,5 @@ cases! {
     /// setne byte ptr [rbx+8]
     setne_byte_rbx_plus_8: setcc(ConditionCode::NE, mem(at(RBX).disp(8))) => [0x0F, 0x95, 0x43, 0x08];
     /// setne byte ptr [r9]
-    #[ignore = "BUG: produit `setne BYTE PTR [rcx]`"]
     setne_byte_r9: setcc(ConditionCode::NE, mem(at(R9))) => [0x41, 0x0F, 0x95, 0x01];
 }

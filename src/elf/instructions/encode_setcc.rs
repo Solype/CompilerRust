@@ -26,16 +26,10 @@ pub(super) fn encode_setcc(cc: ConditionCode, dest: &Operand) -> EncodeInformati
         ConditionCode::G => 0x9F,
     };
 
-    let rm: Option<Register> = match dest {
-        Operand::Reg(r) => Some(*r),
-        Operand::MemoryAddress(_) => None,
-        _ => unimplemented!("SETcc destination must be reg or memory"),
-    };
-
     let mut v = EncodeInformation::new();
 
     // SETcc always writes 8-bit
-    emit_rex(&mut v, Size::U8, None, rm);
+    emit_rex(&mut v, Size::U8, None, dest);
 
     v.push(0x0F);
     v.push(opcode);

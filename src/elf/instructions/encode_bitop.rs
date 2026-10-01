@@ -24,13 +24,7 @@ pub(super) fn encode_bit(op: BitOp, dst: &Operand, src: &Operand, size: Size) ->
         // 0F A3/AB/B3/BB /r
         // =====================================================
         Operand::Reg(reg) => {
-            let rm = match dst {
-                Operand::Reg(r) => Some(*r),
-                Operand::MemoryAddress(_) => None,
-                _ => unimplemented!("invalid BT destination"),
-            };
-
-            emit_rex(&mut v, size, Some(*reg), rm);
+            emit_rex(&mut v, size, Some(*reg), dst);
 
             v.push(0x0F);
             v.push(opcode_rr);
@@ -46,16 +40,7 @@ pub(super) fn encode_bit(op: BitOp, dst: &Operand, src: &Operand, size: Size) ->
         // 0F BA /4..7 ib
         // =====================================================
         Operand::Imm(bit) => {
-            let rm = match dst {
-                Operand::Reg(r) => Some(*r),
-                Operand::MemoryAddress(_) => None,
-
-                _ => {
-                    unimplemented!("invalid BT destination")
-                }
-            };
-
-            emit_rex(&mut v, size, None, rm);
+            emit_rex(&mut v, size, None, dst);
 
             v.push(0x0F);
             v.push(0xBA);

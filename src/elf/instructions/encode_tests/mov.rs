@@ -160,10 +160,8 @@ cases! {
     /// mov dword ptr [rip+my_data], 0x12345678
     mov_dword_rip_plus_my_data_0x12345678: bin(BinOp::Mov, mem(MemAddress::symbol("my_data")), imm(0x12345678), DWORD) => [0xC7, 0x05, 0x00, 0x00, 0x00, 0x00, 0x78, 0x56, 0x34, 0x12];
     /// mov qword ptr [rbx], 0x1234
-    #[ignore = "BUG: produit `mov QWORD PTR [rbx],0x1234; add BYTE PTR [rax],al`"]
     mov_qword_rbx_0x1234: bin(BinOp::Mov, mem(at(RBX)), imm(0x1234), QWORD) => [0x48, 0xC7, 0x03, 0x34, 0x12, 0x00, 0x00];
     /// mov qword ptr [rip+my_data], 0x1234
-    #[ignore = "BUG: produit `mov QWORD PTR [rip+0x0],0x1234; add BYTE PTR [rax],al`"]
     mov_qword_rip_plus_my_data_0x1234: bin(BinOp::Mov, mem(MemAddress::symbol("my_data")), imm(0x1234), QWORD) => [0x48, 0xC7, 0x05, 0x00, 0x00, 0x00, 0x00, 0x34, 0x12, 0x00, 0x00];
     /// mov r12d, offset my_data
     mov_r12d_my_data: bin(BinOp::Mov, reg(R12), sym("my_data"), DWORD) => [0x41, 0xBC, 0x00, 0x00, 0x00, 0x00];

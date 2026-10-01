@@ -45,3 +45,15 @@ pub(super) fn emit_imm(val: i64, size: Size) -> Vec<u8> {
         Size::U64 => (val as u64).to_le_bytes().to_vec(),
     }
 }
+
+pub(super) fn emit_imm_sx32(val: i64, size: Size) -> Vec<u8> {
+    match size {
+        Size::U64 => {
+            let v = i32::try_from(val).unwrap_or_else(|_| {
+                panic!("immédiate {val:#x} hors de i32 : seul `mov reg, imm64` accepte 64 bits")
+            });
+            v.to_le_bytes().to_vec()
+        }
+        _ => emit_imm(val, size),
+    }
+}

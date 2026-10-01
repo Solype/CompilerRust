@@ -31,7 +31,6 @@ cases! {
     /// add dword ptr [rbx], 3
     add_dword_rbx_3: bin(BinOp::Add, mem(at(RBX)), imm(3), DWORD) => [0x83, 0x03, 0x03];
     /// add qword ptr [rbx+8], 0x1000
-    #[ignore = "BUG: produit `add QWORD PTR [rbx+0x8],0x1000; add BYTE PTR [rax],al`"]
     add_qword_rbx_plus_8_0x1000: bin(BinOp::Add, mem(at(RBX).disp(8)), imm(0x1000), QWORD) => [0x48, 0x81, 0x43, 0x08, 0x00, 0x10, 0x00, 0x00];
     /// add dword ptr [rbx], ecx
     add_dword_rbx_ecx: bin(BinOp::Add, mem(at(RBX)), reg(RCX), DWORD) => [0x01, 0x0B];
@@ -66,7 +65,6 @@ cases! {
     /// adc dword ptr [rbx], 3
     adc_dword_rbx_3: bin(BinOp::Adc, mem(at(RBX)), imm(3), DWORD) => [0x83, 0x13, 0x03];
     /// adc qword ptr [rbx+8], 0x1000
-    #[ignore = "BUG: produit `adc QWORD PTR [rbx+0x8],0x1000; add BYTE PTR [rax],al`"]
     adc_qword_rbx_plus_8_0x1000: bin(BinOp::Adc, mem(at(RBX).disp(8)), imm(0x1000), QWORD) => [0x48, 0x81, 0x53, 0x08, 0x00, 0x10, 0x00, 0x00];
     /// adc dword ptr [rbx], ecx
     adc_dword_rbx_ecx: bin(BinOp::Adc, mem(at(RBX)), reg(RCX), DWORD) => [0x11, 0x0B];
@@ -101,7 +99,6 @@ cases! {
     /// sub dword ptr [rbx], 3
     sub_dword_rbx_3: bin(BinOp::Sub, mem(at(RBX)), imm(3), DWORD) => [0x83, 0x2B, 0x03];
     /// sub qword ptr [rbx+8], 0x1000
-    #[ignore = "BUG: produit `sub QWORD PTR [rbx+0x8],0x1000; add BYTE PTR [rax],al`"]
     sub_qword_rbx_plus_8_0x1000: bin(BinOp::Sub, mem(at(RBX).disp(8)), imm(0x1000), QWORD) => [0x48, 0x81, 0x6B, 0x08, 0x00, 0x10, 0x00, 0x00];
     /// sub dword ptr [rbx], ecx
     sub_dword_rbx_ecx: bin(BinOp::Sub, mem(at(RBX)), reg(RCX), DWORD) => [0x29, 0x0B];
@@ -136,7 +133,6 @@ cases! {
     /// sbb dword ptr [rbx], 3
     sbb_dword_rbx_3: bin(BinOp::Sbb, mem(at(RBX)), imm(3), DWORD) => [0x83, 0x1B, 0x03];
     /// sbb qword ptr [rbx+8], 0x1000
-    #[ignore = "BUG: produit `sbb QWORD PTR [rbx+0x8],0x1000; add BYTE PTR [rax],al`"]
     sbb_qword_rbx_plus_8_0x1000: bin(BinOp::Sbb, mem(at(RBX).disp(8)), imm(0x1000), QWORD) => [0x48, 0x81, 0x5B, 0x08, 0x00, 0x10, 0x00, 0x00];
     /// sbb dword ptr [rbx], ecx
     sbb_dword_rbx_ecx: bin(BinOp::Sbb, mem(at(RBX)), reg(RCX), DWORD) => [0x19, 0x0B];
@@ -171,7 +167,6 @@ cases! {
     /// and dword ptr [rbx], 3
     and_dword_rbx_3: bin(BinOp::And, mem(at(RBX)), imm(3), DWORD) => [0x83, 0x23, 0x03];
     /// and qword ptr [rbx+8], 0x1000
-    #[ignore = "BUG: produit `and QWORD PTR [rbx+0x8],0x1000; add BYTE PTR [rax],al`"]
     and_qword_rbx_plus_8_0x1000: bin(BinOp::And, mem(at(RBX).disp(8)), imm(0x1000), QWORD) => [0x48, 0x81, 0x63, 0x08, 0x00, 0x10, 0x00, 0x00];
     /// and dword ptr [rbx], ecx
     and_dword_rbx_ecx: bin(BinOp::And, mem(at(RBX)), reg(RCX), DWORD) => [0x21, 0x0B];
@@ -206,7 +201,6 @@ cases! {
     /// or dword ptr [rbx], 3
     or_dword_rbx_3: bin(BinOp::Or, mem(at(RBX)), imm(3), DWORD) => [0x83, 0x0B, 0x03];
     /// or qword ptr [rbx+8], 0x1000
-    #[ignore = "BUG: produit `or QWORD PTR [rbx+0x8],0x1000; add BYTE PTR [rax],al`"]
     or_qword_rbx_plus_8_0x1000: bin(BinOp::Or, mem(at(RBX).disp(8)), imm(0x1000), QWORD) => [0x48, 0x81, 0x4B, 0x08, 0x00, 0x10, 0x00, 0x00];
     /// or dword ptr [rbx], ecx
     or_dword_rbx_ecx: bin(BinOp::Or, mem(at(RBX)), reg(RCX), DWORD) => [0x09, 0x0B];
@@ -241,7 +235,6 @@ cases! {
     /// xor dword ptr [rbx], 3
     xor_dword_rbx_3: bin(BinOp::Xor, mem(at(RBX)), imm(3), DWORD) => [0x83, 0x33, 0x03];
     /// xor qword ptr [rbx+8], 0x1000
-    #[ignore = "BUG: produit `xor QWORD PTR [rbx+0x8],0x1000; add BYTE PTR [rax],al`"]
     xor_qword_rbx_plus_8_0x1000: bin(BinOp::Xor, mem(at(RBX).disp(8)), imm(0x1000), QWORD) => [0x48, 0x81, 0x73, 0x08, 0x00, 0x10, 0x00, 0x00];
     /// xor dword ptr [rbx], ecx
     xor_dword_rbx_ecx: bin(BinOp::Xor, mem(at(RBX)), reg(RCX), DWORD) => [0x31, 0x0B];
@@ -276,7 +269,6 @@ cases! {
     /// cmp dword ptr [rbx], 3
     cmp_dword_rbx_3: bin(BinOp::Cmp, mem(at(RBX)), imm(3), DWORD) => [0x83, 0x3B, 0x03];
     /// cmp qword ptr [rbx+8], 0x1000
-    #[ignore = "BUG: produit `cmp QWORD PTR [rbx+0x8],0x1000; add BYTE PTR [rax],al`"]
     cmp_qword_rbx_plus_8_0x1000: bin(BinOp::Cmp, mem(at(RBX).disp(8)), imm(0x1000), QWORD) => [0x48, 0x81, 0x7B, 0x08, 0x00, 0x10, 0x00, 0x00];
     /// cmp dword ptr [rbx], ecx
     cmp_dword_rbx_ecx: bin(BinOp::Cmp, mem(at(RBX)), reg(RCX), DWORD) => [0x39, 0x0B];
@@ -291,7 +283,6 @@ cases! {
     /// test bl, 1
     test_bl_1: bin(BinOp::Test, reg(RBX), imm(1), BYTE) => [0xF6, 0xC3, 0x01];
     /// test r9, 1
-    #[ignore = "BUG: produit `test r9,0x1; add BYTE PTR [rax],al`"]
     test_r9_1: bin(BinOp::Test, reg(R9), imm(1), QWORD) => [0x49, 0xF7, 0xC1, 0x01, 0x00, 0x00, 0x00];
     /// test bl, al
     test_bl_al: bin(BinOp::Test, reg(RBX), reg(RAX), BYTE) => [0x84, 0xC3] | [0x84, 0xD8];

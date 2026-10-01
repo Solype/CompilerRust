@@ -3,7 +3,7 @@ use super::super::{
     modrm::*,
     register::*,
     struct_encode_information::*,
-    utils::{emit_imm, emit_rex, emit_size_prefix},
+    utils::{emit_imm, emit_imm_sx32, emit_rex, emit_size_prefix},
 };
 
 use super::*;
@@ -110,7 +110,7 @@ fn encode_mem_imm(dst: &Operand, val: i64, size: Size, enc: &BinaryEncoding) -> 
     if use_imm8 {
         v.push(val as i8 as u8);
     } else {
-        v.extend_vec(emit_imm(val, size));
+        v.extend_vec(emit_imm_sx32(val, size));
     }
     v
 }

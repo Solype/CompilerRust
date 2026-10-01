@@ -26,10 +26,10 @@ impl CtrlOp {
                 match cc {
                     ConditionCode::E  => encode_rel32_with_prefix(Some(0x0F), 0x84, target),
                     ConditionCode::NE => encode_rel32_with_prefix(Some(0x0F), 0x85, target),
-                    ConditionCode::G  => encode_rel32_with_prefix(Some(0x0F), 0x8C, target),
+                    ConditionCode::G  => encode_rel32_with_prefix(Some(0x0F), 0x8F, target),
                     ConditionCode::GE => encode_rel32_with_prefix(Some(0x0F), 0x8D, target),
-                    ConditionCode::L  => encode_rel32_with_prefix(Some(0x0F), 0x8E, target),
-                    ConditionCode::LE => encode_rel32_with_prefix(Some(0x0F), 0x8F, target),
+                    ConditionCode::L  => encode_rel32_with_prefix(Some(0x0F), 0x8C, target),
+                    ConditionCode::LE => encode_rel32_with_prefix(Some(0x0F), 0x8E, target),
                     ConditionCode::A  => encode_rel32_with_prefix(Some(0x0F), 0x87, target),
                     ConditionCode::AE => encode_rel32_with_prefix(Some(0x0F), 0x83, target),
                     ConditionCode::B  => encode_rel32_with_prefix(Some(0x0F), 0x82, target),

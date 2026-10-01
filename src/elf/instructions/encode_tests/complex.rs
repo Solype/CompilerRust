@@ -174,4 +174,6 @@ cases! {
     cmpxchg_qword_rbx_plus_r8_x_2_r11: complex(ComplexBinOp::Cmpxchg, mem(at(RBX).index_scale(R8, Scale::Two)), reg(R11), None, QWORD) => [0x4E, 0x0F, 0xB1, 0x1C, 0x43];
     /// cmpxchg qword ptr [r10+rax], r11
     cmpxchg_qword_r10_plus_rax_r11: complex(ComplexBinOp::Cmpxchg, mem(at(R10).index(RAX)), reg(R11), None, QWORD) => [0x4D, 0x0F, 0xB1, 0x1C, 0x02];
+    /// imul rax, rbx, 1000
+    imul_rax_rbx_1000_qword: complex(ComplexBinOp::Imul, reg(RAX), reg(RBX), Some(imm(1000)), QWORD) => [0x48, 0x69, 0xC3, 0xE8, 0x03, 0x00, 0x00];
 }

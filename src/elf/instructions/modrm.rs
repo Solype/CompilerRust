@@ -97,7 +97,10 @@ fn encode_absolute(
     data: &mut Vec<u8>,
     relocs: &mut Vec<Relocation>,
 ) {
-    data[0] = (MEMNODISP << 6) | 0b101;
+    // En 64 bits, mod = 00 / rm = 101 veut dire [rip + disp32] :
+    // une adresse absolue passe par un SIB sans base ni index (0x25)
+    data[0] = (MEMNODISP << 6) | 0b100;
+    data.push(encode_sib(Scale::One, None, None));
 
     let offset = data.len();
 
@@ -110,7 +113,7 @@ fn encode_absolute(
                 offset,
                 size: 4,
                 kind: RelocKind::Absolute,
-                addend: -4,
+                addend: 0,
             });
         }
 
@@ -146,18 +149,20 @@ fn encode_base_disp(
 ) {
     assert!(base.class == RegisterClass::Gpr);
 
+    // Le SIB passe avant get_disp : la relocation pointe sur le disp, après lui
+    let rm = if base.low3() == Gpr::Sp as u8 {
+        data.push(encode_sib(Scale::One, None, Some(base)));
+        0b100
+    } else {
+        base.low3()
+    };
+
     let val = get_disp(disp, data.len(), relocs);
 
     let (mod_bits, disp_bytes) =
         encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
 
-    if base.low3() == Gpr::Sp as u8 {
-        data[0] = (mod_bits << 6) | 0b100;
-        data.push(encode_sib(Scale::One, None, Some(base)));
-
-    } else {
-        data[0] = (mod_bits << 6) | base.low3();
-    }
+    data[0] = (mod_bits << 6) | rm;
 
     data.extend(disp_bytes);
 }
@@ -172,16 +177,15 @@ fn encode_index_disp(
     assert!(index.class == RegisterClass::Gpr);
     assert!(index.index != Gpr::Sp as u8);
 
-    let val = get_disp(disp, data.len(), relocs);
-
-    let (mod_bits, disp_bytes) =
-        encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
-
-    data[0] = (mod_bits << 6) | 0b100;
+    // Sans base, le SIB impose base = 101 avec mod = 00 et un disp32 toujours
+    // présent (mod = 01 ou 10 voudrait dire [rbp + index*scale + disp])
+    data[0] = (MEMNODISP << 6) | 0b100;
 
     data.push(encode_sib(scale, Some(index), None));
 
-    data.extend(disp_bytes);
+    let val = get_disp(disp, data.len(), relocs);
+
+    data.extend(val.to_le_bytes());
 }
 
 fn encode_base_index_scale(
@@ -221,14 +225,15 @@ fn encode_base_index_scale_disp(
 
     assert!(index.index != Gpr::Sp as u8);
 
+    // Le SIB passe avant get_disp : la relocation pointe sur le disp, après lui
+    data.push(encode_sib(scale, Some(index), Some(base)));
+
     let val = get_disp(disp, data.len(), relocs);
 
     let (mod_bits, disp_bytes) =
         encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
 
     data[0] = (mod_bits << 6) | 0b100;
-
-    data.push(encode_sib(scale, Some(index), Some(base)));
 
     data.extend(disp_bytes);
 }

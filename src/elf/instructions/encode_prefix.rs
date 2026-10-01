@@ -72,6 +72,15 @@ fn is_lock_compatible(ins: &Instruction) -> bool {
             && matches!(dst, Operand::MemoryAddress(_))
         }
 
+        // ==========================================
+        // Unary read-modify-write on memory
+        // lock inc [mem]
+        // ==========================================
+        Instruction::Unary { op, dst, .. } => {
+            matches!(op, UnaryOp::Inc | UnaryOp::Dec | UnaryOp::Neg | UnaryOp::Not)
+            && matches!(dst, Operand::MemoryAddress(_))
+        }
+
         _ => false,
     }
 }

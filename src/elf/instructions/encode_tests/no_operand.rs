@@ -41,7 +41,6 @@ cases! {
     /// hlt
     hlt: nullary(UnaryOp::Hlt) => [0xF4];
     /// cwd
-    #[ignore = "BUG: produit `cdq`"]
     cwd: unary(UnaryOp::Cwd, Operand::NoOperand, WORD) => [0x66, 0x99];
     /// cdq
     cdq: unary(UnaryOp::Cdq, Operand::NoOperand, DWORD) => [0x99];

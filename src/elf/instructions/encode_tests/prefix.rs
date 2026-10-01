@@ -11,15 +11,12 @@ cases! {
     /// lock cmpxchg dword ptr [rbx], ecx
     lock_cmpxchg_dword_rbx_ecx: prefixed(vec![Prefix::Lock], complex(ComplexBinOp::Cmpxchg, mem(at(RBX)), reg(RCX), None, DWORD)) => [0xF0, 0x0F, 0xB1, 0x0B];
     /// lock inc qword ptr [rbx]
-    #[ignore = "BUG: panic `LOCK prefix not valid for instruction: Unary { op: Inc, dst: MemoryAddress(MemAddress { base: Some(Register { class: Gpr`"]
     lock_inc_qword_rbx: prefixed(vec![Prefix::Lock], unary(UnaryOp::Inc, mem(at(RBX)), QWORD)) => [0xF0, 0x48, 0xFF, 0x03];
     /// mov rax, qword ptr fs:[0x1000]
-    #[ignore = "BUG: produit `mov rax,QWORD PTR fs:[rip+0x1000]`"]
     mov_rax_qword_fs_0x1000: prefixed(vec![Prefix::Fs], bin(BinOp::Mov, reg(RAX), mem(MemAddress::direct(0x1000).absolute()), QWORD)) => [0x64, 0x48, 0x8B, 0x04, 0x25, 0x00, 0x10, 0x00, 0x00];
     /// mov rax, qword ptr fs:[rbx]
     mov_rax_qword_fs_rbx: prefixed(vec![Prefix::Fs], bin(BinOp::Mov, reg(RAX), mem(at(RBX)), QWORD)) => [0x64, 0x48, 0x8B, 0x03];
     /// mov rax, qword ptr gs:[0x1000]
-    #[ignore = "BUG: produit `mov rax,QWORD PTR gs:[rip+0x1000]`"]
     mov_rax_qword_gs_0x1000: prefixed(vec![Prefix::Gs], bin(BinOp::Mov, reg(RAX), mem(MemAddress::direct(0x1000).absolute()), QWORD)) => [0x65, 0x48, 0x8B, 0x04, 0x25, 0x00, 0x10, 0x00, 0x00];
     /// mov rax, qword ptr gs:[rbx]
     mov_rax_qword_gs_rbx: prefixed(vec![Prefix::Gs], bin(BinOp::Mov, reg(RAX), mem(at(RBX)), QWORD)) => [0x65, 0x48, 0x8B, 0x03];

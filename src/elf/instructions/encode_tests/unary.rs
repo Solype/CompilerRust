@@ -25,7 +25,6 @@ cases! {
     /// inc r13b
     inc_r13b: unary(UnaryOp::Inc, reg(R13), BYTE) => [0x41, 0xFE, 0xC5];
     /// inc sil
-    #[ignore = "BUG: produit `inc dh`"]
     inc_sil: unary(UnaryOp::Inc, reg(RSI), BYTE) => [0x40, 0xFE, 0xC6];
     /// dec cl
     dec_cl: unary(UnaryOp::Dec, reg(RCX), BYTE) => [0xFE, 0xC9];
@@ -48,7 +47,6 @@ cases! {
     /// dec r13b
     dec_r13b: unary(UnaryOp::Dec, reg(R13), BYTE) => [0x41, 0xFE, 0xCD];
     /// dec sil
-    #[ignore = "BUG: produit `dec dh`"]
     dec_sil: unary(UnaryOp::Dec, reg(RSI), BYTE) => [0x40, 0xFE, 0xCE];
     /// neg cl
     neg_cl: unary(UnaryOp::Neg, reg(RCX), BYTE) => [0xF6, 0xD9];
@@ -71,7 +69,6 @@ cases! {
     /// neg r13b
     neg_r13b: unary(UnaryOp::Neg, reg(R13), BYTE) => [0x41, 0xF6, 0xDD];
     /// neg sil
-    #[ignore = "BUG: produit `neg dh`"]
     neg_sil: unary(UnaryOp::Neg, reg(RSI), BYTE) => [0x40, 0xF6, 0xDE];
     /// not cl
     not_cl: unary(UnaryOp::Not, reg(RCX), BYTE) => [0xF6, 0xD1];
@@ -94,7 +91,6 @@ cases! {
     /// not r13b
     not_r13b: unary(UnaryOp::Not, reg(R13), BYTE) => [0x41, 0xF6, 0xD5];
     /// not sil
-    #[ignore = "BUG: produit `not dh`"]
     not_sil: unary(UnaryOp::Not, reg(RSI), BYTE) => [0x40, 0xF6, 0xD6];
     /// inc qword ptr [r9]
     inc_qword_r9: unary(UnaryOp::Inc, mem(at(R9)), QWORD) => [0x49, 0xFF, 0x01];

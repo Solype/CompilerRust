@@ -37,7 +37,6 @@ cases! {
     /// setnp cl
     setnp_cl: setcc(ConditionCode::NP, reg(RCX)) => [0x0F, 0x9B, 0xC1];
     /// sete sil
-    #[ignore = "BUG: produit `sete dh`"]
     sete_sil: setcc(ConditionCode::E, reg(RSI)) => [0x40, 0x0F, 0x94, 0xC6];
     /// sete r10b
     sete_r10b: setcc(ConditionCode::E, reg(R10)) => [0x41, 0x0F, 0x94, 0xC2];

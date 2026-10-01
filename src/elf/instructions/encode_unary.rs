@@ -49,7 +49,9 @@ impl UnaryOp {
             // ==========================================
             // sign extension accumulator -> high regs
             // ==========================================
-            UnaryOp::Cwd => UnaryEncoding::Simple { opcode: &[0x99] }, // AX -> DX:AX (16-bit)
+            UnaryOp::Cwd => UnaryEncoding::Simple {
+                opcode: &[0x66, 0x99],
+            }, // AX -> DX:AX (16-bit)
             UnaryOp::Cdq => UnaryEncoding::Simple { opcode: &[0x99] }, // EAX -> EDX:EAX (32-bit)
             UnaryOp::Cqo => UnaryEncoding::Simple {
                 opcode: &[0x48, 0x99],

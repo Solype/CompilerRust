@@ -84,3 +84,40 @@ fn rip_base_plus_symbol() {
     let src = mem(at(RBX).sym("my_data"));
     check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 2, 4, false, 0);
 }
+
+// Avec un octet SIB, le disp32 commence un octet plus loin
+
+#[test]
+fn sib_base_index_plus_symbol() {
+    // mov eax, [rbx+rcx*4+my_data] : 8B 84 8B <disp32>
+    let src = mem(at(RBX).index_scale(RCX, Scale::Four).sym("my_data"));
+    check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 3, 4, false, 0);
+}
+
+#[test]
+fn sib_rsp_plus_symbol() {
+    // mov eax, [rsp+my_data] : 8B 84 24 <disp32>
+    let src = mem(at(RSP).sym("my_data"));
+    check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 3, 4, false, 0);
+}
+
+#[test]
+fn sib_r12_plus_symbol() {
+    // mov eax, [r12+my_data] : 41 8B 84 24 <disp32>
+    let src = mem(at(R12).sym("my_data"));
+    check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 4, 4, false, 0);
+}
+
+#[test]
+fn sib_index_only_plus_symbol() {
+    // mov eax, [rcx*4+my_data] : 8B 04 8D <disp32>
+    let src = mem(MemAddress::new().index_scale(RCX, Scale::Four).sym("my_data"));
+    check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 3, 4, false, 0);
+}
+
+#[test]
+fn absolute_symbol() {
+    // mov eax, ds:[my_data] : 8B 04 25 <disp32>, R_X86_64_32S sans addend
+    let src = mem(MemAddress::symbol("my_data").absolute());
+    check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 3, 4, false, 0);
+}

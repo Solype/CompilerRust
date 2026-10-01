@@ -1,6 +1,14 @@
 use crate::elf::instructions::Operand;
 
-use super::{EncodeInformation, Size, register::Register};
+use super::{
+    EncodeInformation, Size,
+    register::{Register, RegisterClass},
+};
+
+/// spl, bpl, sil, dil : sans REX, les index 4 à 7 en 8 bits désignent ah, ch, dh, bh
+fn is_rex_byte_register(r: Register) -> bool {
+    r.class == RegisterClass::Gpr && (4..8).contains(&r.index)
+}
 
 pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<Register>, rm: &Operand) {
     let mut rex = 0x40;
@@ -26,7 +34,11 @@ pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<Regist
         _ => {}
     }
 
-    if rex != 0x40 {
+    let byte_reg = matches!(size, Size::U8)
+        && (reg.is_some_and(is_rex_byte_register)
+            || matches!(rm, Operand::Reg(r) if is_rex_byte_register(*r)));
+
+    if rex != 0x40 || byte_reg {
         v.push(rex);
     }
 }

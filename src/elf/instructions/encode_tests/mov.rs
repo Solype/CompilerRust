@@ -73,13 +73,10 @@ cases! {
     /// mov r12, r13
     mov_r12_r13: bin(BinOp::Mov, reg(R12), reg(R13), QWORD) => [0x4D, 0x89, 0xEC] | [0x4D, 0x8B, 0xE5];
     /// mov sil, al
-    #[ignore = "BUG: produit `mov dh,al`"]
-    mov_sil_al: bin(BinOp::Mov, reg(RSI), reg(RAX), BYTE) => [0x40, 0x88, 0xC6];
+    mov_sil_al: bin(BinOp::Mov, reg(RSI), reg(RAX), BYTE) => [0x40, 0x88, 0xC6] | [0x40, 0x8A, 0xF0];
     /// mov al, dil
-    #[ignore = "BUG: produit `mov al,bh`"]
-    mov_al_dil: bin(BinOp::Mov, reg(RAX), reg(RDI), BYTE) => [0x40, 0x88, 0xF8];
+    mov_al_dil: bin(BinOp::Mov, reg(RAX), reg(RDI), BYTE) => [0x40, 0x88, 0xF8] | [0x40, 0x8A, 0xC7];
     /// mov spl, 1
-    #[ignore = "BUG: produit `mov ah,0x1`"]
     mov_spl_1: bin(BinOp::Mov, reg(RSP), imm(1), BYTE) => [0x40, 0xB4, 0x01];
     /// mov eax, dword ptr [rbx]
     mov_eax_dword_rbx: bin(BinOp::Mov, reg(RAX), mem(at(RBX)), DWORD) => [0x8B, 0x03];
@@ -114,12 +111,10 @@ cases! {
     /// mov eax, dword ptr [r10+rax]
     mov_eax_dword_r10_plus_rax: bin(BinOp::Mov, reg(RAX), mem(at(R10).index(RAX)), DWORD) => [0x41, 0x8B, 0x04, 0x02];
     /// mov eax, dword ptr [rcx*4+16]
-    #[ignore = "BUG: produit `mov eax,DWORD PTR [rbp+rcx*4+0x10]`"]
     mov_eax_dword_rcx_x_4_plus_16: bin(BinOp::Mov, reg(RAX), mem(MemAddress::new().index_scale(RCX, Scale::Four).disp(16)), DWORD) => [0x8B, 0x04, 0x8D, 0x10, 0x00, 0x00, 0x00];
     /// mov eax, dword ptr [rip+my_data]
     mov_eax_dword_rip_plus_my_data: bin(BinOp::Mov, reg(RAX), mem(MemAddress::symbol("my_data")), DWORD) => [0x8B, 0x05, 0x00, 0x00, 0x00, 0x00];
     /// mov eax, dword ptr [0x1000]
-    #[ignore = "BUG: produit `mov eax,DWORD PTR [rip+0x1000]`"]
     mov_eax_dword_0x1000: bin(BinOp::Mov, reg(RAX), mem(MemAddress::direct(0x1000).absolute()), DWORD) => [0x8B, 0x04, 0x25, 0x00, 0x10, 0x00, 0x00];
     /// mov qword ptr [rbx], rax
     mov_qword_rbx_rax: bin(BinOp::Mov, mem(at(RBX)), reg(RAX), QWORD) => [0x48, 0x89, 0x03];
@@ -168,15 +163,12 @@ cases! {
     /// movzx r9d, cl
     movzx_r9d_cl: bin(BinOp::Movzx, reg(R9), reg(RCX), BYTE) => [0x44, 0x0F, 0xB6, 0xC9];
     /// movzx eax, sil
-    #[ignore = "BUG: produit `movzx eax,dh`"]
     movzx_eax_sil: bin(BinOp::Movzx, reg(RAX), reg(RSI), BYTE) => [0x40, 0x0F, 0xB6, 0xC6];
     /// movzx ecx, byte ptr [rbx]
     movzx_ecx_byte_rbx: bin(BinOp::Movzx, reg(RCX), mem(at(RBX)), BYTE) => [0x0F, 0xB6, 0x0B];
     /// movzx eax, bx
-    #[ignore = "BUG: produit `movzx ax,bx`"]
     movzx_eax_bx: bin(BinOp::Movzx, reg(RAX), reg(RBX), WORD) => [0x0F, 0xB7, 0xC3];
     /// movzx ebx, word ptr [rbx]
-    #[ignore = "BUG: produit `movzx bx,WORD PTR [rbx]`"]
     movzx_ebx_word_rbx: bin(BinOp::Movzx, reg(RBX), mem(at(RBX)), WORD) => [0x0F, 0xB7, 0x1B];
     /// movsx eax, bl
     movsx_eax_bl: bin(BinOp::Movsx, reg(RAX), reg(RBX), BYTE) => [0x0F, 0xBE, 0xC3];
@@ -185,15 +177,12 @@ cases! {
     /// movsx r9d, cl
     movsx_r9d_cl: bin(BinOp::Movsx, reg(R9), reg(RCX), BYTE) => [0x44, 0x0F, 0xBE, 0xC9];
     /// movsx eax, sil
-    #[ignore = "BUG: produit `movsx eax,dh`"]
     movsx_eax_sil: bin(BinOp::Movsx, reg(RAX), reg(RSI), BYTE) => [0x40, 0x0F, 0xBE, 0xC6];
     /// movsx ecx, byte ptr [rbx]
     movsx_ecx_byte_rbx: bin(BinOp::Movsx, reg(RCX), mem(at(RBX)), BYTE) => [0x0F, 0xBE, 0x0B];
     /// movsx eax, bx
-    #[ignore = "BUG: produit `movsx ax,bx`"]
     movsx_eax_bx: bin(BinOp::Movsx, reg(RAX), reg(RBX), WORD) => [0x0F, 0xBF, 0xC3];
     /// movsx ebx, word ptr [rbx]
-    #[ignore = "BUG: produit `movsx bx,WORD PTR [rbx]`"]
     movsx_ebx_word_rbx: bin(BinOp::Movsx, reg(RBX), mem(at(RBX)), WORD) => [0x0F, 0xBF, 0x1B];
     /// xchg bl, cl
     xchg_bl_cl: bin(BinOp::Xchg, reg(RBX), reg(RCX), BYTE) => [0x86, 0xCB] | [0x86, 0xD9];

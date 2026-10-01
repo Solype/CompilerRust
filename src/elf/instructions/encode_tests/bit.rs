@@ -84,4 +84,36 @@ cases! {
     btc_dword_rbx_plus_8_2: bit(BitOp::Btc, mem(at(RBX).disp(8)), imm(2), DWORD) => [0x0F, 0xBA, 0x7B, 0x08, 0x02];
     /// btc dword ptr [rbx+8], eax
     btc_dword_rbx_plus_8_eax: bit(BitOp::Btc, mem(at(RBX).disp(8)), reg(RAX), DWORD) => [0x0F, 0xBB, 0x43, 0x08];
+    /// bt qword ptr [r9], 2
+    bt_qword_r9_2: bit(BitOp::Bt, mem(at(R9)), imm(2), QWORD) => [0x49, 0x0F, 0xBA, 0x21, 0x02];
+    /// bt qword ptr [rbx+r8*2], 2
+    bt_qword_rbx_plus_r8_x_2_2: bit(BitOp::Bt, mem(at(RBX).index_scale(R8, Scale::Two)), imm(2), QWORD) => [0x4A, 0x0F, 0xBA, 0x24, 0x43, 0x02];
+    /// bt qword ptr [r10+rax], 2
+    bt_qword_r10_plus_rax_2: bit(BitOp::Bt, mem(at(R10).index(RAX)), imm(2), QWORD) => [0x49, 0x0F, 0xBA, 0x24, 0x02, 0x02];
+    /// bt qword ptr [r9], r10
+    bt_qword_r9_r10: bit(BitOp::Bt, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x0F, 0xA3, 0x11];
+    /// bts qword ptr [r9], 2
+    bts_qword_r9_2: bit(BitOp::Bts, mem(at(R9)), imm(2), QWORD) => [0x49, 0x0F, 0xBA, 0x29, 0x02];
+    /// bts qword ptr [rbx+r8*2], 2
+    bts_qword_rbx_plus_r8_x_2_2: bit(BitOp::Bts, mem(at(RBX).index_scale(R8, Scale::Two)), imm(2), QWORD) => [0x4A, 0x0F, 0xBA, 0x2C, 0x43, 0x02];
+    /// bts qword ptr [r10+rax], 2
+    bts_qword_r10_plus_rax_2: bit(BitOp::Bts, mem(at(R10).index(RAX)), imm(2), QWORD) => [0x49, 0x0F, 0xBA, 0x2C, 0x02, 0x02];
+    /// bts qword ptr [r9], r10
+    bts_qword_r9_r10: bit(BitOp::Bts, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x0F, 0xAB, 0x11];
+    /// btr qword ptr [r9], 2
+    btr_qword_r9_2: bit(BitOp::Btr, mem(at(R9)), imm(2), QWORD) => [0x49, 0x0F, 0xBA, 0x31, 0x02];
+    /// btr qword ptr [rbx+r8*2], 2
+    btr_qword_rbx_plus_r8_x_2_2: bit(BitOp::Btr, mem(at(RBX).index_scale(R8, Scale::Two)), imm(2), QWORD) => [0x4A, 0x0F, 0xBA, 0x34, 0x43, 0x02];
+    /// btr qword ptr [r10+rax], 2
+    btr_qword_r10_plus_rax_2: bit(BitOp::Btr, mem(at(R10).index(RAX)), imm(2), QWORD) => [0x49, 0x0F, 0xBA, 0x34, 0x02, 0x02];
+    /// btr qword ptr [r9], r10
+    btr_qword_r9_r10: bit(BitOp::Btr, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x0F, 0xB3, 0x11];
+    /// btc qword ptr [r9], 2
+    btc_qword_r9_2: bit(BitOp::Btc, mem(at(R9)), imm(2), QWORD) => [0x49, 0x0F, 0xBA, 0x39, 0x02];
+    /// btc qword ptr [rbx+r8*2], 2
+    btc_qword_rbx_plus_r8_x_2_2: bit(BitOp::Btc, mem(at(RBX).index_scale(R8, Scale::Two)), imm(2), QWORD) => [0x4A, 0x0F, 0xBA, 0x3C, 0x43, 0x02];
+    /// btc qword ptr [r10+rax], 2
+    btc_qword_r10_plus_rax_2: bit(BitOp::Btc, mem(at(R10).index(RAX)), imm(2), QWORD) => [0x49, 0x0F, 0xBA, 0x3C, 0x02, 0x02];
+    /// btc qword ptr [r9], r10
+    btc_qword_r9_r10: bit(BitOp::Btc, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x0F, 0xBB, 0x11];
 }

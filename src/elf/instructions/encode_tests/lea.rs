@@ -17,10 +17,10 @@ cases! {
     /// lea rax, [rsp]
     lea_rax_rsp: lea(RAX, at(RSP), QWORD) => [0x48, 0x8D, 0x04, 0x24];
     /// lea rax, [r12]
-    #[ignore = "BUG: produit `rex.W; .byte 0x8d; .byte 0x4`"]
+    #[ignore = "BUG: produit `rex.WB; .byte 0x8d; .byte 0x4`"]
     lea_rax_r12: lea(RAX, at(R12), QWORD) => [0x49, 0x8D, 0x04, 0x24];
     /// lea rax, [r13]
-    #[ignore = "BUG: produit `rex.W; .byte 0x8d; .byte 0x5`"]
+    #[ignore = "BUG: produit `rex.WB; .byte 0x8d; .byte 0x5`"]
     lea_rax_r13: lea(RAX, at(R13), QWORD) => [0x49, 0x8D, 0x45, 0x00];
     /// lea rax, [rbx+rcx*4]
     lea_rax_rbx_plus_rcx_x_4: lea(RAX, at(RBX).index_scale(RCX, Scale::Four), QWORD) => [0x48, 0x8D, 0x04, 0x8B];
@@ -42,4 +42,14 @@ cases! {
     lea_r11_rbx_plus_8: lea(R11, at(RBX).disp(8), QWORD) => [0x4C, 0x8D, 0x5B, 0x08];
     /// lea rax, [rip+my_data]
     lea_rax_rip_plus_my_data_2: lea(RAX, MemAddress::symbol("my_data"), None) => [0x48, 0x8D, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// lea r11, [r9]
+    lea_r11_r9: lea(R11, at(R9), QWORD) => [0x4D, 0x8D, 0x19];
+    /// lea r11, [rbx+r8*2]
+    lea_r11_rbx_plus_r8_x_2: lea(R11, at(RBX).index_scale(R8, Scale::Two), QWORD) => [0x4E, 0x8D, 0x1C, 0x43];
+    /// lea r11, [r10+rax]
+    lea_r11_r10_plus_rax: lea(R11, at(R10).index(RAX), QWORD) => [0x4D, 0x8D, 0x1C, 0x02];
+    /// lea rax, [r9+8]
+    lea_rax_r9_plus_8: lea(RAX, at(R9).disp(8), QWORD) => [0x49, 0x8D, 0x41, 0x08];
+    /// lea rax, [r9+r10*4+16]
+    lea_rax_r9_plus_r10_x_4_plus_16: lea(RAX, at(R9).index_scale(R10, Scale::Four).disp(16), QWORD) => [0x4B, 0x8D, 0x44, 0x91, 0x10];
 }

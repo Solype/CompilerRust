@@ -53,4 +53,16 @@ cases! {
     enter_32_0: stack(StackOp::Enter(0), imm(32), None) => [0xC8, 0x20, 0x00, 0x00];
     /// enter 0x100, 1
     enter_0x100_1: stack(StackOp::Enter(1), imm(0x100), None) => [0xC8, 0x00, 0x01, 0x01];
+    /// push qword ptr [r9]
+    push_qword_r9: stack(StackOp::Push, mem(at(R9)), None) => [0x41, 0xFF, 0x31] | [0x49, 0xFF, 0x31];
+    /// pop qword ptr [r9]
+    pop_qword_r9: stack(StackOp::Pop, mem(at(R9)), None) => [0x41, 0x8F, 0x01] | [0x49, 0x8F, 0x01];
+    /// push qword ptr [rbx+r8*2]
+    push_qword_rbx_plus_r8_x_2: stack(StackOp::Push, mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0x42, 0xFF, 0x34, 0x43] | [0x4A, 0xFF, 0x34, 0x43];
+    /// pop qword ptr [rbx+r8*2]
+    pop_qword_rbx_plus_r8_x_2: stack(StackOp::Pop, mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0x42, 0x8F, 0x04, 0x43] | [0x4A, 0x8F, 0x04, 0x43];
+    /// push qword ptr [r10+rax]
+    push_qword_r10_plus_rax: stack(StackOp::Push, mem(at(R10).index(RAX)), None) => [0x41, 0xFF, 0x34, 0x02] | [0x49, 0xFF, 0x34, 0x02];
+    /// pop qword ptr [r10+rax]
+    pop_qword_r10_plus_rax: stack(StackOp::Pop, mem(at(R10).index(RAX)), None) => [0x41, 0x8F, 0x04, 0x02] | [0x49, 0x8F, 0x04, 0x02];
 }

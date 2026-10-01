@@ -96,4 +96,36 @@ cases! {
     /// not sil
     #[ignore = "BUG: produit `not dh`"]
     not_sil: unary(UnaryOp::Not, reg(RSI), BYTE) => [0x40, 0xF6, 0xD6];
+    /// inc qword ptr [r9]
+    inc_qword_r9: unary(UnaryOp::Inc, mem(at(R9)), QWORD) => [0x49, 0xFF, 0x01];
+    /// inc qword ptr [rbx+r8*2]
+    inc_qword_rbx_plus_r8_x_2: unary(UnaryOp::Inc, mem(at(RBX).index_scale(R8, Scale::Two)), QWORD) => [0x4A, 0xFF, 0x04, 0x43];
+    /// inc qword ptr [r10+rax]
+    inc_qword_r10_plus_rax: unary(UnaryOp::Inc, mem(at(R10).index(RAX)), QWORD) => [0x49, 0xFF, 0x04, 0x02];
+    /// inc byte ptr [r9]
+    inc_byte_r9: unary(UnaryOp::Inc, mem(at(R9)), BYTE) => [0x41, 0xFE, 0x01];
+    /// dec qword ptr [r9]
+    dec_qword_r9: unary(UnaryOp::Dec, mem(at(R9)), QWORD) => [0x49, 0xFF, 0x09];
+    /// dec qword ptr [rbx+r8*2]
+    dec_qword_rbx_plus_r8_x_2: unary(UnaryOp::Dec, mem(at(RBX).index_scale(R8, Scale::Two)), QWORD) => [0x4A, 0xFF, 0x0C, 0x43];
+    /// dec qword ptr [r10+rax]
+    dec_qword_r10_plus_rax: unary(UnaryOp::Dec, mem(at(R10).index(RAX)), QWORD) => [0x49, 0xFF, 0x0C, 0x02];
+    /// dec byte ptr [r9]
+    dec_byte_r9: unary(UnaryOp::Dec, mem(at(R9)), BYTE) => [0x41, 0xFE, 0x09];
+    /// neg qword ptr [r9]
+    neg_qword_r9: unary(UnaryOp::Neg, mem(at(R9)), QWORD) => [0x49, 0xF7, 0x19];
+    /// neg qword ptr [rbx+r8*2]
+    neg_qword_rbx_plus_r8_x_2: unary(UnaryOp::Neg, mem(at(RBX).index_scale(R8, Scale::Two)), QWORD) => [0x4A, 0xF7, 0x1C, 0x43];
+    /// neg qword ptr [r10+rax]
+    neg_qword_r10_plus_rax: unary(UnaryOp::Neg, mem(at(R10).index(RAX)), QWORD) => [0x49, 0xF7, 0x1C, 0x02];
+    /// neg byte ptr [r9]
+    neg_byte_r9: unary(UnaryOp::Neg, mem(at(R9)), BYTE) => [0x41, 0xF6, 0x19];
+    /// not qword ptr [r9]
+    not_qword_r9: unary(UnaryOp::Not, mem(at(R9)), QWORD) => [0x49, 0xF7, 0x11];
+    /// not qword ptr [rbx+r8*2]
+    not_qword_rbx_plus_r8_x_2: unary(UnaryOp::Not, mem(at(RBX).index_scale(R8, Scale::Two)), QWORD) => [0x4A, 0xF7, 0x14, 0x43];
+    /// not qword ptr [r10+rax]
+    not_qword_r10_plus_rax: unary(UnaryOp::Not, mem(at(R10).index(RAX)), QWORD) => [0x49, 0xF7, 0x14, 0x02];
+    /// not byte ptr [r9]
+    not_byte_r9: unary(UnaryOp::Not, mem(at(R9)), BYTE) => [0x41, 0xF6, 0x11];
 }

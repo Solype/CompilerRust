@@ -31,4 +31,8 @@ cases! {
     mov_rax_qword_es_rbx: prefixed(vec![Prefix::Es], bin(BinOp::Mov, reg(RAX), mem(at(RBX)), QWORD)) => [0x26, 0x48, 0x8B, 0x03];
     /// mov rax, qword ptr ss:[rbx]
     mov_rax_qword_ss_rbx: prefixed(vec![Prefix::Ss], bin(BinOp::Mov, reg(RAX), mem(at(RBX)), QWORD)) => [0x36, 0x48, 0x8B, 0x03];
+    /// lock add qword ptr [r9], 1
+    lock_add_qword_r9_1: prefixed(vec![Prefix::Lock], bin(BinOp::Add, mem(at(R9)), imm(1), QWORD)) => [0xF0, 0x49, 0x83, 0x01, 0x01];
+    /// lock cmpxchg qword ptr [rbx+r8*2], r12
+    lock_cmpxchg_qword_rbx_plus_r8_x_2_r12: prefixed(vec![Prefix::Lock], complex(ComplexBinOp::Cmpxchg, mem(at(RBX).index_scale(R8, Scale::Two)), reg(R12), None, QWORD)) => [0xF0, 0x4E, 0x0F, 0xB1, 0x24, 0x43];
 }

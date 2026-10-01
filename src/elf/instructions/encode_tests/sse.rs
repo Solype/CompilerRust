@@ -180,4 +180,20 @@ cases! {
     movss_dword_rip_plus_my_data_xmm0: bin(BinOp::StoreF, reg(XMM0), mem(MemAddress::symbol("my_data")), DWORD) => [0xF3, 0x0F, 0x11, 0x05, 0x00, 0x00, 0x00, 0x00];
     /// movss dword ptr [rbx], xmm10
     movss_dword_rbx_xmm10: bin(BinOp::StoreF, reg(XMM10), mem(at(RBX)), DWORD) => [0xF3, 0x44, 0x0F, 0x11, 0x13];
+    /// movsd xmm11, qword ptr [rbx+r8*2]
+    movsd_xmm11_qword_rbx_plus_r8_x_2: bin(BinOp::LoadF, reg(XMM11), mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0xF2, 0x46, 0x0F, 0x10, 0x1C, 0x43];
+    /// addsd xmm11, qword ptr [rbx+r8*2]
+    addsd_xmm11_qword_rbx_plus_r8_x_2: bin(BinOp::AddF, reg(XMM11), mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0xF2, 0x46, 0x0F, 0x58, 0x1C, 0x43];
+    /// subsd xmm11, qword ptr [rbx+r8*2]
+    subsd_xmm11_qword_rbx_plus_r8_x_2: bin(BinOp::SubF, reg(XMM11), mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0xF2, 0x46, 0x0F, 0x5C, 0x1C, 0x43];
+    /// mulsd xmm11, qword ptr [rbx+r8*2]
+    mulsd_xmm11_qword_rbx_plus_r8_x_2: bin(BinOp::MulF, reg(XMM11), mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0xF2, 0x46, 0x0F, 0x59, 0x1C, 0x43];
+    /// divsd xmm11, qword ptr [rbx+r8*2]
+    divsd_xmm11_qword_rbx_plus_r8_x_2: bin(BinOp::DivF, reg(XMM11), mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0xF2, 0x46, 0x0F, 0x5E, 0x1C, 0x43];
+    /// comisd xmm11, qword ptr [rbx+r8*2]
+    comisd_xmm11_qword_rbx_plus_r8_x_2: bin(BinOp::ComiF, reg(XMM11), mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0x66, 0x46, 0x0F, 0x2F, 0x1C, 0x43];
+    /// ucomisd xmm11, qword ptr [rbx+r8*2]
+    ucomisd_xmm11_qword_rbx_plus_r8_x_2: bin(BinOp::UcomiF, reg(XMM11), mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0x66, 0x46, 0x0F, 0x2E, 0x1C, 0x43];
+    /// movsd qword ptr [r9], xmm12
+    movsd_qword_r9_xmm12: bin(BinOp::StoreF, reg(XMM12), mem(at(R9)), None) => [0xF2, 0x45, 0x0F, 0x11, 0x21];
 }

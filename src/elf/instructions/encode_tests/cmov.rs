@@ -48,4 +48,16 @@ cases! {
     cmovl_ebx_dword_rbx_plus_8: cmov(ConditionCode::L, RBX, mem(at(RBX).disp(8)), DWORD) => [0x0F, 0x4C, 0x5B, 0x08];
     /// cmovl rbx, qword ptr [rip+my_data]
     cmovl_rbx_qword_rip_plus_my_data: cmov(ConditionCode::L, RBX, mem(MemAddress::symbol("my_data")), QWORD) => [0x48, 0x0F, 0x4C, 0x1D, 0x00, 0x00, 0x00, 0x00];
+    /// cmovg rax, qword ptr [r9]
+    cmovg_rax_qword_r9: cmov(ConditionCode::G, RAX, mem(at(R9)), QWORD) => [0x49, 0x0F, 0x4F, 0x01];
+    /// cmovg r11d, dword ptr [r9]
+    cmovg_r11d_dword_r9: cmov(ConditionCode::G, R11, mem(at(R9)), DWORD) => [0x45, 0x0F, 0x4F, 0x19];
+    /// cmovg rax, qword ptr [rbx+r8*2]
+    cmovg_rax_qword_rbx_plus_r8_x_2: cmov(ConditionCode::G, RAX, mem(at(RBX).index_scale(R8, Scale::Two)), QWORD) => [0x4A, 0x0F, 0x4F, 0x04, 0x43];
+    /// cmovg r11d, dword ptr [rbx+r8*2]
+    cmovg_r11d_dword_rbx_plus_r8_x_2: cmov(ConditionCode::G, R11, mem(at(RBX).index_scale(R8, Scale::Two)), DWORD) => [0x46, 0x0F, 0x4F, 0x1C, 0x43];
+    /// cmovg rax, qword ptr [r10+rax]
+    cmovg_rax_qword_r10_plus_rax: cmov(ConditionCode::G, RAX, mem(at(R10).index(RAX)), QWORD) => [0x49, 0x0F, 0x4F, 0x04, 0x02];
+    /// cmovg r11d, dword ptr [r10+rax]
+    cmovg_r11d_dword_r10_plus_rax: cmov(ConditionCode::G, R11, mem(at(R10).index(RAX)), DWORD) => [0x45, 0x0F, 0x4F, 0x1C, 0x02];
 }

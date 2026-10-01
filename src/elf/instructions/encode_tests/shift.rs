@@ -29,7 +29,6 @@ cases! {
     /// shl rdx, cl
     shl_rdx_cl: shift(ShiftOp::Shl, reg(RDX), reg(RCX), QWORD) => [0x48, 0xD3, 0xE2];
     /// shl r10, 7
-    #[ignore = "BUG: produit `shl rdx,0x7`"]
     shl_r10_7: shift(ShiftOp::Shl, reg(R10), imm(7), QWORD) => [0x49, 0xC1, 0xE2, 0x07];
     /// shl dword ptr [rbx], 2
     shl_dword_rbx_2: shift(ShiftOp::Shl, mem(at(RBX)), imm(2), DWORD) => [0xC1, 0x23, 0x02];
@@ -60,7 +59,6 @@ cases! {
     /// shr rdx, cl
     shr_rdx_cl: shift(ShiftOp::Shr, reg(RDX), reg(RCX), QWORD) => [0x48, 0xD3, 0xEA];
     /// shr r10, 7
-    #[ignore = "BUG: produit `shr rdx,0x7`"]
     shr_r10_7: shift(ShiftOp::Shr, reg(R10), imm(7), QWORD) => [0x49, 0xC1, 0xEA, 0x07];
     /// shr dword ptr [rbx], 2
     shr_dword_rbx_2: shift(ShiftOp::Shr, mem(at(RBX)), imm(2), DWORD) => [0xC1, 0x2B, 0x02];
@@ -91,7 +89,6 @@ cases! {
     /// sar rdx, cl
     sar_rdx_cl: shift(ShiftOp::Sar, reg(RDX), reg(RCX), QWORD) => [0x48, 0xD3, 0xFA];
     /// sar r10, 7
-    #[ignore = "BUG: produit `sar rdx,0x7`"]
     sar_r10_7: shift(ShiftOp::Sar, reg(R10), imm(7), QWORD) => [0x49, 0xC1, 0xFA, 0x07];
     /// sar dword ptr [rbx], 2
     sar_dword_rbx_2: shift(ShiftOp::Sar, mem(at(RBX)), imm(2), DWORD) => [0xC1, 0x3B, 0x02];
@@ -122,7 +119,6 @@ cases! {
     /// rol rdx, cl
     rol_rdx_cl: shift(ShiftOp::Rol, reg(RDX), reg(RCX), QWORD) => [0x48, 0xD3, 0xC2];
     /// rol r10, 7
-    #[ignore = "BUG: produit `rol rdx,0x7`"]
     rol_r10_7: shift(ShiftOp::Rol, reg(R10), imm(7), QWORD) => [0x49, 0xC1, 0xC2, 0x07];
     /// rol dword ptr [rbx], 2
     rol_dword_rbx_2: shift(ShiftOp::Rol, mem(at(RBX)), imm(2), DWORD) => [0xC1, 0x03, 0x02];
@@ -153,10 +149,109 @@ cases! {
     /// ror rdx, cl
     ror_rdx_cl: shift(ShiftOp::Ror, reg(RDX), reg(RCX), QWORD) => [0x48, 0xD3, 0xCA];
     /// ror r10, 7
-    #[ignore = "BUG: produit `ror rdx,0x7`"]
     ror_r10_7: shift(ShiftOp::Ror, reg(R10), imm(7), QWORD) => [0x49, 0xC1, 0xCA, 0x07];
     /// ror dword ptr [rbx], 2
     ror_dword_rbx_2: shift(ShiftOp::Ror, mem(at(RBX)), imm(2), DWORD) => [0xC1, 0x0B, 0x02];
     /// ror qword ptr [rbx+8], cl
     ror_qword_rbx_plus_8_cl: shift(ShiftOp::Ror, mem(at(RBX).disp(8)), reg(RCX), QWORD) => [0x48, 0xD3, 0x4B, 0x08];
+    /// shl r10b, 1
+    shl_r10b_1: shift(ShiftOp::Shl, reg(R10), imm(1), BYTE) => [0x41, 0xD0, 0xE2];
+    /// shl r10b, cl
+    shl_r10b_cl: shift(ShiftOp::Shl, reg(R10), reg(RCX), BYTE) => [0x41, 0xD2, 0xE2];
+    /// shl r10d, 1
+    shl_r10d_1: shift(ShiftOp::Shl, reg(R10), imm(1), DWORD) => [0x41, 0xD1, 0xE2];
+    /// shl r10d, cl
+    shl_r10d_cl: shift(ShiftOp::Shl, reg(R10), reg(RCX), DWORD) => [0x41, 0xD3, 0xE2];
+    /// shl r10, 1
+    shl_r10_1: shift(ShiftOp::Shl, reg(R10), imm(1), QWORD) => [0x49, 0xD1, 0xE2];
+    /// shl r10, cl
+    shl_r10_cl: shift(ShiftOp::Shl, reg(R10), reg(RCX), QWORD) => [0x49, 0xD3, 0xE2];
+    /// shl qword ptr [r9], 3
+    shl_qword_r9_3: shift(ShiftOp::Shl, mem(at(R9)), imm(3), QWORD) => [0x49, 0xC1, 0x21, 0x03];
+    /// shl qword ptr [rbx+r8*2], 3
+    shl_qword_rbx_plus_r8_x_2_3: shift(ShiftOp::Shl, mem(at(RBX).index_scale(R8, Scale::Two)), imm(3), QWORD) => [0x4A, 0xC1, 0x24, 0x43, 0x03];
+    /// shl qword ptr [r10+rax], 3
+    shl_qword_r10_plus_rax_3: shift(ShiftOp::Shl, mem(at(R10).index(RAX)), imm(3), QWORD) => [0x49, 0xC1, 0x24, 0x02, 0x03];
+    /// shl dword ptr [r9], cl
+    shl_dword_r9_cl: shift(ShiftOp::Shl, mem(at(R9)), reg(RCX), DWORD) => [0x41, 0xD3, 0x21];
+    /// shr r10b, 1
+    shr_r10b_1: shift(ShiftOp::Shr, reg(R10), imm(1), BYTE) => [0x41, 0xD0, 0xEA];
+    /// shr r10b, cl
+    shr_r10b_cl: shift(ShiftOp::Shr, reg(R10), reg(RCX), BYTE) => [0x41, 0xD2, 0xEA];
+    /// shr r10d, 1
+    shr_r10d_1: shift(ShiftOp::Shr, reg(R10), imm(1), DWORD) => [0x41, 0xD1, 0xEA];
+    /// shr r10d, cl
+    shr_r10d_cl: shift(ShiftOp::Shr, reg(R10), reg(RCX), DWORD) => [0x41, 0xD3, 0xEA];
+    /// shr r10, 1
+    shr_r10_1: shift(ShiftOp::Shr, reg(R10), imm(1), QWORD) => [0x49, 0xD1, 0xEA];
+    /// shr r10, cl
+    shr_r10_cl: shift(ShiftOp::Shr, reg(R10), reg(RCX), QWORD) => [0x49, 0xD3, 0xEA];
+    /// shr qword ptr [r9], 3
+    shr_qword_r9_3: shift(ShiftOp::Shr, mem(at(R9)), imm(3), QWORD) => [0x49, 0xC1, 0x29, 0x03];
+    /// shr qword ptr [rbx+r8*2], 3
+    shr_qword_rbx_plus_r8_x_2_3: shift(ShiftOp::Shr, mem(at(RBX).index_scale(R8, Scale::Two)), imm(3), QWORD) => [0x4A, 0xC1, 0x2C, 0x43, 0x03];
+    /// shr qword ptr [r10+rax], 3
+    shr_qword_r10_plus_rax_3: shift(ShiftOp::Shr, mem(at(R10).index(RAX)), imm(3), QWORD) => [0x49, 0xC1, 0x2C, 0x02, 0x03];
+    /// shr dword ptr [r9], cl
+    shr_dword_r9_cl: shift(ShiftOp::Shr, mem(at(R9)), reg(RCX), DWORD) => [0x41, 0xD3, 0x29];
+    /// sar r10b, 1
+    sar_r10b_1: shift(ShiftOp::Sar, reg(R10), imm(1), BYTE) => [0x41, 0xD0, 0xFA];
+    /// sar r10b, cl
+    sar_r10b_cl: shift(ShiftOp::Sar, reg(R10), reg(RCX), BYTE) => [0x41, 0xD2, 0xFA];
+    /// sar r10d, 1
+    sar_r10d_1: shift(ShiftOp::Sar, reg(R10), imm(1), DWORD) => [0x41, 0xD1, 0xFA];
+    /// sar r10d, cl
+    sar_r10d_cl: shift(ShiftOp::Sar, reg(R10), reg(RCX), DWORD) => [0x41, 0xD3, 0xFA];
+    /// sar r10, 1
+    sar_r10_1: shift(ShiftOp::Sar, reg(R10), imm(1), QWORD) => [0x49, 0xD1, 0xFA];
+    /// sar r10, cl
+    sar_r10_cl: shift(ShiftOp::Sar, reg(R10), reg(RCX), QWORD) => [0x49, 0xD3, 0xFA];
+    /// sar qword ptr [r9], 3
+    sar_qword_r9_3: shift(ShiftOp::Sar, mem(at(R9)), imm(3), QWORD) => [0x49, 0xC1, 0x39, 0x03];
+    /// sar qword ptr [rbx+r8*2], 3
+    sar_qword_rbx_plus_r8_x_2_3: shift(ShiftOp::Sar, mem(at(RBX).index_scale(R8, Scale::Two)), imm(3), QWORD) => [0x4A, 0xC1, 0x3C, 0x43, 0x03];
+    /// sar qword ptr [r10+rax], 3
+    sar_qword_r10_plus_rax_3: shift(ShiftOp::Sar, mem(at(R10).index(RAX)), imm(3), QWORD) => [0x49, 0xC1, 0x3C, 0x02, 0x03];
+    /// sar dword ptr [r9], cl
+    sar_dword_r9_cl: shift(ShiftOp::Sar, mem(at(R9)), reg(RCX), DWORD) => [0x41, 0xD3, 0x39];
+    /// rol r10b, 1
+    rol_r10b_1: shift(ShiftOp::Rol, reg(R10), imm(1), BYTE) => [0x41, 0xD0, 0xC2];
+    /// rol r10b, cl
+    rol_r10b_cl: shift(ShiftOp::Rol, reg(R10), reg(RCX), BYTE) => [0x41, 0xD2, 0xC2];
+    /// rol r10d, 1
+    rol_r10d_1: shift(ShiftOp::Rol, reg(R10), imm(1), DWORD) => [0x41, 0xD1, 0xC2];
+    /// rol r10d, cl
+    rol_r10d_cl: shift(ShiftOp::Rol, reg(R10), reg(RCX), DWORD) => [0x41, 0xD3, 0xC2];
+    /// rol r10, 1
+    rol_r10_1: shift(ShiftOp::Rol, reg(R10), imm(1), QWORD) => [0x49, 0xD1, 0xC2];
+    /// rol r10, cl
+    rol_r10_cl: shift(ShiftOp::Rol, reg(R10), reg(RCX), QWORD) => [0x49, 0xD3, 0xC2];
+    /// rol qword ptr [r9], 3
+    rol_qword_r9_3: shift(ShiftOp::Rol, mem(at(R9)), imm(3), QWORD) => [0x49, 0xC1, 0x01, 0x03];
+    /// rol qword ptr [rbx+r8*2], 3
+    rol_qword_rbx_plus_r8_x_2_3: shift(ShiftOp::Rol, mem(at(RBX).index_scale(R8, Scale::Two)), imm(3), QWORD) => [0x4A, 0xC1, 0x04, 0x43, 0x03];
+    /// rol qword ptr [r10+rax], 3
+    rol_qword_r10_plus_rax_3: shift(ShiftOp::Rol, mem(at(R10).index(RAX)), imm(3), QWORD) => [0x49, 0xC1, 0x04, 0x02, 0x03];
+    /// rol dword ptr [r9], cl
+    rol_dword_r9_cl: shift(ShiftOp::Rol, mem(at(R9)), reg(RCX), DWORD) => [0x41, 0xD3, 0x01];
+    /// ror r10b, 1
+    ror_r10b_1: shift(ShiftOp::Ror, reg(R10), imm(1), BYTE) => [0x41, 0xD0, 0xCA];
+    /// ror r10b, cl
+    ror_r10b_cl: shift(ShiftOp::Ror, reg(R10), reg(RCX), BYTE) => [0x41, 0xD2, 0xCA];
+    /// ror r10d, 1
+    ror_r10d_1: shift(ShiftOp::Ror, reg(R10), imm(1), DWORD) => [0x41, 0xD1, 0xCA];
+    /// ror r10d, cl
+    ror_r10d_cl: shift(ShiftOp::Ror, reg(R10), reg(RCX), DWORD) => [0x41, 0xD3, 0xCA];
+    /// ror r10, 1
+    ror_r10_1: shift(ShiftOp::Ror, reg(R10), imm(1), QWORD) => [0x49, 0xD1, 0xCA];
+    /// ror r10, cl
+    ror_r10_cl: shift(ShiftOp::Ror, reg(R10), reg(RCX), QWORD) => [0x49, 0xD3, 0xCA];
+    /// ror qword ptr [r9], 3
+    ror_qword_r9_3: shift(ShiftOp::Ror, mem(at(R9)), imm(3), QWORD) => [0x49, 0xC1, 0x09, 0x03];
+    /// ror qword ptr [rbx+r8*2], 3
+    ror_qword_rbx_plus_r8_x_2_3: shift(ShiftOp::Ror, mem(at(RBX).index_scale(R8, Scale::Two)), imm(3), QWORD) => [0x4A, 0xC1, 0x0C, 0x43, 0x03];
+    /// ror qword ptr [r10+rax], 3
+    ror_qword_r10_plus_rax_3: shift(ShiftOp::Ror, mem(at(R10).index(RAX)), imm(3), QWORD) => [0x49, 0xC1, 0x0C, 0x02, 0x03];
+    /// ror dword ptr [r9], cl
+    ror_dword_r9_cl: shift(ShiftOp::Ror, mem(at(R9)), reg(RCX), DWORD) => [0x41, 0xD3, 0x09];
 }

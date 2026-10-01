@@ -45,4 +45,10 @@ cases! {
     setne_byte_rbx_plus_8: setcc(ConditionCode::NE, mem(at(RBX).disp(8))) => [0x0F, 0x95, 0x43, 0x08];
     /// setne byte ptr [r9]
     setne_byte_r9: setcc(ConditionCode::NE, mem(at(R9))) => [0x41, 0x0F, 0x95, 0x01];
+    /// sete byte ptr [r9]
+    sete_byte_r9: setcc(ConditionCode::E, mem(at(R9))) => [0x41, 0x0F, 0x94, 0x01];
+    /// sete byte ptr [rbx+r8*2]
+    sete_byte_rbx_plus_r8_x_2: setcc(ConditionCode::E, mem(at(RBX).index_scale(R8, Scale::Two))) => [0x42, 0x0F, 0x94, 0x04, 0x43];
+    /// sete byte ptr [r10+rax]
+    sete_byte_r10_plus_rax: setcc(ConditionCode::E, mem(at(R10).index(RAX))) => [0x41, 0x0F, 0x94, 0x04, 0x02];
 }

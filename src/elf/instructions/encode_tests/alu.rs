@@ -305,4 +305,140 @@ cases! {
     test_dword_rbx_3: bin(BinOp::Test, mem(at(RBX)), imm(3), DWORD) => [0xF7, 0x03, 0x03, 0x00, 0x00, 0x00];
     /// test dword ptr [rbx], ecx
     test_dword_rbx_ecx: bin(BinOp::Test, mem(at(RBX)), reg(RCX), DWORD) => [0x85, 0x0B];
+    /// add qword ptr [r9], 1
+    add_qword_r9_1: bin(BinOp::Add, mem(at(R9)), imm(1), QWORD) => [0x49, 0x83, 0x01, 0x01];
+    /// add byte ptr [r9], 1
+    add_byte_r9_1: bin(BinOp::Add, mem(at(R9)), imm(1), BYTE) => [0x41, 0x80, 0x01, 0x01];
+    /// add qword ptr [rbx+r8*2], 1
+    add_qword_rbx_plus_r8_x_2_1: bin(BinOp::Add, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), QWORD) => [0x4A, 0x83, 0x04, 0x43, 0x01];
+    /// add byte ptr [rbx+r8*2], 1
+    add_byte_rbx_plus_r8_x_2_1: bin(BinOp::Add, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), BYTE) => [0x42, 0x80, 0x04, 0x43, 0x01];
+    /// add qword ptr [r10+rax], 1
+    add_qword_r10_plus_rax_1: bin(BinOp::Add, mem(at(R10).index(RAX)), imm(1), QWORD) => [0x49, 0x83, 0x04, 0x02, 0x01];
+    /// add byte ptr [r10+rax], 1
+    add_byte_r10_plus_rax_1: bin(BinOp::Add, mem(at(R10).index(RAX)), imm(1), BYTE) => [0x41, 0x80, 0x04, 0x02, 0x01];
+    /// add qword ptr [r9], r10
+    add_qword_r9_r10: bin(BinOp::Add, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x01, 0x11];
+    /// add r10, qword ptr [r9]
+    add_r10_qword_r9: bin(BinOp::Add, reg(R10), mem(at(R9)), QWORD) => [0x4D, 0x03, 0x11];
+    /// adc qword ptr [r9], 1
+    adc_qword_r9_1: bin(BinOp::Adc, mem(at(R9)), imm(1), QWORD) => [0x49, 0x83, 0x11, 0x01];
+    /// adc byte ptr [r9], 1
+    adc_byte_r9_1: bin(BinOp::Adc, mem(at(R9)), imm(1), BYTE) => [0x41, 0x80, 0x11, 0x01];
+    /// adc qword ptr [rbx+r8*2], 1
+    adc_qword_rbx_plus_r8_x_2_1: bin(BinOp::Adc, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), QWORD) => [0x4A, 0x83, 0x14, 0x43, 0x01];
+    /// adc byte ptr [rbx+r8*2], 1
+    adc_byte_rbx_plus_r8_x_2_1: bin(BinOp::Adc, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), BYTE) => [0x42, 0x80, 0x14, 0x43, 0x01];
+    /// adc qword ptr [r10+rax], 1
+    adc_qword_r10_plus_rax_1: bin(BinOp::Adc, mem(at(R10).index(RAX)), imm(1), QWORD) => [0x49, 0x83, 0x14, 0x02, 0x01];
+    /// adc byte ptr [r10+rax], 1
+    adc_byte_r10_plus_rax_1: bin(BinOp::Adc, mem(at(R10).index(RAX)), imm(1), BYTE) => [0x41, 0x80, 0x14, 0x02, 0x01];
+    /// adc qword ptr [r9], r10
+    adc_qword_r9_r10: bin(BinOp::Adc, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x11, 0x11];
+    /// adc r10, qword ptr [r9]
+    adc_r10_qword_r9: bin(BinOp::Adc, reg(R10), mem(at(R9)), QWORD) => [0x4D, 0x13, 0x11];
+    /// sub qword ptr [r9], 1
+    sub_qword_r9_1: bin(BinOp::Sub, mem(at(R9)), imm(1), QWORD) => [0x49, 0x83, 0x29, 0x01];
+    /// sub byte ptr [r9], 1
+    sub_byte_r9_1: bin(BinOp::Sub, mem(at(R9)), imm(1), BYTE) => [0x41, 0x80, 0x29, 0x01];
+    /// sub qword ptr [rbx+r8*2], 1
+    sub_qword_rbx_plus_r8_x_2_1: bin(BinOp::Sub, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), QWORD) => [0x4A, 0x83, 0x2C, 0x43, 0x01];
+    /// sub byte ptr [rbx+r8*2], 1
+    sub_byte_rbx_plus_r8_x_2_1: bin(BinOp::Sub, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), BYTE) => [0x42, 0x80, 0x2C, 0x43, 0x01];
+    /// sub qword ptr [r10+rax], 1
+    sub_qword_r10_plus_rax_1: bin(BinOp::Sub, mem(at(R10).index(RAX)), imm(1), QWORD) => [0x49, 0x83, 0x2C, 0x02, 0x01];
+    /// sub byte ptr [r10+rax], 1
+    sub_byte_r10_plus_rax_1: bin(BinOp::Sub, mem(at(R10).index(RAX)), imm(1), BYTE) => [0x41, 0x80, 0x2C, 0x02, 0x01];
+    /// sub qword ptr [r9], r10
+    sub_qword_r9_r10: bin(BinOp::Sub, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x29, 0x11];
+    /// sub r10, qword ptr [r9]
+    sub_r10_qword_r9: bin(BinOp::Sub, reg(R10), mem(at(R9)), QWORD) => [0x4D, 0x2B, 0x11];
+    /// sbb qword ptr [r9], 1
+    sbb_qword_r9_1: bin(BinOp::Sbb, mem(at(R9)), imm(1), QWORD) => [0x49, 0x83, 0x19, 0x01];
+    /// sbb byte ptr [r9], 1
+    sbb_byte_r9_1: bin(BinOp::Sbb, mem(at(R9)), imm(1), BYTE) => [0x41, 0x80, 0x19, 0x01];
+    /// sbb qword ptr [rbx+r8*2], 1
+    sbb_qword_rbx_plus_r8_x_2_1: bin(BinOp::Sbb, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), QWORD) => [0x4A, 0x83, 0x1C, 0x43, 0x01];
+    /// sbb byte ptr [rbx+r8*2], 1
+    sbb_byte_rbx_plus_r8_x_2_1: bin(BinOp::Sbb, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), BYTE) => [0x42, 0x80, 0x1C, 0x43, 0x01];
+    /// sbb qword ptr [r10+rax], 1
+    sbb_qword_r10_plus_rax_1: bin(BinOp::Sbb, mem(at(R10).index(RAX)), imm(1), QWORD) => [0x49, 0x83, 0x1C, 0x02, 0x01];
+    /// sbb byte ptr [r10+rax], 1
+    sbb_byte_r10_plus_rax_1: bin(BinOp::Sbb, mem(at(R10).index(RAX)), imm(1), BYTE) => [0x41, 0x80, 0x1C, 0x02, 0x01];
+    /// sbb qword ptr [r9], r10
+    sbb_qword_r9_r10: bin(BinOp::Sbb, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x19, 0x11];
+    /// sbb r10, qword ptr [r9]
+    sbb_r10_qword_r9: bin(BinOp::Sbb, reg(R10), mem(at(R9)), QWORD) => [0x4D, 0x1B, 0x11];
+    /// and qword ptr [r9], 1
+    and_qword_r9_1: bin(BinOp::And, mem(at(R9)), imm(1), QWORD) => [0x49, 0x83, 0x21, 0x01];
+    /// and byte ptr [r9], 1
+    and_byte_r9_1: bin(BinOp::And, mem(at(R9)), imm(1), BYTE) => [0x41, 0x80, 0x21, 0x01];
+    /// and qword ptr [rbx+r8*2], 1
+    and_qword_rbx_plus_r8_x_2_1: bin(BinOp::And, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), QWORD) => [0x4A, 0x83, 0x24, 0x43, 0x01];
+    /// and byte ptr [rbx+r8*2], 1
+    and_byte_rbx_plus_r8_x_2_1: bin(BinOp::And, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), BYTE) => [0x42, 0x80, 0x24, 0x43, 0x01];
+    /// and qword ptr [r10+rax], 1
+    and_qword_r10_plus_rax_1: bin(BinOp::And, mem(at(R10).index(RAX)), imm(1), QWORD) => [0x49, 0x83, 0x24, 0x02, 0x01];
+    /// and byte ptr [r10+rax], 1
+    and_byte_r10_plus_rax_1: bin(BinOp::And, mem(at(R10).index(RAX)), imm(1), BYTE) => [0x41, 0x80, 0x24, 0x02, 0x01];
+    /// and qword ptr [r9], r10
+    and_qword_r9_r10: bin(BinOp::And, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x21, 0x11];
+    /// and r10, qword ptr [r9]
+    and_r10_qword_r9: bin(BinOp::And, reg(R10), mem(at(R9)), QWORD) => [0x4D, 0x23, 0x11];
+    /// or qword ptr [r9], 1
+    or_qword_r9_1: bin(BinOp::Or, mem(at(R9)), imm(1), QWORD) => [0x49, 0x83, 0x09, 0x01];
+    /// or byte ptr [r9], 1
+    or_byte_r9_1: bin(BinOp::Or, mem(at(R9)), imm(1), BYTE) => [0x41, 0x80, 0x09, 0x01];
+    /// or qword ptr [rbx+r8*2], 1
+    or_qword_rbx_plus_r8_x_2_1: bin(BinOp::Or, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), QWORD) => [0x4A, 0x83, 0x0C, 0x43, 0x01];
+    /// or byte ptr [rbx+r8*2], 1
+    or_byte_rbx_plus_r8_x_2_1: bin(BinOp::Or, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), BYTE) => [0x42, 0x80, 0x0C, 0x43, 0x01];
+    /// or qword ptr [r10+rax], 1
+    or_qword_r10_plus_rax_1: bin(BinOp::Or, mem(at(R10).index(RAX)), imm(1), QWORD) => [0x49, 0x83, 0x0C, 0x02, 0x01];
+    /// or byte ptr [r10+rax], 1
+    or_byte_r10_plus_rax_1: bin(BinOp::Or, mem(at(R10).index(RAX)), imm(1), BYTE) => [0x41, 0x80, 0x0C, 0x02, 0x01];
+    /// or qword ptr [r9], r10
+    or_qword_r9_r10: bin(BinOp::Or, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x09, 0x11];
+    /// or r10, qword ptr [r9]
+    or_r10_qword_r9: bin(BinOp::Or, reg(R10), mem(at(R9)), QWORD) => [0x4D, 0x0B, 0x11];
+    /// xor qword ptr [r9], 1
+    xor_qword_r9_1: bin(BinOp::Xor, mem(at(R9)), imm(1), QWORD) => [0x49, 0x83, 0x31, 0x01];
+    /// xor byte ptr [r9], 1
+    xor_byte_r9_1: bin(BinOp::Xor, mem(at(R9)), imm(1), BYTE) => [0x41, 0x80, 0x31, 0x01];
+    /// xor qword ptr [rbx+r8*2], 1
+    xor_qword_rbx_plus_r8_x_2_1: bin(BinOp::Xor, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), QWORD) => [0x4A, 0x83, 0x34, 0x43, 0x01];
+    /// xor byte ptr [rbx+r8*2], 1
+    xor_byte_rbx_plus_r8_x_2_1: bin(BinOp::Xor, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), BYTE) => [0x42, 0x80, 0x34, 0x43, 0x01];
+    /// xor qword ptr [r10+rax], 1
+    xor_qword_r10_plus_rax_1: bin(BinOp::Xor, mem(at(R10).index(RAX)), imm(1), QWORD) => [0x49, 0x83, 0x34, 0x02, 0x01];
+    /// xor byte ptr [r10+rax], 1
+    xor_byte_r10_plus_rax_1: bin(BinOp::Xor, mem(at(R10).index(RAX)), imm(1), BYTE) => [0x41, 0x80, 0x34, 0x02, 0x01];
+    /// xor qword ptr [r9], r10
+    xor_qword_r9_r10: bin(BinOp::Xor, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x31, 0x11];
+    /// xor r10, qword ptr [r9]
+    xor_r10_qword_r9: bin(BinOp::Xor, reg(R10), mem(at(R9)), QWORD) => [0x4D, 0x33, 0x11];
+    /// cmp qword ptr [r9], 1
+    cmp_qword_r9_1: bin(BinOp::Cmp, mem(at(R9)), imm(1), QWORD) => [0x49, 0x83, 0x39, 0x01];
+    /// cmp byte ptr [r9], 1
+    cmp_byte_r9_1: bin(BinOp::Cmp, mem(at(R9)), imm(1), BYTE) => [0x41, 0x80, 0x39, 0x01];
+    /// cmp qword ptr [rbx+r8*2], 1
+    cmp_qword_rbx_plus_r8_x_2_1: bin(BinOp::Cmp, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), QWORD) => [0x4A, 0x83, 0x3C, 0x43, 0x01];
+    /// cmp byte ptr [rbx+r8*2], 1
+    cmp_byte_rbx_plus_r8_x_2_1: bin(BinOp::Cmp, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), BYTE) => [0x42, 0x80, 0x3C, 0x43, 0x01];
+    /// cmp qword ptr [r10+rax], 1
+    cmp_qword_r10_plus_rax_1: bin(BinOp::Cmp, mem(at(R10).index(RAX)), imm(1), QWORD) => [0x49, 0x83, 0x3C, 0x02, 0x01];
+    /// cmp byte ptr [r10+rax], 1
+    cmp_byte_r10_plus_rax_1: bin(BinOp::Cmp, mem(at(R10).index(RAX)), imm(1), BYTE) => [0x41, 0x80, 0x3C, 0x02, 0x01];
+    /// cmp qword ptr [r9], r10
+    cmp_qword_r9_r10: bin(BinOp::Cmp, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x39, 0x11];
+    /// cmp r10, qword ptr [r9]
+    cmp_r10_qword_r9: bin(BinOp::Cmp, reg(R10), mem(at(R9)), QWORD) => [0x4D, 0x3B, 0x11];
+    /// test dword ptr [r9], 1
+    test_dword_r9_1: bin(BinOp::Test, mem(at(R9)), imm(1), DWORD) => [0x41, 0xF7, 0x01, 0x01, 0x00, 0x00, 0x00];
+    /// test dword ptr [rbx+r8*2], 1
+    test_dword_rbx_plus_r8_x_2_1: bin(BinOp::Test, mem(at(RBX).index_scale(R8, Scale::Two)), imm(1), DWORD) => [0x42, 0xF7, 0x04, 0x43, 0x01, 0x00, 0x00, 0x00];
+    /// test dword ptr [r10+rax], 1
+    test_dword_r10_plus_rax_1: bin(BinOp::Test, mem(at(R10).index(RAX)), imm(1), DWORD) => [0x41, 0xF7, 0x04, 0x02, 0x01, 0x00, 0x00, 0x00];
+    /// test qword ptr [r9], r10
+    test_qword_r9_r10: bin(BinOp::Test, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x85, 0x11];
 }

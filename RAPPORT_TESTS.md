@@ -1,14 +1,14 @@
 # Rapport de tests de l'encodeur x86-64
 
-2 octobre 2026, mis à jour après la correction des sauts et des bits REX · version en ligne : https://claude.ai/code/artifact/5f97e6cd-52b8-4205-bc58-d1c65b70267f
+2 octobre 2026, mis à jour après la correction des sauts, des bits REX et des immédiates 64 bits · version en ligne : https://claude.ai/code/artifact/5f97e6cd-52b8-4205-bc58-d1c65b70267f
 
 ## Résumé
 
-1 002 tests unitaires couvrent maintenant toutes les familles d'instructions de l'encodeur, y compris avec les registres `r8`–`r15` et les adresses étendues : ils ont trouvé **199 encodages faux**, dus à **12 causes**. Les sauts et tous les bits `REX.R`/`REX.X`/`REX.B` sont corrigés : **il reste 43 cas faux, dus à 9 causes**. Le plus grave restant : les registres `sil`/`dil`/`spl`/`bpl` sont remplacés par `dh`/`bh`/`ah`/`ch`, ce qui touche tout argument 8 bits passé dans `rdi` ou `rsi`.
+1 002 tests unitaires couvrent maintenant toutes les familles d'instructions de l'encodeur, y compris avec les registres `r8`–`r15` et les adresses étendues : ils ont trouvé **199 encodages faux**, dus à **12 causes**. Les sauts, tous les bits `REX.R`/`REX.X`/`REX.B` et les immédiates 64 bits sont corrigés : **il reste 32 cas faux, dus à 8 causes**. Le plus grave restant : les registres `sil`/`dil`/`spl`/`bpl` sont remplacés par `dh`/`bh`/`ah`/`ch`, ce qui touche tout argument 8 bits passé dans `rdi` ou `rsi`.
 
-`cargo test` passe (959 tests OK, 0 échec) parce que chaque cas faux restant est marqué `#[ignore = "BUG: produit ..."]`. `cargo test -- --ignored` fait échouer les 43, ce qui donne la liste de travail.
+`cargo test` passe (970 tests OK, 0 échec) parce que chaque cas faux restant est marqué `#[ignore = "BUG: produit ..."]`. `cargo test -- --ignored` fait échouer les 32, ce qui donne la liste de travail.
 
-Cinq causes restent dans le code d'adressage et de préfixes communs (`utils.rs` / `modrm.rs`) : elles représentent 26 des 43 cas.
+Cinq causes restent dans le code d'adressage et de préfixes communs (`utils.rs` / `modrm.rs`) : elles représentent 26 des 32 cas.
 
 ## Méthode
 
@@ -23,7 +23,7 @@ Les relocations (offset, type, addend) sont vérifiées à part, contre la sorti
 
 ## Couverture
 
-Sur 990 cas d'encodage, 862 produisent exactement les octets de GNU `as`, 85 un encodage différent mais valide, et 43 un encodage faux. Les 12 tests de relocations passent tous.
+Sur 990 cas d'encodage, 873 produisent exactement les octets de GNU `as`, 85 un encodage différent mais valide, et 32 un encodage faux. Les 12 tests de relocations passent tous.
 
 - **Familles :** 18 fichiers (mov, alu, sse, complex, unary, no_operand, sys, shift, bit, bitscan, cmov, setcc, lea, stack, string, prefix, ctrl, conversion), plus `relocations.rs`.
 - **Tailles :** 8, 16, 32 et 64 bits, avec les registres étendus `r8`–`r15` et `xmm8`–`xmm15`.
@@ -34,8 +34,7 @@ Résultats par famille, triés par nombre de cas faux :
 
 | Famille | Identiques à `as` | Équivalents valides | Faux |
 | --- | ---: | ---: | ---: |
-| mov | 76 | 17 | 19 |
-| alu | 156 | 49 | 9 |
+| mov | 78 | 17 | 17 |
 | unary | 56 | 0 | 4 |
 | lea | 18 | 0 | 4 |
 | prefix | 10 | 1 | 3 |
@@ -43,6 +42,7 @@ Résultats par famille, triés par nombre de cas faux :
 | no_operand | 28 | 0 | 1 |
 | setcc | 22 | 0 | 1 |
 | conversion | 19 | 0 | 1 |
+| alu | 165 | 49 | 0 |
 | shift | 125 | 0 | 0 |
 | sse | 96 | 0 | 0 |
 | complex | 85 | 0 | 0 |
@@ -57,13 +57,13 @@ En proportion, `prefix` (3 cas faux sur 14) et `lea` (4 sur 22) sont les famille
 
 ## Bugs trouvés
 
-La première exécution a trouvé 76 cas faux ; les tests ajoutés ensuite pour `r8`–`r15` en ont trouvé 123 de plus, tous dans la cause 5. Les causes 1, 2 et 5 sont corrigées, soit 156 cas : il en reste 43. Les causes sont classées de la plus grave à la moins grave. Les causes 2, 4, 6, 8 et 9 sont dans le code d'adressage commun et touchent donc toutes les familles.
+La première exécution a trouvé 76 cas faux ; les tests ajoutés ensuite pour `r8`–`r15` en ont trouvé 123 de plus, tous dans la cause 5. Les causes 1, 2, 3 et 5 sont corrigées, soit 167 cas : il en reste 32. Les causes sont classées de la plus grave à la moins grave. Les causes 2, 4, 6, 8 et 9 sont dans le code d'adressage commun et touchent donc toutes les familles.
 
 | # | Cause | Cas | Exemple (attendu → produit) | Fichier |
 | --- | --- | --- | --- | --- |
 | 1 | **Corrigé.** Opcodes de `jg`, `jl` et `jle` permutés | 3 | `jg` → `jl` | `encode_ctrl.rs` |
 | 2 | **Corrigé.** `REX.B`/`REX.X` jamais émis pour la base ou l'index d'une adresse mémoire | 19 | `[r9]` → `[rcx]`, `[rbx+r8*2]` → `[rbx+rax*2]` | `utils.rs` (`emit_rex`) |
-| 3 | Immédiate 64 bits émise là où x86 n'accepte que 32 bits : 4 octets parasites décalent la suite du code | 11 | `add qword [rbx+8], 0x1000`, `test r9, 1` | `encode_alu` |
+| 3 | **Corrigé.** Immédiate 64 bits émise là où x86 n'accepte que 32 bits : 4 octets parasites décalent la suite du code | 11 | `add qword [rbx+8], 0x1000`, `test r9, 1` | `utils.rs` (`emit_imm_sx32`), `encode_alu`, `encode_complexbin.rs` |
 | 4 | `r12`/`r13` comme base : SIB et disp8 oubliés (test sur `index` au lieu de `low3()`) | 9 | `[r12]`, `[r13]` → octets invalides | `modrm.rs` |
 | 5 | **Corrigé.** Opérande r/m ou registre `reg` non transmis à `emit_rex` : `REX.R`/`REX.X`/`REX.B` manquants | 134 | `add qword [r9], 1` → `[rcx]` ; `shl r10, 7` → `shl rdx, 7` ; `bsf r8, rbx` → `bsf rax, rbx` ; `imul r10, r11` → `imul rdx, r11` | `encode_alu/encode.rs`, `encode_shift_rotate.rs`, `encode_bitscan.rs`, `encode_stack.rs`, `encode_complexbin.rs` |
 | 6 | `sil`, `dil`, `spl`, `bpl` sans le REX `0x40` obligatoire | 10 | `mov sil, al` → `mov dh, al` | `utils.rs` (`emit_rex`) |
@@ -99,8 +99,8 @@ Modifications ailleurs : `src/elf/instructions/mod.rs` déclare `#[cfg(test)] mo
 Pour lancer :
 
 ```bash
-cargo test                      # 959 OK, 43 ignorés
-cargo test -- --ignored         # les 43 bugs restants, tous en échec
+cargo test                      # 970 OK, 32 ignorés
+cargo test -- --ignored         # les 32 bugs restants, tous en échec
 cargo test encode_tests::mov    # une seule famille
 ```
 
@@ -108,14 +108,14 @@ Quand un bug est corrigé, il suffit de retirer le `#[ignore]` du cas correspond
 
 ## Prochaines étapes
 
-Les sauts et tous les bits `REX.R`/`REX.X`/`REX.B` sont corrigés. La suite : `modrm.rs` et le REX nu des registres 8 bits, qui débloquent 26 des 43 cas restants.
+Les sauts, tous les bits `REX.R`/`REX.X`/`REX.B` et les immédiates 64 bits sont corrigés. La suite : `modrm.rs` et le REX nu des registres 8 bits, qui débloquent 26 des 32 cas restants.
 
 - [x] Remettre les opcodes de `jg` (`0x8F`), `jl` (`0x8C`) et `jle` (`0x8E`) dans `encode_ctrl.rs`
 - [x] Faire calculer à `emit_rex` les bits `REX.B`/`REX.X` depuis la base et l'index des opérandes mémoire (cause 2)
 - [x] Rétablir dans `encode_conversion.rs` le contrôle « source = registre général ou mémoire » retiré avec l'ancien `rm` (2 tests en échec)
 - [ ] Émettre dans `emit_rex` un REX nu pour `spl`/`bpl`/`sil`/`dil` en 8 bits, sur les registres généraux seulement (cause 6)
 - [ ] Dans `modrm.rs`, tester `low3()` au lieu de `index` pour `rsp`/`r12` et `rbp`/`r13`, et corriger `[rbp+index]`, `[index*scale+disp]` et `.absolute()` (causes 4, 7, 8, 9)
-- [ ] Limiter les immédiates à 32 bits signés pour l'ALU et `mov` vers la mémoire en 64 bits (cause 3)
+- [x] Limiter les immédiates à 32 bits signés pour l'ALU et `mov` vers la mémoire en 64 bits (cause 3)
 - [x] Passer le bon opérande à `emit_rex` dans l'ALU mémoire/immédiate, les shifts, `push`/`pop`, `imul` et `encode_bitscan.rs` (cause 5)
 - [ ] Corriger `movzx`/`movsx` 16 bits, `cwd` et `lock` sur les unaires (causes 10 à 12)
 - [ ] Ajouter le générateur de tests au dépôt (par exemple `tools/gen_encode_tests.py`) : il est aujourd'hui dans un dossier temporaire de session

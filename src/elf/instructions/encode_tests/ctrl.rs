@@ -50,4 +50,26 @@ cases! {
     loope_target: ctrl(CtrlOp::Loope, "target") => [0xE1, 0x00];
     /// loopne target
     loopne_target: ctrl(CtrlOp::Loopne, "target") => [0xE0, 0x00];
+    /// call rax
+    call_rax: call_indirect(reg(RAX)) => [0xFF, 0xD0];
+    /// call r11
+    call_r11: call_indirect(reg(R11)) => [0x41, 0xFF, 0xD3];
+    /// jmp rax
+    jmp_rax: jmp_indirect(reg(RAX)) => [0xFF, 0xE0];
+    /// jmp r12
+    jmp_r12: jmp_indirect(reg(R12)) => [0x41, 0xFF, 0xE4];
+    /// call qword ptr [rax]
+    call_qword_rax: call_indirect(mem(at(RAX))) => [0xFF, 0x10];
+    /// call qword ptr [rax+8]
+    call_qword_rax_plus_8: call_indirect(mem(at(RAX).disp(8))) => [0xFF, 0x50, 0x08];
+    /// call qword ptr [r12]
+    call_qword_r12: call_indirect(mem(at(R12))) => [0x41, 0xFF, 0x14, 0x24];
+    /// jmp qword ptr [rbx+rcx*8]
+    jmp_qword_rbx_plus_rcx_x_8: jmp_indirect(mem(at(RBX).index_scale(RCX, Scale::Eight))) => [0xFF, 0x24, 0xCB];
+    /// jmp qword ptr [r9+r10*8]
+    jmp_qword_r9_plus_r10_x_8: jmp_indirect(mem(at(R9).index_scale(R10, Scale::Eight))) => [0x43, 0xFF, 0x24, 0xD1];
+    /// call qword ptr [rip+my_data]
+    call_qword_rip_plus_my_data: call_indirect(var("my_data")) => [0xFF, 0x15, 0x00, 0x00, 0x00, 0x00];
+    /// jmp qword ptr [rip+my_data]
+    jmp_qword_rip_plus_my_data: jmp_indirect(var("my_data")) => [0xFF, 0x25, 0x00, 0x00, 0x00, 0x00];
 }

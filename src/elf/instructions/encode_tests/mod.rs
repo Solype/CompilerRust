@@ -14,6 +14,7 @@ mod cmov;
 mod complex;
 mod conversion;
 mod ctrl;
+mod invalid_forms;
 mod lea;
 mod mov;
 mod no_operand;

@@ -218,6 +218,11 @@ pub enum Prefix {
     Gs,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum ConvOp {
+    Cvtsi2sd,
+}
+
 #[derive(Debug)]
 pub enum Instruction {
     Binary {
@@ -293,6 +298,13 @@ pub enum Instruction {
 
     String {
         op: StringOp,
+        size: Option<Size>,
+    },
+
+    Convert {
+        op: ConvOp,
+        dst: Register,
+        src: Operand,
         size: Option<Size>,
     },
 

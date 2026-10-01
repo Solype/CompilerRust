@@ -22,17 +22,17 @@ pub struct Register {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Gpr {
-    A  = 0,
-    C  = 1,
-    D  = 2,
-    B  = 3,
+    A = 0,
+    C = 1,
+    D = 2,
+    B = 3,
     Sp = 4,
     Bp = 5,
     Si = 6,
     Di = 7,
 
-    R8  = 8,
-    R9  = 9,
+    R8 = 8,
+    R9 = 9,
     R10 = 10,
     R11 = 11,
     R12 = 12,
@@ -58,12 +58,12 @@ impl Register {
 
     #[inline]
     pub fn is_gpr(self) -> bool {
-        matches!(self.class, RegisterClass::Gpr)
+        return matches!(self.class, RegisterClass::Gpr);
     }
 
     #[inline]
     pub fn is_xmm(self) -> bool {
-        matches!(self.class, RegisterClass::Xmm)
+        return matches!(self.class, RegisterClass::Xmm);
     }
 }
 
@@ -81,17 +81,17 @@ impl TryFrom<u8> for Gpr {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0  => Ok(Gpr::A),
-            1  => Ok(Gpr::C),
-            2  => Ok(Gpr::D),
-            3  => Ok(Gpr::B),
-            4  => Ok(Gpr::Sp),
-            5  => Ok(Gpr::Bp),
-            6  => Ok(Gpr::Si),
-            7  => Ok(Gpr::Di),
+            0 => Ok(Gpr::A),
+            1 => Ok(Gpr::C),
+            2 => Ok(Gpr::D),
+            3 => Ok(Gpr::B),
+            4 => Ok(Gpr::Sp),
+            5 => Ok(Gpr::Bp),
+            6 => Ok(Gpr::Si),
+            7 => Ok(Gpr::Di),
 
-            8  => Ok(Gpr::R8),
-            9  => Ok(Gpr::R9),
+            8 => Ok(Gpr::R8),
+            9 => Ok(Gpr::R9),
             10 => Ok(Gpr::R10),
             11 => Ok(Gpr::R11),
             12 => Ok(Gpr::R12),
@@ -117,8 +117,8 @@ pub const RBP: Register = Register::new(RegisterClass::Gpr, Gpr::Bp as u8);
 pub const RSI: Register = Register::new(RegisterClass::Gpr, Gpr::Si as u8);
 pub const RDI: Register = Register::new(RegisterClass::Gpr, Gpr::Di as u8);
 
-pub const R8: Register  = Register::new(RegisterClass::Gpr, Gpr::R8 as u8);
-pub const R9: Register  = Register::new(RegisterClass::Gpr, Gpr::R9 as u8);
+pub const R8: Register = Register::new(RegisterClass::Gpr, Gpr::R8 as u8);
+pub const R9: Register = Register::new(RegisterClass::Gpr, Gpr::R9 as u8);
 pub const R10: Register = Register::new(RegisterClass::Gpr, Gpr::R10 as u8);
 pub const R11: Register = Register::new(RegisterClass::Gpr, Gpr::R11 as u8);
 pub const R12: Register = Register::new(RegisterClass::Gpr, Gpr::R12 as u8);
@@ -130,17 +130,17 @@ pub const R15: Register = Register::new(RegisterClass::Gpr, Gpr::R15 as u8);
 // Future SIMD registers
 //
 
-pub const XMM0: Register  = Register::new(RegisterClass::Xmm, 0);
-pub const XMM1: Register  = Register::new(RegisterClass::Xmm, 1);
-pub const XMM2: Register  = Register::new(RegisterClass::Xmm, 2);
-pub const XMM3: Register  = Register::new(RegisterClass::Xmm, 3);
-pub const XMM4: Register  = Register::new(RegisterClass::Xmm, 4);
-pub const XMM5: Register  = Register::new(RegisterClass::Xmm, 5);
-pub const XMM6: Register  = Register::new(RegisterClass::Xmm, 6);
-pub const XMM7: Register  = Register::new(RegisterClass::Xmm, 7);
+pub const XMM0: Register = Register::new(RegisterClass::Xmm, 0);
+pub const XMM1: Register = Register::new(RegisterClass::Xmm, 1);
+pub const XMM2: Register = Register::new(RegisterClass::Xmm, 2);
+pub const XMM3: Register = Register::new(RegisterClass::Xmm, 3);
+pub const XMM4: Register = Register::new(RegisterClass::Xmm, 4);
+pub const XMM5: Register = Register::new(RegisterClass::Xmm, 5);
+pub const XMM6: Register = Register::new(RegisterClass::Xmm, 6);
+pub const XMM7: Register = Register::new(RegisterClass::Xmm, 7);
 
-pub const XMM8: Register  = Register::new(RegisterClass::Xmm, 8);
-pub const XMM9: Register  = Register::new(RegisterClass::Xmm, 9);
+pub const XMM8: Register = Register::new(RegisterClass::Xmm, 8);
+pub const XMM9: Register = Register::new(RegisterClass::Xmm, 9);
 pub const XMM10: Register = Register::new(RegisterClass::Xmm, 10);
 pub const XMM11: Register = Register::new(RegisterClass::Xmm, 11);
 pub const XMM12: Register = Register::new(RegisterClass::Xmm, 12);

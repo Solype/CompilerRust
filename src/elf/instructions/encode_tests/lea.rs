@@ -29,7 +29,6 @@ cases! {
     /// lea rax, [rbx+r8*2]
     lea_rax_rbx_plus_r8_x_2: lea(RAX, at(RBX).index_scale(R8, Scale::Two), QWORD) => [0x4A, 0x8D, 0x04, 0x43];
     /// lea rax, [rcx*4+16]
-    #[ignore = "BUG: produit `lea rax,[rbp+rcx*4+0x10]`"]
     lea_rax_rcx_x_4_plus_16: lea(RAX, MemAddress::new().index_scale(RCX, Scale::Four).disp(16), QWORD) => [0x48, 0x8D, 0x04, 0x8D, 0x10, 0x00, 0x00, 0x00];
     /// lea rax, [rip+my_data]
     lea_rax_rip_plus_my_data: lea(RAX, MemAddress::symbol("my_data"), QWORD) => [0x48, 0x8D, 0x05, 0x00, 0x00, 0x00, 0x00];

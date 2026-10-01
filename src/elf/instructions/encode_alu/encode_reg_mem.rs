@@ -61,7 +61,9 @@ pub(super) fn encode_reg_mem(
         // MOVZX / MOVSX
         // --------------------------------------------------
         BinaryEncoding::MovExtend { prefix, opcode } => {
-            emit_size_prefix(&mut v, size);
+            // `size` est celle de la source (byte ou word, déjà portée par
+            // l'opcode B6/B7/BE/BF) : la destination est toujours 32 bits,
+            // donc ni préfixe 66 ni REX.W
             emit_rex(&mut v, size, Some(*reg), rm_op);
 
             v.push(prefix);

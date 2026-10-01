@@ -432,4 +432,6 @@ cases! {
     test_dword_r10_plus_rax_1: bin(BinOp::Test, mem(at(R10).index(RAX)), imm(1), DWORD) => [0x41, 0xF7, 0x04, 0x02, 0x01, 0x00, 0x00, 0x00];
     /// test qword ptr [r9], r10
     test_qword_r9_r10: bin(BinOp::Test, mem(at(R9)), reg(R10), QWORD) => [0x4D, 0x85, 0x11];
+    /// add rbx, 0x1000
+    add_rbx_0x1000_qword: bin(BinOp::Add, reg(RBX), imm(0x1000), QWORD) => [0x48, 0x81, 0xC3, 0x00, 0x10, 0x00, 0x00];
 }

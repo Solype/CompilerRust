@@ -110,7 +110,7 @@ fn encode_imul_two_operands(dst: &Operand, src: &Operand, size: Size) -> EncodeI
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, src);
+    emit_rex(&mut v, size, Some(dst_reg), src);
 
     v.push(0x0F);
     v.push(0xAF);
@@ -144,7 +144,7 @@ fn encode_imul_three_operands(
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, src);
+    emit_rex(&mut v, size, Some(dst_reg), src);
 
     v.push(opcode);
 

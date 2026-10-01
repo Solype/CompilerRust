@@ -30,7 +30,7 @@ fn encode_mem_address(
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, &Operand::NoOperand);
+    emit_rex(&mut v, size, None, &value);
 
     v.push(opcode);
 

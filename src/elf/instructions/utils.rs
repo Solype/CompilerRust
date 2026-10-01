@@ -1,11 +1,8 @@
+use crate::elf::instructions::Operand;
+
 use super::{EncodeInformation, Size, register::Register};
 
-pub(super) fn emit_rex(
-    v: &mut EncodeInformation,
-    size: Size,
-    reg: Option<Register>,
-    rm: Option<Register>,
-) {
+pub(super) fn emit_rex(v: &mut EncodeInformation, size: Size, reg: Option<Register>, rm: &Operand) {
     let mut rex = 0x40;
 
     if let Size::U64 = size {
@@ -16,8 +13,17 @@ pub(super) fn emit_rex(
         rex |= r.rex_bit() << 2; // R
     }
 
-    if let Some(b) = rm {
-        rex |= b.rex_bit(); // B
+    match rm {
+        Operand::Reg(r) => rex |= r.rex_bit(), // B
+        Operand::MemoryAddress(mem) => {
+            if let Some(index) = mem.index {
+                rex |= index.rex_bit() << 1; // X
+            }
+            if let Some(base) = mem.base {
+                rex |= base.rex_bit(); // B
+            }
+        }
+        _ => {}
     }
 
     if rex != 0x40 {

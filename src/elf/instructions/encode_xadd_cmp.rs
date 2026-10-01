@@ -22,13 +22,7 @@ pub(super) fn encode_xadd_cmpxchg(
         _ => panic!("src must be a register"),
     };
 
-    let rm = match dst {
-        Operand::Reg(r) => Some(*r),
-        Operand::MemoryAddress(_) => None,
-        _ => panic!("invalid dst for xadd/cmpxchg"),
-    };
-
-    emit_rex(&mut v, size, Some(reg), rm);
+    emit_rex(&mut v, size, Some(reg), dst);
 
     // ==========================================
     // Opcode

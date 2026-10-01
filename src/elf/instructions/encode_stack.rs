@@ -12,7 +12,7 @@ fn encode_with_reg(opcode: u8, reg: Register, size: Size) -> EncodeInformation {
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, Some(reg));
+    emit_rex(&mut v, size, None, &Operand::Reg(reg));
 
     v.push(opcode + reg.low3());
 
@@ -30,7 +30,7 @@ fn encode_mem_address(
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, None);
+    emit_rex(&mut v, size, None, &Operand::NoOperand);
 
     v.push(opcode);
 
@@ -76,7 +76,7 @@ pub(super) fn encode_stack(op: StackOp, value: &Operand, size: Size) -> EncodeIn
                 Operand::Imm(v) => *v,
 
                 _ => {
-                    panic!("ENTER requires immediate frame size")
+                    panic!("ENTER requires immediate frame size");
                 }
             };
 

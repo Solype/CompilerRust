@@ -21,11 +21,11 @@ pub(super) fn encode_conversion(
         panic!("{:?}: destination must be an XMM register", op);
     }
 
-    let rm = match src {
-        Operand::Reg(r) if r.is_gpr() => Some(*r),
-        Operand::MemoryAddress(_) => None,
+    match src {
+        Operand::Reg(r) if r.is_gpr() => {}
+        Operand::MemoryAddress(_) => {}
         _ => panic!("{:?}: source must be a GPR or a memory address", op),
-    };
+    }
 
     if let Size::U8 | Size::U16 = size {
         panic!("{:?}: integer source must be 32 or 64 bits", op);
@@ -37,7 +37,7 @@ pub(super) fn encode_conversion(
 
     // mandatory prefix must come BEFORE REX
     v.push(prefix);
-    emit_rex(&mut v, size, Some(*dst), rm);
+    emit_rex(&mut v, size, Some(*dst), src);
     v.push(0x0F);
     v.push(opcode);
 

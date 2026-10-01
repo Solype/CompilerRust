@@ -30,7 +30,6 @@ cases! {
     #[ignore = "BUG: produit `rex.W; .byte 0x8d; add al,0xd`"]
     lea_rax_rbp_plus_rcx: lea(RAX, at(RBP).index(RCX), QWORD) => [0x48, 0x8D, 0x44, 0x0D, 0x00];
     /// lea rax, [rbx+r8*2]
-    #[ignore = "BUG: produit `lea rax,[rbx+rax*2]`"]
     lea_rax_rbx_plus_r8_x_2: lea(RAX, at(RBX).index_scale(R8, Scale::Two), QWORD) => [0x4A, 0x8D, 0x04, 0x43];
     /// lea rax, [rcx*4+16]
     #[ignore = "BUG: produit `lea rax,[rbp+rcx*4+0x10]`"]

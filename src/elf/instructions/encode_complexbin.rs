@@ -86,12 +86,7 @@ fn encode_group_f6_f7(op: &ComplexBinOp, src: &Operand, size: Size) -> EncodeInf
         _ => unreachable!(),
     };
 
-    let rm = match src {
-        Operand::Reg(r) => Some(*r),
-        _ => None,
-    };
-
-    emit_rex(&mut v, size, None, rm);
+    emit_rex(&mut v, size, None, src);
 
     v.push(opcode);
 
@@ -115,13 +110,7 @@ fn encode_imul_two_operands(dst: &Operand, src: &Operand, size: Size) -> EncodeI
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-
-    let rm = match src {
-        Operand::Reg(r) => Some(*r),
-        _ => None,
-    };
-
-    emit_rex(&mut v, size, None, rm);
+    emit_rex(&mut v, size, None, src);
 
     v.push(0x0F);
     v.push(0xAF);
@@ -155,13 +144,7 @@ fn encode_imul_three_operands(
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-
-    let rm = match src {
-        Operand::Reg(r) => Some(*r),
-        _ => None,
-    };
-
-    emit_rex(&mut v, size, None, rm);
+    emit_rex(&mut v, size, None, src);
 
     v.push(opcode);
 

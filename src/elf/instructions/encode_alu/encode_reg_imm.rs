@@ -19,7 +19,7 @@ pub(super) fn encode_reg_int(
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, Some(*reg));
+    emit_rex(&mut v, size, None, &Operand::Reg(*reg));
 
     match *enc {
         // --------------------------------------------------

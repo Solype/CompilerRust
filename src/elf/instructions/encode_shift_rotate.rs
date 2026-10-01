@@ -42,7 +42,7 @@ pub fn encode_shift_rotate(
         class: RegisterClass::Gpr,
         index: ext,
     });
-    emit_rex(&mut v, size, None, None);
+    emit_rex(&mut v, size, None, &Operand::NoOperand);
 
     // ================================
     // Opcode selection

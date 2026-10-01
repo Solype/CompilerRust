@@ -15,7 +15,6 @@ cases! {
     /// movsd xmm3, qword ptr [rbx+8]
     movsd_xmm3_qword_rbx_plus_8: bin(BinOp::LoadF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0xF2, 0x0F, 0x10, 0x5B, 0x08];
     /// movsd xmm3, qword ptr [r9]
-    #[ignore = "BUG: produit `movsd xmm3,QWORD PTR [rcx]`"]
     movsd_xmm3_qword_r9: bin(BinOp::LoadF, reg(XMM3), mem(at(R9)), None) => [0xF2, 0x41, 0x0F, 0x10, 0x19];
     /// addsd xmm1, xmm0
     addsd_xmm1_xmm0: bin(BinOp::AddF, reg(XMM1), reg(XMM0), None) => [0xF2, 0x0F, 0x58, 0xC8];
@@ -28,7 +27,6 @@ cases! {
     /// addsd xmm3, qword ptr [rbx+8]
     addsd_xmm3_qword_rbx_plus_8: bin(BinOp::AddF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0xF2, 0x0F, 0x58, 0x5B, 0x08];
     /// addsd xmm3, qword ptr [r9]
-    #[ignore = "BUG: produit `addsd xmm3,QWORD PTR [rcx]`"]
     addsd_xmm3_qword_r9: bin(BinOp::AddF, reg(XMM3), mem(at(R9)), None) => [0xF2, 0x41, 0x0F, 0x58, 0x19];
     /// subsd xmm1, xmm0
     subsd_xmm1_xmm0: bin(BinOp::SubF, reg(XMM1), reg(XMM0), None) => [0xF2, 0x0F, 0x5C, 0xC8];
@@ -41,7 +39,6 @@ cases! {
     /// subsd xmm3, qword ptr [rbx+8]
     subsd_xmm3_qword_rbx_plus_8: bin(BinOp::SubF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0xF2, 0x0F, 0x5C, 0x5B, 0x08];
     /// subsd xmm3, qword ptr [r9]
-    #[ignore = "BUG: produit `subsd xmm3,QWORD PTR [rcx]`"]
     subsd_xmm3_qword_r9: bin(BinOp::SubF, reg(XMM3), mem(at(R9)), None) => [0xF2, 0x41, 0x0F, 0x5C, 0x19];
     /// mulsd xmm1, xmm0
     mulsd_xmm1_xmm0: bin(BinOp::MulF, reg(XMM1), reg(XMM0), None) => [0xF2, 0x0F, 0x59, 0xC8];
@@ -54,7 +51,6 @@ cases! {
     /// mulsd xmm3, qword ptr [rbx+8]
     mulsd_xmm3_qword_rbx_plus_8: bin(BinOp::MulF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0xF2, 0x0F, 0x59, 0x5B, 0x08];
     /// mulsd xmm3, qword ptr [r9]
-    #[ignore = "BUG: produit `mulsd xmm3,QWORD PTR [rcx]`"]
     mulsd_xmm3_qword_r9: bin(BinOp::MulF, reg(XMM3), mem(at(R9)), None) => [0xF2, 0x41, 0x0F, 0x59, 0x19];
     /// divsd xmm1, xmm0
     divsd_xmm1_xmm0: bin(BinOp::DivF, reg(XMM1), reg(XMM0), None) => [0xF2, 0x0F, 0x5E, 0xC8];
@@ -67,7 +63,6 @@ cases! {
     /// divsd xmm3, qword ptr [rbx+8]
     divsd_xmm3_qword_rbx_plus_8: bin(BinOp::DivF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0xF2, 0x0F, 0x5E, 0x5B, 0x08];
     /// divsd xmm3, qword ptr [r9]
-    #[ignore = "BUG: produit `divsd xmm3,QWORD PTR [rcx]`"]
     divsd_xmm3_qword_r9: bin(BinOp::DivF, reg(XMM3), mem(at(R9)), None) => [0xF2, 0x41, 0x0F, 0x5E, 0x19];
     /// comisd xmm1, xmm0
     comisd_xmm1_xmm0: bin(BinOp::ComiF, reg(XMM1), reg(XMM0), None) => [0x66, 0x0F, 0x2F, 0xC8];
@@ -80,7 +75,6 @@ cases! {
     /// comisd xmm3, qword ptr [rbx+8]
     comisd_xmm3_qword_rbx_plus_8: bin(BinOp::ComiF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0x66, 0x0F, 0x2F, 0x5B, 0x08];
     /// comisd xmm3, qword ptr [r9]
-    #[ignore = "BUG: produit `comisd xmm3,QWORD PTR [rcx]`"]
     comisd_xmm3_qword_r9: bin(BinOp::ComiF, reg(XMM3), mem(at(R9)), None) => [0x66, 0x41, 0x0F, 0x2F, 0x19];
     /// ucomisd xmm1, xmm0
     ucomisd_xmm1_xmm0: bin(BinOp::UcomiF, reg(XMM1), reg(XMM0), None) => [0x66, 0x0F, 0x2E, 0xC8];
@@ -93,7 +87,6 @@ cases! {
     /// ucomisd xmm3, qword ptr [rbx+8]
     ucomisd_xmm3_qword_rbx_plus_8: bin(BinOp::UcomiF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0x66, 0x0F, 0x2E, 0x5B, 0x08];
     /// ucomisd xmm3, qword ptr [r9]
-    #[ignore = "BUG: produit `ucomisd xmm3,QWORD PTR [rcx]`"]
     ucomisd_xmm3_qword_r9: bin(BinOp::UcomiF, reg(XMM3), mem(at(R9)), None) => [0x66, 0x41, 0x0F, 0x2E, 0x19];
     /// movsd qword ptr [rip+my_data], xmm0
     movsd_qword_rip_plus_my_data_xmm0: bin(BinOp::StoreF, reg(XMM0), mem(MemAddress::symbol("my_data")), None) => [0xF2, 0x0F, 0x11, 0x05, 0x00, 0x00, 0x00, 0x00];
@@ -110,7 +103,6 @@ cases! {
     /// movss xmm3, dword ptr [rbx+8]
     movss_xmm3_dword_rbx_plus_8: bin(BinOp::LoadF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0xF3, 0x0F, 0x10, 0x5B, 0x08];
     /// movss xmm3, dword ptr [r9]
-    #[ignore = "BUG: produit `movss xmm3,DWORD PTR [rcx]`"]
     movss_xmm3_dword_r9: bin(BinOp::LoadF, reg(XMM3), mem(at(R9)), DWORD) => [0xF3, 0x41, 0x0F, 0x10, 0x19];
     /// addss xmm1, xmm0
     addss_xmm1_xmm0: bin(BinOp::AddF, reg(XMM1), reg(XMM0), DWORD) => [0xF3, 0x0F, 0x58, 0xC8];
@@ -123,7 +115,6 @@ cases! {
     /// addss xmm3, dword ptr [rbx+8]
     addss_xmm3_dword_rbx_plus_8: bin(BinOp::AddF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0xF3, 0x0F, 0x58, 0x5B, 0x08];
     /// addss xmm3, dword ptr [r9]
-    #[ignore = "BUG: produit `addss xmm3,DWORD PTR [rcx]`"]
     addss_xmm3_dword_r9: bin(BinOp::AddF, reg(XMM3), mem(at(R9)), DWORD) => [0xF3, 0x41, 0x0F, 0x58, 0x19];
     /// subss xmm1, xmm0
     subss_xmm1_xmm0: bin(BinOp::SubF, reg(XMM1), reg(XMM0), DWORD) => [0xF3, 0x0F, 0x5C, 0xC8];
@@ -136,7 +127,6 @@ cases! {
     /// subss xmm3, dword ptr [rbx+8]
     subss_xmm3_dword_rbx_plus_8: bin(BinOp::SubF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0xF3, 0x0F, 0x5C, 0x5B, 0x08];
     /// subss xmm3, dword ptr [r9]
-    #[ignore = "BUG: produit `subss xmm3,DWORD PTR [rcx]`"]
     subss_xmm3_dword_r9: bin(BinOp::SubF, reg(XMM3), mem(at(R9)), DWORD) => [0xF3, 0x41, 0x0F, 0x5C, 0x19];
     /// mulss xmm1, xmm0
     mulss_xmm1_xmm0: bin(BinOp::MulF, reg(XMM1), reg(XMM0), DWORD) => [0xF3, 0x0F, 0x59, 0xC8];
@@ -149,7 +139,6 @@ cases! {
     /// mulss xmm3, dword ptr [rbx+8]
     mulss_xmm3_dword_rbx_plus_8: bin(BinOp::MulF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0xF3, 0x0F, 0x59, 0x5B, 0x08];
     /// mulss xmm3, dword ptr [r9]
-    #[ignore = "BUG: produit `mulss xmm3,DWORD PTR [rcx]`"]
     mulss_xmm3_dword_r9: bin(BinOp::MulF, reg(XMM3), mem(at(R9)), DWORD) => [0xF3, 0x41, 0x0F, 0x59, 0x19];
     /// divss xmm1, xmm0
     divss_xmm1_xmm0: bin(BinOp::DivF, reg(XMM1), reg(XMM0), DWORD) => [0xF3, 0x0F, 0x5E, 0xC8];
@@ -162,7 +151,6 @@ cases! {
     /// divss xmm3, dword ptr [rbx+8]
     divss_xmm3_dword_rbx_plus_8: bin(BinOp::DivF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0xF3, 0x0F, 0x5E, 0x5B, 0x08];
     /// divss xmm3, dword ptr [r9]
-    #[ignore = "BUG: produit `divss xmm3,DWORD PTR [rcx]`"]
     divss_xmm3_dword_r9: bin(BinOp::DivF, reg(XMM3), mem(at(R9)), DWORD) => [0xF3, 0x41, 0x0F, 0x5E, 0x19];
     /// comiss xmm1, xmm0
     comiss_xmm1_xmm0: bin(BinOp::ComiF, reg(XMM1), reg(XMM0), DWORD) => [0x0F, 0x2F, 0xC8];
@@ -175,7 +163,6 @@ cases! {
     /// comiss xmm3, dword ptr [rbx+8]
     comiss_xmm3_dword_rbx_plus_8: bin(BinOp::ComiF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0x0F, 0x2F, 0x5B, 0x08];
     /// comiss xmm3, dword ptr [r9]
-    #[ignore = "BUG: produit `comiss xmm3,DWORD PTR [rcx]`"]
     comiss_xmm3_dword_r9: bin(BinOp::ComiF, reg(XMM3), mem(at(R9)), DWORD) => [0x41, 0x0F, 0x2F, 0x19];
     /// ucomiss xmm1, xmm0
     ucomiss_xmm1_xmm0: bin(BinOp::UcomiF, reg(XMM1), reg(XMM0), DWORD) => [0x0F, 0x2E, 0xC8];
@@ -188,7 +175,6 @@ cases! {
     /// ucomiss xmm3, dword ptr [rbx+8]
     ucomiss_xmm3_dword_rbx_plus_8: bin(BinOp::UcomiF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0x0F, 0x2E, 0x5B, 0x08];
     /// ucomiss xmm3, dword ptr [r9]
-    #[ignore = "BUG: produit `ucomiss xmm3,DWORD PTR [rcx]`"]
     ucomiss_xmm3_dword_r9: bin(BinOp::UcomiF, reg(XMM3), mem(at(R9)), DWORD) => [0x41, 0x0F, 0x2E, 0x19];
     /// movss dword ptr [rip+my_data], xmm0
     movss_dword_rip_plus_my_data_xmm0: bin(BinOp::StoreF, reg(XMM0), mem(MemAddress::symbol("my_data")), DWORD) => [0xF3, 0x0F, 0x11, 0x05, 0x00, 0x00, 0x00, 0x00];

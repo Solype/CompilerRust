@@ -1,9 +1,7 @@
 use super::{
-    ComplexBinOp,
-    EncodeInformation,
-    Operand,
-    Size,
-    utils::{emit_size_prefix, emit_rex}, modrm::{mod_rm_encode}
+    ComplexBinOp, EncodeInformation, Operand, Size,
+    modrm::mod_rm_encode,
+    utils::{emit_rex, emit_size_prefix},
 };
 
 pub(super) fn encode_xadd_cmpxchg(
@@ -39,11 +37,19 @@ pub(super) fn encode_xadd_cmpxchg(
 
     let opcode = match op {
         ComplexBinOp::Xadd => {
-            if size == Size::U8 { 0xC0 } else { 0xC1 }
+            if size == Size::U8 {
+                0xC0
+            } else {
+                0xC1
+            }
         }
 
         ComplexBinOp::Cmpxchg => {
-            if size == Size::U8 { 0xB0 } else { 0xB1 }
+            if size == Size::U8 {
+                0xB0
+            } else {
+                0xB1
+            }
         }
 
         _ => unreachable!(),

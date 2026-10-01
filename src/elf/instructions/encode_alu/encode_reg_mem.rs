@@ -1,12 +1,10 @@
-
 use super::super::{
-    modrm::mod_rm_encode,
     enums::*,
+    modrm::mod_rm_encode,
     struct_encode_information::*,
-    utils::{emit_size_prefix, emit_rex},
+    utils::{emit_rex, emit_size_prefix},
 };
 use super::structs::*;
-
 
 pub(super) fn encode_reg_mem(
     dst: &Operand,
@@ -14,7 +12,6 @@ pub(super) fn encode_reg_mem(
     size: Size,
     enc: &BinaryEncoding,
 ) -> EncodeInformation {
-
     let (is_reg_dst, reg_op, rm_op) = match (dst, src) {
         (Operand::Reg(_), _) => (true, dst, src),
         (_, Operand::Reg(_)) => (false, src, dst),
@@ -34,13 +31,19 @@ pub(super) fn encode_reg_mem(
     let mut v = EncodeInformation::new();
 
     match *enc {
-
         // --------------------------------------------------
         // Integer MOV / ALU
         // --------------------------------------------------
-        BinaryEncoding::Mov { opcode_rm_r, opcode_r_rm, .. }
-        | BinaryEncoding::Alu { opcode_rm_r, opcode_r_rm, .. } => {
-
+        BinaryEncoding::Mov {
+            opcode_rm_r,
+            opcode_r_rm,
+            ..
+        }
+        | BinaryEncoding::Alu {
+            opcode_rm_r,
+            opcode_r_rm,
+            ..
+        } => {
             emit_size_prefix(&mut v, size);
             emit_rex(&mut v, size, Some(*reg), rm);
 
@@ -52,10 +55,7 @@ pub(super) fn encode_reg_mem(
         // --------------------------------------------------
         // XCHG
         // --------------------------------------------------
-        BinaryEncoding::Xchg {
-            opcode
-        } => {
-
+        BinaryEncoding::Xchg { opcode } => {
             emit_size_prefix(&mut v, size);
             emit_rex(&mut v, size, Some(*reg), rm);
 
@@ -65,10 +65,7 @@ pub(super) fn encode_reg_mem(
         // --------------------------------------------------
         // MOVZX / MOVSX
         // --------------------------------------------------
-        BinaryEncoding::MovExtend {
-            prefix,
-            opcode,
-        } => {
+        BinaryEncoding::MovExtend { prefix, opcode } => {
             emit_size_prefix(&mut v, size);
             emit_rex(&mut v, size, Some(*reg), rm);
 
@@ -79,11 +76,7 @@ pub(super) fn encode_reg_mem(
         // --------------------------------------------------
         // SSE
         // --------------------------------------------------
-        BinaryEncoding::Sse {
-            prefix,
-            opcode,
-        } => {
-
+        BinaryEncoding::Sse { prefix, opcode } => {
             // mandatory SSE prefix
             if prefix != 0 {
                 v.push(prefix);

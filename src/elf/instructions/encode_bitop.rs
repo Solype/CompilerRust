@@ -1,19 +1,14 @@
 use super::{
-    modrm::*,
     enums::*,
-    utils::{emit_size_prefix, emit_rex},
-    struct_encode_information::*,
+    modrm::*,
     register::*,
+    struct_encode_information::*,
+    utils::{emit_rex, emit_size_prefix},
 };
 
-pub(super) fn encode_bit(
-    op: BitOp,
-    dst: &Operand,
-    src: &Operand,
-    size: Size,
-) -> EncodeInformation {
+pub(super) fn encode_bit(op: BitOp, dst: &Operand, src: &Operand, size: Size) -> EncodeInformation {
     let (opcode_rr, modrm_ext) = match op {
-        BitOp::Bt  => (0xA3, 4),
+        BitOp::Bt => (0xA3, 4),
         BitOp::Bts => (0xAB, 5),
         BitOp::Btr => (0xB3, 6),
         BitOp::Btc => (0xBB, 7),
@@ -29,7 +24,6 @@ pub(super) fn encode_bit(
         // 0F A3/AB/B3/BB /r
         // =====================================================
         Operand::Reg(reg) => {
-
             let rm = match dst {
                 Operand::Reg(r) => Some(*r),
                 Operand::MemoryAddress(_) => None,
@@ -44,7 +38,7 @@ pub(super) fn encode_bit(
             let modrm = mod_rm_encode(dst, src);
 
             v.append(modrm);
-            return v
+            return v;
         }
 
         // =====================================================
@@ -52,7 +46,6 @@ pub(super) fn encode_bit(
         // 0F BA /4..7 ib
         // =====================================================
         Operand::Imm(bit) => {
-
             let rm = match dst {
                 Operand::Reg(r) => Some(*r),
                 Operand::MemoryAddress(_) => None,
@@ -72,8 +65,7 @@ pub(super) fn encode_bit(
                 index: modrm_ext,
             });
 
-            let modrm =
-                mod_rm_encode(dst, &reg_field);
+            let modrm = mod_rm_encode(dst, &reg_field);
 
             v.append(modrm);
 

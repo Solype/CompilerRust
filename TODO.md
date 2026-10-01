@@ -61,6 +61,7 @@ Flottants SSE scalaires (ss si U32, sd sinon) :
 [X] LoadF / StoreF (movss / movsd)
 [X] AddF / SubF / MulF / DivF
 [X] ComiF / UcomiF
+[X] Cvtsi2sd (entier -> double)
 
 Contrôle :
 [X] Jmp / Call / Ret / IRet
@@ -94,6 +95,12 @@ Atomiques :
 [X] Xadd
 [X] Cmpxchg
 
+Tests :
+[X] 1011 tests unitaires (src/elf/instructions/encode_tests/), octets de
+    référence produits par GNU as, une famille par fichier
+[X] Tests de relocations (offset, type, addend) comparés à readelf
+[X] Correction des 199 encodages faux trouvés (voir RAPPORT_TESTS.md)
+
 Organisation :
 [X] main.rs réduit à la construction de l'ELF
 [X] Programmes de test déplacés dans src/samples/
@@ -104,21 +111,36 @@ Organisation :
 ==================================================
 
 Backend :
-[ ] Conversions int <-> float :
-    [ ] Cvtsi2sd / Cvtsi2ss
-    [ ] Cvttsd2si / Cvttss2si
+[ ] Call / Jmp indirects (pointeurs de fonction, GOT, tables de switch) :
+    [X] call reg / jmp reg          (FF /2, FF /4)
+    [X] call [mem] / jmp [mem]      (FF /2, FF /4 + ModRM mémoire)
+    [X] call [rip+sym]              (relocation PC32)
+    [ ] call [rip+sym@GOTPCREL]     (nouveau RelocKind, pour la libc dynamique / PIE)
+[ ] Conversions int <-> float (une ligne par opcode dans ConvOp) :
+    [X] Cvtsi2sd
+    [ ] Cvtsi2ss
+    [ ] Cvttsd2si / Cvttss2si (destination GPR : inverser la validation)
     [ ] Cvtsd2ss / Cvtss2sd
 [ ] Ajouter Movsxd
+[ ] Movzx / Movsx vers une destination 64 bits (REX.W)
 [ ] Séparer taille source/destination
 [ ] Gérer tailles mémoire distinctes
 [ ] Ajouter ImmediateFloat(f64) (constantes flottantes en .data/.rodata)
 [ ] Séparer Label et Sym
 [ ] Revoir l'ordre dst/src de StoreF (le registre est dans dst)
+[ ] SSE scalaire courant :
+    [ ] Xorps / Xorpd (mise à zéro, changement de signe)
+    [ ] Andpd / Andps (valeur absolue)
+    [ ] Movq / Movd (GPR <-> XMM)
+    [ ] Movaps / Movapd (copie XMM -> XMM)
+    [ ] Sqrtsd / Sqrtss
+    [ ] Minsd / Maxsd / Minss / Maxss
 [ ] Ajouter tests automatiques :
-    [ ] encodage (comparer les octets à une référence)
-    [ ] objdump
+    [X] encodage (comparer les octets à une référence GNU as)
+    [X] objdump (tri des encodages équivalents)
     [ ] ndisasm
     [ ] décodage
+    [ ] panic! des immédiates hors de i32 (emit_imm_sx32)
 
 Front-end :
 [ ] Lexer :
@@ -151,8 +173,19 @@ Front-end :
 [ ] Ajouter registres segment
 [ ] Ajouter registres contrôle/debug
 
+[ ] Sauts courts (jmp / jcc rel8) quand la cible est proche
+[ ] Ret imm16
+[ ] Int3 (forme courte CC au lieu de CD 03)
+[ ] Endbr64 (si la cible active CET / IBT)
+
+[ ] Optimisations d'encodage (valides mais un octet de trop) :
+    [ ] Supprimer le REX.W inutile de push / pop
+    [ ] Supprimer le REX 0x40 superflu de movzx esi, al
+    [ ] Forme courte de l'accumulateur (05 / A9 au lieu de 81 / F7)
+
+[ ] Garder le générateur de tests (gen_encode_tests.py) dans le dépôt
+
 [ ] Ajouter SSE2 minimum :
-    [ ] Movaps
     [ ] Movups
     [ ] Movdqa
     [ ] Movdqu

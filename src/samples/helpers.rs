@@ -132,6 +132,16 @@ pub fn call(target: &str) -> Instruction {
     ctrl(CtrlOp::Call, target)
 }
 
+/// `jmp reg` / `jmp [mem]`
+pub fn jmp_indirect(target: Operand) -> Instruction {
+    Instruction::Ctrl { op: CtrlOp::Jmp, target }
+}
+
+/// `call reg` / `call [mem]`
+pub fn call_indirect(target: Operand) -> Instruction {
+    Instruction::Ctrl { op: CtrlOp::Call, target }
+}
+
 pub fn ret() -> Instruction {
     Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand }
 }

@@ -121,3 +121,9 @@ fn absolute_symbol() {
     let src = mem(MemAddress::symbol("my_data").absolute());
     check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 3, 4, false, 0);
 }
+
+#[test]
+fn call_indirect_rip() {
+    // call [rip+my_data] : FF 15 <disp32>, R_X86_64_PC32 addend -4
+    check(call_indirect(var("my_data")), "my_data", 2, 4, true, -4);
+}

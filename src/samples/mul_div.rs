@@ -1,7 +1,7 @@
 use super::helpers::*;
 use crate::elf::instructions::{register::*, *};
 
-/// div, idiv, mul, imul (1, 2 et 3 opérandes)
+/// div, idiv, mul, imul (1, 2 and 3 operands)
 pub fn mul_div() -> Vec<Instruction> {
     let none = || Operand::NoOperand;
     return vec![
@@ -47,7 +47,7 @@ pub fn mul_div() -> Vec<Instruction> {
         ),
         complex(ComplexBinOp::Mul, none(), reg(RBX), None, DWORD),
         complex(ComplexBinOp::Mul, none(), mem(at(RBX)), None, DWORD),
-        // imul à 1 opérande
+        // one-operand imul
         complex(ComplexBinOp::Imul, none(), reg(RBX), None, DWORD),
         complex(
             ComplexBinOp::Imul,
@@ -56,7 +56,7 @@ pub fn mul_div() -> Vec<Instruction> {
             None,
             None,
         ),
-        // imul à 2 opérandes
+        // two-operand imul
         complex(ComplexBinOp::Imul, reg(RAX), reg(RBX), None, DWORD),
         complex(ComplexBinOp::Imul, reg(RCX), mem(at(RBX)), None, DWORD),
         complex(
@@ -73,7 +73,7 @@ pub fn mul_div() -> Vec<Instruction> {
             None,
             DWORD,
         ),
-        // imul à 3 opérandes (imm8 et imm32)
+        // three-operand imul (imm8 and imm32)
         complex(
             ComplexBinOp::Imul,
             reg(RAX),

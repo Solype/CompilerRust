@@ -1,7 +1,7 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// bsf, bsr sur 16, 32, 64 bits et en mémoire
+/// bsf, bsr on 16, 32, 64 bits and in memory
 pub fn bit_scan() -> Vec<Instruction> {
     let mut code = Vec::new();
     for op in [BitScanOp::Bsf, BitScanOp::Bsr] {

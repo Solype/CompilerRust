@@ -14,7 +14,7 @@ pub enum _SegmentType {
     Tls     = 7,    // PT_TLS
 }
 
-// Énumération pour les flags de segment
+// Segment flags
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum _SegmentFlags {

@@ -13,7 +13,7 @@ use super::{
 fn encode_modrm_field_reg(reg_op: &Operand) -> u8 {
     match reg_op {
         Operand::Reg(r) => r.low3(),
-        Operand::NoOperand => 0, // si instruction utilise /digit au lieu de reg
+        Operand::NoOperand => 0, // when the instruction uses /digit instead of reg
         _ => panic!("ModRM register field must be a register or noop!"),
     }
 }
@@ -97,8 +97,8 @@ fn encode_absolute(
     data: &mut Vec<u8>,
     relocs: &mut Vec<Relocation>,
 ) {
-    // En 64 bits, mod = 00 / rm = 101 veut dire [rip + disp32] :
-    // une adresse absolue passe par un SIB sans base ni index (0x25)
+    // In 64 bits, mod = 00 / rm = 101 means [rip + disp32]:
+    // an absolute address goes through a SIB with no base and no index (0x25)
     data[0] = (MEMNODISP << 6) | 0b100;
     data.push(encode_sib(Scale::One, None, None));
 
@@ -126,8 +126,8 @@ fn encode_absolute(
 fn encode_base(base: Register, data: &mut Vec<u8>) {
     assert!(base.class == RegisterClass::Gpr);
 
-    // ModRM ne voit que les 3 bits bas : r12 se comporte comme rsp (SIB
-    // obligatoire) et r13 comme rbp (pas de mode sans déplacement)
+    // ModRM only sees the low 3 bits: r12 behaves like rsp (SIB required)
+    // and r13 like rbp (no mode without displacement)
     if base.low3() == Gpr::Sp as u8 {
         data[0] = (MEMNODISP << 6) | 0b100;
         data.push(encode_sib(Scale::One, None, Some(base)));
@@ -149,7 +149,7 @@ fn encode_base_disp(
 ) {
     assert!(base.class == RegisterClass::Gpr);
 
-    // Le SIB passe avant get_disp : la relocation pointe sur le disp, après lui
+    // The SIB goes before get_disp: the relocation points at the disp, after it
     let rm = if base.low3() == Gpr::Sp as u8 {
         data.push(encode_sib(Scale::One, None, Some(base)));
         0b100
@@ -177,8 +177,8 @@ fn encode_index_disp(
     assert!(index.class == RegisterClass::Gpr);
     assert!(index.index != Gpr::Sp as u8);
 
-    // Sans base, le SIB impose base = 101 avec mod = 00 et un disp32 toujours
-    // présent (mod = 01 ou 10 voudrait dire [rbp + index*scale + disp])
+    // Without a base, the SIB requires base = 101 with mod = 00 and a disp32
+    // always present (mod = 01 or 10 would mean [rbp + index*scale + disp])
     data[0] = (MEMNODISP << 6) | 0b100;
 
     data.push(encode_sib(scale, Some(index), None));
@@ -199,8 +199,8 @@ fn encode_base_index_scale(
 
     assert!(index.index != Gpr::Sp as u8);
 
-    // Avec un SIB, base = 101 et mod = 00 signifie « pas de base + disp32 » :
-    // rbp / r13 en base exigent donc un disp8 à 0
+    // With a SIB, base = 101 and mod = 00 means "no base + disp32":
+    // rbp / r13 as base therefore need a zero disp8
     if base.low3() == Gpr::Bp as u8 {
         data[0] = (MEMDISP8 << 6) | 0b100;
         data.push(encode_sib(scale, Some(index), Some(base)));
@@ -225,7 +225,7 @@ fn encode_base_index_scale_disp(
 
     assert!(index.index != Gpr::Sp as u8);
 
-    // Le SIB passe avant get_disp : la relocation pointe sur le disp, après lui
+    // The SIB goes before get_disp: the relocation points at the disp, after it
     data.push(encode_sib(scale, Some(index), Some(base)));
 
     let val = get_disp(disp, data.len(), relocs);

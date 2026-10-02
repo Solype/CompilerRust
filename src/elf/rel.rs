@@ -38,7 +38,7 @@ where
 
 impl<T> ElfWritable for ElfRel<T>
 where
-    T: Copy  + ElfWritable, // On convertit en u64 pour gérer 32/64 bits
+    T: Copy  + ElfWritable, // Converted to u64 to handle 32/64 bits
 {
     fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         match std::mem::size_of::<T>() {

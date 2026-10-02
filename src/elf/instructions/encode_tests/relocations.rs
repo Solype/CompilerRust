@@ -1,5 +1,5 @@
-//! Relocations : offset (depuis le début de l'instruction), type et addend,
-//! comparés à ceux que produit GNU as (`readelf -r`).
+//! Relocations: offset (from the start of the instruction), type and addend,
+//! compared with those GNU as produces (`readelf -r`).
 
 use super::*;
 
@@ -18,7 +18,7 @@ fn check(ins: Instruction, sym: &str, offset: usize, size: u8, kind: RelocKind, 
     assert_eq!(r.addend, addend, "addend");
 }
 
-// GNU as >= 2.31 : R_X86_64_PLT32 pour call / jmp / jcc rel32 (cf. readelf -r)
+// GNU as >= 2.31: R_X86_64_PLT32 for call / jmp / jcc rel32 (see readelf -r)
 
 #[test]
 fn jmp_rel32() {
@@ -47,7 +47,7 @@ fn rip_load() {
 
 #[test]
 fn rip_with_imm8_after() {
-    // mov byte ptr [rip+my_data], 0x41 : 1 octet après le disp32
+    // mov byte ptr [rip+my_data], 0x41: 1 byte after the disp32
     check(bin(BinOp::Mov, var("my_data"), imm(0x41), BYTE), "my_data", 2, 4, RelocKind::Relative, -5);
 }
 
@@ -87,7 +87,7 @@ fn rip_base_plus_symbol() {
     check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 2, 4, RelocKind::AbsoluteSigned, 0);
 }
 
-// Avec un octet SIB, le disp32 commence un octet plus loin
+// With a SIB byte, the disp32 starts one byte further
 
 #[test]
 fn sib_base_index_plus_symbol() {
@@ -119,7 +119,7 @@ fn sib_index_only_plus_symbol() {
 
 #[test]
 fn absolute_symbol() {
-    // mov eax, ds:[my_data] : 8B 04 25 <disp32>, R_X86_64_32S sans addend
+    // mov eax, ds:[my_data]: 8B 04 25 <disp32>, R_X86_64_32S without addend
     let src = mem(MemAddress::symbol("my_data").absolute());
     check(bin(BinOp::Mov, reg(RAX), src, DWORD), "my_data", 3, 4, RelocKind::AbsoluteSigned, 0);
 }
@@ -131,8 +131,8 @@ fn call_indirect_rip() {
 }
 
 
-// Absolu étendu avec le signe (R_X86_64_32S) ou non (R_X86_64_32 / 64 / 8),
-// comme GNU as (cf. readelf -r)
+// Absolute, sign-extended (R_X86_64_32S) or not (R_X86_64_32 / 64 / 8),
+// as GNU as does (see readelf -r)
 
 #[test]
 fn absolute_imm64() {
@@ -150,7 +150,7 @@ fn absolute_imm8() {
 fn alu64_symbol_is_imm32_signed() {
     // add rax, offset my_data : 48 81 C0 <imm32>, R_X86_64_32S
     let ins = bin(BinOp::Add, reg(RAX), sym("my_data"), QWORD);
-    assert_eq!(ins.encode(Size::U64).data.len(), 7, "imm32, pas imm64");
+    assert_eq!(ins.encode(Size::U64).data.len(), 7, "imm32, not imm64");
     check(bin(BinOp::Add, reg(RAX), sym("my_data"), QWORD), "my_data", 3, 4, RelocKind::AbsoluteSigned, 0);
 }
 

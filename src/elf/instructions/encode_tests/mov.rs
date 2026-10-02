@@ -1,5 +1,5 @@
-//! Tests d'encodage générés : octets de référence produits par GNU as.
-//! `#[ignore = "BUG: ..."]` marque un encodage faux (voir `cargo test -- --ignored`).
+//! Generated encoding tests: reference bytes produced by GNU as.
+//! `#[ignore = "BUG: ..."]` marks a wrong encoding (see `cargo test -- --ignored`).
 
 use super::*;
 
@@ -238,9 +238,9 @@ cases! {
     movsxd_rax_dword_rbp_plus_8: extend(ExtendOp::Movsxd, RAX, mem(at(RBP).disp(8)), DWORD, QWORD) => [0x48, 0x63, 0x45, 0x08];
     /// movsxd rax, dword ptr [rip+my_data]
     movsxd_rax_dword_rip_plus_my_data: extend(ExtendOp::Movsxd, RAX, mem(MemAddress::symbol("my_data")), DWORD, QWORD) => [0x48, 0x63, 0x05, 0x00, 0x00, 0x00, 0x00];
-    /// movsxd rax, ebx (tailles par défaut : source 32, destination 64)
+    /// movsxd rax, ebx (default sizes: source 32, destination 64)
     movsxd_rax_ebx_default_size: extend(ExtendOp::Movsxd, RAX, reg(RBX), None, None) => [0x48, 0x63, 0xC3];
-    /// movzx rax, bl (destination par défaut : 64 bits)
+    /// movzx rax, bl (default destination: 64 bits)
     movzx_rax_bl_default_size: extend(ExtendOp::Movzx, RAX, reg(RBX), BYTE, None) => [0x48, 0x0F, 0xB6, 0xC3];
     /// movzx ax, bl
     movzx_ax_bl: extend(ExtendOp::Movzx, RAX, reg(RBX), BYTE, WORD) => [0x66, 0x0F, 0xB6, 0xC3];
@@ -254,7 +254,7 @@ cases! {
     movsx_dx_sil: extend(ExtendOp::Movsx, RDX, reg(RSI), BYTE, WORD) => [0x66, 0x40, 0x0F, 0xBE, 0xD6];
     /// movsx cx, byte ptr [r12]
     movsx_cx_byte_r12: extend(ExtendOp::Movsx, RCX, mem(at(R12)), BYTE, WORD) => [0x66, 0x41, 0x0F, 0xBE, 0x0C, 0x24];
-    /// movzx esi, al (pas de REX : seule une source 8 bits peut en exiger un)
+    /// movzx esi, al (no REX: only an 8-bit source can require one)
     movzx_esi_al: extend(ExtendOp::Movzx, RSI, reg(RAX), BYTE, DWORD) => [0x0F, 0xB6, 0xF0];
     /// movzx edi, bl
     movzx_edi_bl: extend(ExtendOp::Movzx, RDI, reg(RBX), BYTE, DWORD) => [0x0F, 0xB6, 0xFB];

@@ -1,7 +1,7 @@
 use super::helpers::*;
 use crate::elf::instructions::{register::*, *};
 
-/// shl, shr, sar, rol, ror : par immédiat et par cl, sur registre et mémoire
+/// shl, shr, sar, rol, ror: by immediate and by cl, on register and memory
 pub fn shift_rotate() -> Vec<Instruction> {
     let mut code = Vec::new();
     for op in [

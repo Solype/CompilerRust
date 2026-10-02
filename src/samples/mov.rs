@@ -1,7 +1,7 @@
 use super::helpers::*;
 use crate::elf::instructions::{register::*, *};
 
-/// mov (toutes tailles et adressages), movzx, movsx
+/// mov (every size and addressing mode), movzx, movsx
 pub fn mov() -> Vec<Instruction> {
     return vec![
         bin(BinOp::Mov, reg(R8), imm(0x12), BYTE),

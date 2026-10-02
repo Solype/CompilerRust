@@ -1,7 +1,7 @@
 use super::helpers::*;
 use crate::elf::instructions::{register::*, *};
 
-/// lea sur les différents modes d'adressage
+/// lea on the various addressing modes
 pub fn lea_addressing() -> Vec<Instruction> {
     return vec![
         lea(RAX, at(RBX), DWORD),

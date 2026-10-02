@@ -37,7 +37,7 @@ pub fn encode_shift_rotate(
     // ================================
     emit_size_prefix(&mut v, size);
 
-    // REX (important pour registres étendus + 64-bit)
+    // REX (needed for extended registers + 64-bit)
     let reg_field = Operand::Reg(Register {
         class: RegisterClass::Gpr,
         index: ext,

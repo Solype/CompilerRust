@@ -1,5 +1,5 @@
-//! Raccourcis pour écrire les programmes de test sans répéter
-//! `Instruction::X { ... }` et `Operand::Y(...)` à chaque ligne.
+//! Shortcuts to write the test programs without repeating
+//! `Instruction::X { ... }` and `Operand::Y(...)` on every line.
 
 use crate::elf::instructions::{register::*, *};
 
@@ -8,17 +8,17 @@ pub const WORD: Option<Size> = Some(Size::U16);
 pub const DWORD: Option<Size> = Some(Size::U32);
 pub const QWORD: Option<Size> = Some(Size::U64);
 
-/// Toutes les conditions, pour les familles jcc / setcc / cmovcc
+/// Every condition, for the jcc / setcc / cmovcc families
 pub const ALL_CC: [ConditionCode; 16] = {
     use ConditionCode::*;
     [E, NE, G, L, GE, LE, A, B, AE, BE, S, NS, O, NO, P, NP]
 };
 
-/// Registres utilisés à tour de rôle dans les boucles de test
+/// Registers used in turn in the test loops
 pub const GPRS: [Register; 4] = [RAX, RBX, RCX, RDX];
 
 // =========================================================
-// Opérandes
+// Operands
 // =========================================================
 
 pub fn reg(r: Register) -> Operand {
@@ -33,7 +33,7 @@ pub fn sym(name: &str) -> Operand {
     Operand::Sym(name.to_string())
 }
 
-/// `[base]`, à compléter avec `.disp()`, `.index()`, ...
+/// `[base]`, to extend with `.disp()`, `.index()`, ...
 pub fn at(base: Register) -> MemAddress {
     MemAddress::new().base(base)
 }
@@ -42,7 +42,7 @@ pub fn mem(addr: MemAddress) -> Operand {
     Operand::MemoryAddress(addr)
 }
 
-/// Accès mémoire à une variable globale : `[rip + name]`
+/// Memory access to a global variable: `[rip + name]`
 pub fn var(name: &str) -> Operand {
     mem(MemAddress::symbol(name))
 }
@@ -63,7 +63,7 @@ pub fn unary(op: UnaryOp, dst: Operand, size: Option<Size>) -> Instruction {
     Instruction::Unary { op, dst, size }
 }
 
-/// Instruction sans opérande (`cli`, `hlt`, `cqo`, ...)
+/// Instruction without operand (`cli`, `hlt`, `cqo`, ...)
 pub fn nullary(op: UnaryOp) -> Instruction {
     unary(op, Operand::NoOperand, None)
 }
@@ -84,7 +84,7 @@ pub fn convert(op: ConvOp, dst: Register, src: Operand, size: Option<Size>) -> I
     Instruction::Convert { op, dst, src, size }
 }
 
-/// `src_size` est la taille de la source, `size` celle de la destination
+/// `src_size` is the source size, `size` the destination size
 pub fn extend(op: ExtendOp, dst: Register, src: Operand, src_size: Option<Size>, size: Option<Size>) -> Instruction {
     Instruction::Extend { op, dst, src, src_size, size }
 }

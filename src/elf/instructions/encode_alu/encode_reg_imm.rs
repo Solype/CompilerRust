@@ -71,7 +71,7 @@ pub(super) fn encode_reg_int(
     }
 
     let imm = match *enc {
-        BinaryEncoding::Mov { .. } => emit_imm(val, size), // B8+r : movabs, imm64 légal
+        BinaryEncoding::Mov { .. } => emit_imm(val, size), // B8+r: movabs, imm64 allowed
         _ => emit_imm_sx32(val, size),                     // 81 /x : imm32 seulement
     };
     v.extend_vec(imm);

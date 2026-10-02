@@ -1,7 +1,7 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// Flottants scalaires SSE, en double (`None`) puis en simple précision (`DWORD`)
+/// SSE scalar floats, in double (`None`) then single precision (`DWORD`)
 pub fn sse_float() -> Vec<Instruction> {
     let f = || var("my_float");
     let mut code = Vec::new();

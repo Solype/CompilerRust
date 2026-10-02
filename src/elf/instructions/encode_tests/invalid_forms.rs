@@ -1,4 +1,4 @@
-//! Formes d'instruction que l'encodeur doit refuser.
+//! Instruction forms the encoder must reject.
 
 use super::*;
 
@@ -9,7 +9,7 @@ fn encode(ins: Instruction) {
 #[test]
 #[should_panic(expected = "unsupported target for rel32")]
 fn jcc_register_target() {
-    // Les sauts conditionnels n'ont pas de forme indirecte
+    // Conditional jumps have no indirect form
     encode(Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::G), target: reg(RAX) });
 }
 
@@ -34,14 +34,14 @@ fn extend_immediate_source() {
 #[test]
 #[should_panic(expected = "source must be 8 or 16 bits")]
 fn movzx_without_source_size() {
-    // la taille de la source ne peut pas se déduire d'un registre
+    // the source size cannot be inferred from a register
     encode(extend(ExtendOp::Movzx, RAX, reg(RBX), None, DWORD));
 }
 
 #[test]
 #[should_panic(expected = "source must be 8 or 16 bits")]
 fn movsx_dword_source() {
-    // c'est movsxd
+    // that is movsxd
     encode(extend(ExtendOp::Movsx, RAX, reg(RBX), DWORD, QWORD));
 }
 

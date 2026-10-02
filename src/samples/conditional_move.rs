@@ -1,7 +1,7 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// cmovcc pour chaque condition, depuis un registre puis depuis la mémoire
+/// cmovcc for each condition, from a register then from memory
 pub fn conditional_move() -> Vec<Instruction> {
     let mut code = Vec::new();
     for (i, cc) in ALL_CC.into_iter().enumerate() {

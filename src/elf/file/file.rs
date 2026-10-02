@@ -32,7 +32,7 @@ where T: Copy + ElfWritable + Debug + Default,
     pub(super) pending_relocs: Vec<PendingReloc>,
 }
 
-/// Relocation émise à l'encodage, dont le symbole n'est pas encore résolu
+/// Relocation emitted while encoding, whose symbol is not resolved yet
 #[derive(Debug, Clone)]
 pub(super) struct PendingReloc {
     pub section: usize,

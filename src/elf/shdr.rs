@@ -36,13 +36,13 @@ where
             sh_name,
             sh_type,
             sh_flags,
-            sh_addr: T::default(),       // pas chargé en mémoire
-            sh_offset: T::default(),     // offset dans le fichier (sera mis à jour plus tard)
-            sh_size: T::default(),       // taille (sera calculée après remplissage)
-            sh_link: 0,                  // lien vers section associée (0 si non utilisé)
-            sh_info: 0,                  // info supplémentaire (0 par défaut)
-            sh_addralign: T::from_usize(1),  // alignement (peut être 1 ou 4 pour strtab)
-            sh_entsize: T::default(),    // taille d’entrée (utile pour symtab)
+            sh_addr: T::default(),       // not loaded in memory
+            sh_offset: T::default(),     // offset in the file (updated later)
+            sh_size: T::default(),       // size (computed once filled)
+            sh_link: 0,                  // link to the related section (0 if unused)
+            sh_info: 0,                  // extra info (0 by default)
+            sh_addralign: T::from_usize(1),  // alignment (can be 1 or 4 for strtab)
+            sh_entsize: T::default(),    // entry size (used by symtab)
         }
     }
 

@@ -13,7 +13,7 @@ pub(super) fn encode_bitscan(
     size: Size,
 ) -> EncodeInformation {
     if let Size::U8 = size {
-        panic!("BSF/BSR n'existent pas en 8 bits");
+        panic!("BSF/BSR do not exist in 8 bits");
     }
 
     let mut v = EncodeInformation::new();
@@ -21,7 +21,7 @@ pub(super) fn encode_bitscan(
     emit_size_prefix(&mut v, size);
     emit_rex(&mut v, size, Some(*dst), src);
 
-    // Préfixe 0x0F obligatoire
+    // Mandatory 0x0F prefix
     v.push(0x0F);
 
     let opcode = match op {

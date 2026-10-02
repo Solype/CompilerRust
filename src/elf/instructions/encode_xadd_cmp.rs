@@ -13,7 +13,7 @@ pub(super) fn encode_xadd_cmpxchg(
     let mut v = EncodeInformation::new();
 
     // ==========================================
-    // Préfixe taille + REX
+    // Size prefix + REX
     // ==========================================
     emit_size_prefix(&mut v, size);
 

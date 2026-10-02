@@ -109,7 +109,7 @@ fn encode_rel32_with_prefix(prefix: Option<u8>, opcode: u8, target: &Operand) ->
     }
 }
 
-/// call / jmp indirects : FF /2 et FF /4, cible en r/m (64 bits sans REX.W)
+/// Indirect call / jmp: FF /2 and FF /4, target in r/m (64 bits without REX.W)
 fn encode_indirect(ext: u8, target: &Operand) -> EncodeInformation {
     let mut v = EncodeInformation::new();
 
@@ -148,7 +148,7 @@ fn encode_rel8(opcode: u8, target: &Operand) -> EncodeInformation {
 
             v.push(opcode);
 
-            let rel = *val as i8; // ⚠️ doit être validé ailleurs
+            let rel = *val as i8; // ⚠️ must be validated elsewhere
             v.push(rel as u8);
 
             EncodeInformation {

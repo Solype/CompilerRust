@@ -1,6 +1,6 @@
 [profile.default]
-# Lancer tous les tests même après un échec, pour voir tous les encodages faux
+# Run every test even after a failure, to see every wrong encoding
 fail-fast = false
-# N'afficher que les échecs pendant le run, plus le résumé
+# Only show failures during the run, plus the summary
 status-level = "fail"
 final-status-level = "fail"

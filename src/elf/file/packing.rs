@@ -85,7 +85,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                     shdr::ElfShdr {
                         sh_type: shdr::ShType::Rel as u32,
                         sh_link: symtab_ndx as u32,
-                        sh_info: target_section_ndx as u32, // ⭐ clé ici
+                        sh_info: target_section_ndx as u32, // ⭐ key point
                         sh_addralign: T::from_usize(entsize),
                         sh_entsize: T::from_usize(entsize),
                         ..Default::default()
@@ -127,7 +127,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                     shdr::ElfShdr {
                         sh_type: shdr::ShType::Rela as u32,
                         sh_link: symtab_ndx as u32,
-                        sh_info: target_section_ndx as u32, // ⭐ clé ici
+                        sh_info: target_section_ndx as u32, // ⭐ key point
                         sh_addralign: T::from_usize(entsize),
                         sh_entsize: T::from_usize(entsize),
                         ..Default::default()
@@ -180,7 +180,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             self.ehdr.e_phoff = T::from_usize(ehdr::ElfEhdr::<T>::mem_len());
         }
 
-        // Avant pack_strtab / pack_symtab : peut ajouter des symboles externes
+        // Before pack_strtab / pack_symtab: may add external symbols
         self.resolve_relocations();
 
         let strtab_ndx = self.pack_strtab();

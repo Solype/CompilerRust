@@ -1,6 +1,6 @@
-//! Programmes de test encodés dans `output.elf`, en attendant le front-end.
-//! Une fonction par famille d'instructions, dans un fichier du même nom ;
-//! chaque famille devient une fonction globale du même nom dans le binaire.
+//! Test programs encoded into `output.elf`, until the front-end exists.
+//! One function per instruction family, in a file of the same name;
+//! each family becomes a global function of the same name in the binary.
 
 pub(crate) mod helpers;
 mod start;
@@ -13,7 +13,7 @@ macro_rules! families {
     ($($name:ident),* $(,)?) => {
         $(mod $name;)*
 
-        /// (nom du symbole, code) pour chaque famille
+        /// (symbol name, code) for each family
         pub fn families() -> Vec<(&'static str, Vec<Instruction>)> {
             return vec![$((stringify!($name), $name::$name())),*];
         }

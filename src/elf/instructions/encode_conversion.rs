@@ -2,17 +2,17 @@ use super::{
     enums::*, modrm::mod_rm_encode, register::*, struct_encode_information::*, utils::emit_rex,
 };
 
-/// Forme des opérandes d'une conversion
+/// Operand form of a conversion
 enum Shape {
-    /// xmm <- r/m32 | r/m64 ; `size` est celle de l'entier source (U64 -> REX.W)
+    /// xmm <- r/m32 | r/m64; `size` is the size of the source integer (U64 -> REX.W)
     IntToFloat,
-    /// r32 | r64 <- xmm/m ; `size` est celle de l'entier destination (U64 -> REX.W)
+    /// r32 | r64 <- xmm/m; `size` is the size of the destination integer (U64 -> REX.W)
     FloatToInt,
-    /// xmm <- xmm/m ; jamais de REX.W, `size` est ignorée
+    /// xmm <- xmm/m; never REX.W, `size` is ignored
     FloatToFloat,
 }
 
-/// (forme, préfixe obligatoire, opcode après 0x0F)
+/// (form, mandatory prefix, opcode after 0x0F)
 fn get_opcode(op: ConvOp) -> (Shape, u8, u8) {
     match op {
         // CVTSD2SI r32 | r64, xmm/m64 : F2 [REX.W] 0F 2D /r

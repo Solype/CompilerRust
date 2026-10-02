@@ -1,10 +1,12 @@
 //! Relocation symbols resolved when writing: a name that is never defined
 //! becomes external (GLOBAL UND), a global defined after its call stays
 //! among the globals, a forward-referenced label stays LOCAL.
+//! Objects are placed at an offset multiple of their alignment.
 
 use std::fmt::Debug;
 
 use super::file::ElfFile;
+use super::symbols::natural_alignment;
 use super::super::{
     elfsym::{make_st_info, ElfSym, StBind, StType, StVis, SHN_UNDEF},
     shdr::{ElfShdr, SectionName, ShFlags, ShType},
@@ -131,4 +133,92 @@ fn rel8_addend_in_32_bits() {
     elf.resolve_relocations();
 
     assert_eq!(elf.sections[text].get_data(), &[0xE2, 0xFF]);
+}
+
+fn data_section(elf: &mut ElfFile<u64>, align: u64) -> usize {
+    elf.add_section(
+        SectionName::Rodata.as_str().to_string(),
+        ElfShdr {
+            sh_type: ShType::ProgBits as u32,
+            sh_flags: ShFlags::Alloc as u64,
+            sh_addralign: align,
+            ..Default::default()
+        },
+    )
+}
+
+fn object(elf: &mut ElfFile<u64>, section: usize, name: &str, bytes: &[u8], align: usize) {
+    let info = make_st_info(StBind::Global, StType::Object);
+    elf.add_symbol_to_section_raw(section, name.to_string(), &bytes.to_vec(), info, StVis::Default as u8, align);
+}
+
+#[test]
+fn object_is_padded_to_its_alignment() {
+    // f64 then a 16-byte SSE mask: the mask goes to offset 16, not 8
+    let mut elf = ElfFile::<u64>::default();
+    let rodata = data_section(&mut elf, 16);
+    object(&mut elf, rodata, "value", &2.5f64.to_le_bytes(), 8);
+    object(&mut elf, rodata, "mask", &[0xFF; 16], 16);
+
+    assert_eq!(symbol(&mut elf, "value").1.st_value, 0);
+    assert_eq!(symbol(&mut elf, "mask").1.st_value, 16);
+    let data = elf.sections[rodata].get_data();
+    assert_eq!(data.len(), 32);
+    assert_eq!(&data[8..16], &[0; 8], "zero padding");
+}
+
+#[test]
+fn aligned_offset_adds_no_padding() {
+    let mut elf = ElfFile::<u64>::default();
+    let rodata = data_section(&mut elf, 16);
+    object(&mut elf, rodata, "a", &[1; 16], 16);
+    object(&mut elf, rodata, "b", &[2; 16], 16);
+    object(&mut elf, rodata, "c", b"hi\0", 1);
+    object(&mut elf, rodata, "d", b"x", 1);
+
+    assert_eq!(symbol(&mut elf, "b").1.st_value, 16);
+    assert_eq!(symbol(&mut elf, "d").1.st_value, 35);
+    assert_eq!(elf.sections[rodata].get_data().len(), 36);
+}
+
+#[test]
+fn section_alignment_is_raised() {
+    // an object aligned on 16 in a section aligned on 4: the section moves to 16
+    let mut elf = ElfFile::<u64>::default();
+    let rodata = data_section(&mut elf, 4);
+    object(&mut elf, rodata, "mask", &[0; 16], 16);
+    assert_eq!(elf.shdrs[rodata].sh_addralign, 16);
+
+    // but never lowered
+    object(&mut elf, rodata, "byte", &[0], 1);
+    assert_eq!(elf.shdrs[rodata].sh_addralign, 16);
+}
+
+#[test]
+fn executable_section_is_padded_with_int3() {
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    object(&mut elf, text, "a", &[0x90], 1);
+    object(&mut elf, text, "b", &[0x90], 8);
+    assert_eq!(elf.sections[text].get_data(), &[0x90, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0x90]);
+}
+
+#[test]
+#[should_panic(expected = "alignment 12 is not a power of two")]
+fn non_power_of_two_alignment_panics() {
+    let mut elf = ElfFile::<u64>::default();
+    let rodata = data_section(&mut elf, 16);
+    object(&mut elf, rodata, "x", &[0; 12], 12);
+}
+
+#[test]
+fn natural_alignment_values() {
+    assert_eq!(natural_alignment(0), 1);
+    assert_eq!(natural_alignment(1), 1);  // byte, string of 1
+    assert_eq!(natural_alignment(3), 4);  // "hi\0"
+    assert_eq!(natural_alignment(4), 4);  // f32, i32
+    assert_eq!(natural_alignment(8), 8);  // f64, pointer
+    assert_eq!(natural_alignment(16), 16); // SSE mask
+    assert_eq!(natural_alignment(24), 16); // capped
+    assert_eq!(natural_alignment(4096), 16);
 }

@@ -14,7 +14,7 @@ use super::{
 };
 
 
-fn align_up(offset: usize, align: usize) -> usize {
+pub(super) fn align_up(offset: usize, align: usize) -> usize {
     if align == 0 { return offset; } // safe fallback
     (offset + (align - 1)) & !(align - 1)
 }

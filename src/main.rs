@@ -4,7 +4,7 @@ mod samples;
 use std::fs::File;
 
 use elf::elfsym::{make_st_info, StBind, StType, StVis};
-use elf::file::{ElfFile64, SymbolType};
+use elf::file::{natural_alignment, ElfFile64, SymbolType};
 use elf::instructions::Instruction;
 use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
 
@@ -43,7 +43,7 @@ fn add_section(elf_file: &mut ElfFile64, name: SectionName, flag: ShFlags, align
     )
 }
 
-/// Adds an initialized global variable
+/// Adds an initialized global variable, at its natural alignment
 fn add_object(elf_file: &mut ElfFile64, section: usize, name: &str, bytes: &[u8]) {
     elf_file.add_symbol_to_section_raw(
         section,
@@ -51,6 +51,7 @@ fn add_object(elf_file: &mut ElfFile64, section: usize, name: &str, bytes: &[u8]
         &bytes.to_vec(),
         make_st_info(StBind::Global, StType::Object),
         StVis::Default as u8,
+        natural_alignment(bytes.len()),
     );
 }
 

@@ -26,6 +26,10 @@ ELF :
 [X] Symboles non définis (externes, résolus au link)
 [X] Symboles locaux (labels)
 [X] Relocations (rela), y compris 8 bits et sous préfixe lock
+[X] R_X86_64_PLT32 pour call / jmp / jcc rel32 (comme GNU as >= 2.31),
+    nécessaire pour appeler la libc dynamique en PIE (gcc -pie)
+[X] R_X86_64_32S pour les absolus étendus avec le signe (disp32 du ModRM,
+    imm32 d'une ALU 64 bits, push imm32), R_X86_64_8 / 16 pour mov r8/r16, sym
 [X] Fichier objet linkable avec ld
 
 Encodage :
@@ -96,7 +100,7 @@ Atomiques :
 [X] Cmpxchg
 
 Tests :
-[X] 1011 tests unitaires (src/elf/instructions/encode_tests/), octets de
+[X] 1114 tests unitaires (src/elf/instructions/encode_tests/), octets de
     référence produits par GNU as, une famille par fichier
 [X] Tests de relocations (offset, type, addend) comparés à readelf
 [X] Correction des 199 encodages faux trouvés (voir RAPPORT_TESTS.md)
@@ -116,6 +120,13 @@ Backend :
     [X] call [mem] / jmp [mem]      (FF /2, FF /4 + ModRM mémoire)
     [X] call [rip+sym]              (relocation PC32)
     [ ] call [rip+sym@GOTPCREL]     (nouveau RelocKind, pour la libc dynamique / PIE)
+[ ] Corrections d'encodage repérées :
+    [ ] IRet encode CF (iretd) : en 64 bits, il faut 48 CF (iretq)
+    [X] [disp32] absolu ([sym], [base+sym]) : R_X86_64_32S comme GNU as
+    [X] add/sub/... r64, sym : émettait un imm64 (4 octets de trop), imm32 + 32S
+    [ ] Symbole externe non déclaré (sans declare_non_defined_sym) : ajouté
+        en StBind::Local + SHN_UNDEF, ld le linke sans erreur mais l'appel
+        segfault ; doit être Global (encode_single_instruction)
 [X] Conversions int <-> float (une ligne par opcode dans ConvOp) :
     [X] Cvtsi2sd
     [X] Cvtsi2ss
@@ -131,7 +142,7 @@ Backend :
 [ ] SSE scalaire courant :
     [ ] Xorps / Xorpd (mise à zéro, changement de signe)
     [ ] Andpd / Andps (valeur absolue)
-    [ ] Movq / Movd (GPR <-> XMM)
+    [ ] Movq / Movd (GPR <-> XMM, bitcast et passage de constantes)
     [ ] Movaps / Movapd (copie XMM -> XMM)
     [ ] Sqrtsd / Sqrtss
     [ ] Minsd / Maxsd / Minss / Maxss

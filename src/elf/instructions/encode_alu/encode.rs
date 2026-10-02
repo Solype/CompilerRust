@@ -50,15 +50,22 @@ fn encode_reg_sym(reg: Register, sym: &str, size: Size, enc: &BinaryEncoding) ->
         _ => unimplemented!(),
     }
 
+    // mov r64, imm64 garde ses 8 octets ; une opération ALU 64 bits n'a
+    // qu'un imm32, étendu avec le signe
+    let (imm_size, kind) = match (enc, size) {
+        (BinaryEncoding::Alu { .. }, Size::U64) => (Size::U32, RelocKind::AbsoluteSigned),
+        _ => (size, RelocKind::Absolute),
+    };
+
     let offset = v.len();
 
-    v.extend_vec(emit_imm(0, size));
+    v.extend_vec(emit_imm(0, imm_size));
 
     v.add_relocation(Relocation {
         sym: sym.to_string(),
         offset,
-        size: size as u8,
-        kind: RelocKind::Absolute,
+        size: imm_size as u8,
+        kind,
         addend: 0,
     });
 

@@ -1,7 +1,8 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// Integer <-> float and double <-> single conversions, from a register then from memory
+/// Integer <-> float and double <-> single conversions, from a register then from memory,
+/// and movd / movq raw copies between GPR and XMM
 pub fn conversions() -> Vec<Instruction> {
     let mut code = Vec::new();
     for op in [ConvOp::Cvtsi2sd, ConvOp::Cvtsi2ss] {
@@ -32,6 +33,17 @@ pub fn conversions() -> Vec<Instruction> {
             convert(op, XMM2, var("my_float"), None),
         ]);
     }
+    for op in [ConvOp::Movd, ConvOp::Movq] {
+        code.extend([
+            convert(op, XMM0, reg(RAX), None),
+            convert(op, XMM9, reg(R10), None),
+            convert(op, RAX, reg(XMM0), None),
+            convert(op, R11, reg(XMM13), None),
+            convert(op, XMM1, mem(at(RBX).disp(8)), None),
+            convert(op, XMM2, var("my_float"), None),
+        ]);
+    }
+    code.push(convert(ConvOp::Movq, XMM10, reg(XMM3), None));
     code.push(ret());
     code
 }

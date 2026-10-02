@@ -100,7 +100,7 @@ Atomics:
 [X] Cmpxchg
 
 Tests:
-[X] 1119 unit tests (src/elf/instructions/encode_tests/), reference bytes
+[X] 1131 unit tests (src/elf/instructions/encode_tests/), reference bytes
     produced by GNU as, one family per file
 [X] Relocation tests (offset, type, addend) compared with readelf
 [X] Symbol table tests (src/elf/file/symbol_tests.rs)
@@ -143,7 +143,7 @@ Backend:
 [ ] Common scalar SSE:
     [ ] Xorps / Xorpd (zeroing, sign flip)
     [ ] Andpd / Andps (absolute value)
-    [ ] Movq / Movd (GPR <-> XMM, bitcast and passing constants)
+    [X] Movq / Movd (GPR <-> XMM, bitcast and passing constants, in ConvOp)
     [ ] Movaps / Movapd (XMM -> XMM copy)
     [ ] Sqrtsd / Sqrtss
     [ ] Minsd / Maxsd / Minss / Maxss

@@ -3,8 +3,10 @@ use super::helpers::*;
 
 /// jmp, call (direct and indirect), jcc, loop*, ret, iret
 pub fn jumps_and_calls() -> Vec<Instruction> {
+    let jump_target = LabelId::new();
+    let loop_target = LabelId::new();
     let mut code = vec![
-        jmp("jump_target"),           // local label, forward
+        jmp(jump_target),             // local label, forward
         call("jumps_and_calls"),      // symbole global
         jmp("jumps_and_calls"),
         call("my_exit"),              // external symbol, defined in test.asm
@@ -16,13 +18,14 @@ pub fn jumps_and_calls() -> Vec<Instruction> {
     for cc in ALL_CC {
         code.push(jcc(cc, "jumps_and_calls"));
     }
+    code.push(jcc(ConditionCode::E, jump_target)); // label: resolved in place
     code.extend([
-        label("loop_target"),
-        ctrl(CtrlOp::Loop,   "loop_target"),
-        ctrl(CtrlOp::Loope,  "loop_target"),
-        ctrl(CtrlOp::Loopne, "loop_target"),
+        label(loop_target),
+        ctrl(CtrlOp::Loop,   loop_target),
+        ctrl(CtrlOp::Loope,  loop_target),
+        ctrl(CtrlOp::Loopne, loop_target),
 
-        label("jump_target"),
+        label(jump_target),
         ret(),
         iret(),
     ]);

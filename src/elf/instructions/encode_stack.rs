@@ -143,7 +143,7 @@ pub(super) fn encode_stack(op: StackOp, value: &Operand, size: Size) -> EncodeIn
             // -------------------------------------------------
             // push symbol
             // -------------------------------------------------
-            Operand::Sym(sym) => {
+            Operand::Sym(_) | Operand::Label(_) => {
                 let mut v = EncodeInformation::new();
 
                 v.push(0x68);
@@ -153,7 +153,7 @@ pub(super) fn encode_stack(op: StackOp, value: &Operand, size: Size) -> EncodeIn
                 v.extend(&0u32.to_le_bytes());
 
                 v.add_relocation(Relocation {
-                    sym: sym.clone(),
+                    target: value.target().unwrap(),
                     offset,
                     size: 4,
                     kind: RelocKind::AbsoluteSigned,

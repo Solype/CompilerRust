@@ -1,10 +1,11 @@
 # Backend gaps
 
-State of the backend on October 2, 2026 (1232 tests passing), checked against the code rather than
+State of the backend on October 2, 2026 (1248 tests passing), checked against the code rather than
 only against `TODO.md`.
 
-**In short:** the instruction encoder is nearly complete for a compiler. What is mostly missing is
-the ELF layer around **data**: code can be written well, data cannot be described well yet.
+**In short:** nothing in the backend blocks the code generator any more. The three blocking gaps
+(object alignment, relocations in data, labels separate from symbols) are fixed; what is left is
+useful but not required (section 2).
 
 ## 1. Blocking for code generation
 
@@ -39,9 +40,17 @@ In PIE, keep pointer tables in a writable section (`.data`): the loader has to p
 with a pointer table in `.rodata` `gcc -pie` fails (`error: read-only segment has dynamic
 relocations`). Static links accept both. gcc uses `.data.rel.ro` for this.
 
-### c. Separate `Label` and `Sym` (already in `TODO.md`)
+### c. ~~Separate `Label` and `Sym`~~ (done)
 
-A string is both a local label and a global symbol. The code generator will produce thousands of
+**Fixed:** a label is a `LabelId` (unique counter, `LabelId::new()`), defined by
+`Instruction::Label` (or `define_label` in a data section) and targeted by `Operand::Label`,
+`MemAddress::label` / `disp_label` or `Target::Label` in a data relocation. Labels never enter the
+symbol table. As with GNU as, a PC-relative reference in the same section (`jmp`, `jcc`, `call`,
+`loop`, `lea [rip+label]`) is patched in place with no relocation; any other one (jump table,
+another section, absolute address) points at the section symbol with the label offset as addend.
+A label used but never defined, defined twice, or out of range of a `rel8` panics. The issue was:
+
+A string was both a local label and a global symbol. The code generator will produce thousands of
 labels (`.L_if_3`, `.L_loop_12`, …) that must not collide with user function names nor show up in
 the symbol table.
 
@@ -51,7 +60,7 @@ the symbol table.
 | --- | --- | --- |
 | **`.bss`** | `SectionName::Bss` and `ShType::NoBits` exist, but space cannot be reserved without writing bytes: uninitialized globals would go to `.data` with zeros in the file. Works, wastes space. | Small |
 | **`GOTPCREL`** | Needed to read a libc **variable** in PIE (`stdout`, `errno`). Function **calls** already work through PLT32. | Small |
-| **Local jumps resolved in place** | Every `jmp` / `jcc` to a label of the same function produces a relocation resolved by `ld`. Correct, but GNU as resolves them itself: smaller `.o`, and `rel8` (2 bytes instead of 5-6) becomes possible. | Medium |
+| **Short jumps (`rel8`)** | Jumps to a label are now resolved in place, but always in the 5-6 byte `rel32` form. Picking `rel8` (2 bytes) when the target is close needs a relaxation pass, since shrinking a jump moves the labels after it. | Medium |
 | **dst/src order of `StoreF`** | The register is in `dst` while it is the source: a trap for the code generator. | Small |
 | **"Distinct memory sizes"** | In `TODO.md`, scope unclear. | ? |
 
@@ -82,7 +91,7 @@ Short encodings (`05` / `A9`, `int3`, `REX.W` of `push` / `pop`), packed SSE and
 
 1. ~~**Per-object alignment**~~: done.
 2. ~~**Relocations in data**~~: done.
-3. **Separate `Label` / `Sym`** before writing the code generator, since it changes the IR it emits.
+3. ~~**Separate `Label` / `Sym`**~~: done. The backend no longer blocks the code generator.
 
 ---
 

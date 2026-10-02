@@ -1,6 +1,8 @@
-//! Relocation symbols resolved when writing: a name that is never defined
+//! Relocation targets resolved when writing: a name that is never defined
 //! becomes external (GLOBAL UND), a global defined after its call stays
-//! among the globals, a forward-referenced label stays LOCAL.
+//! among the globals. Labels never enter the symbol table: a PC-relative
+//! reference in the same section is patched in place, any other one points at
+//! the section symbol (reference bytes and relocations from GNU as).
 //! Objects are placed at an offset multiple of their alignment, and can hold
 //! relocations (pointers, jump tables) resolved like those of instructions.
 
@@ -12,7 +14,7 @@ use super::super::{
     elfsym::{make_st_info, ElfSym, StBind, StType, StVis, SHN_UNDEF},
     shdr::{ElfShdr, SectionName, ShFlags, ShType},
     traits::{ElfWritable, UsizeCompatible},
-    instructions::{CtrlOp, Instruction, Relocation, RelocKind},
+    instructions::{register::RAX, ConditionCode, CtrlOp, Instruction, LabelId, MemAddress, Relocation, RelocKind, Target},
 };
 use crate::samples::helpers::*;
 
@@ -94,35 +96,97 @@ fn forward_global_stays_global() {
     assert_eq!(rela_symbols(&elf, text), vec![idx]);
 }
 
-#[test]
-fn forward_label_stays_local() {
-    let mut elf = ElfFile::<u64>::default();
-    let text = text_section(&mut elf);
-    function(&mut elf, text, "_start", vec![jmp("done"), ret(), label("done"), ret()]);
-    elf.resolve_relocations();
-
-    check_local_global_split(&elf);
-    let (idx, sym) = symbol(&mut elf, "done");
-    assert_eq!(bind(sym), StBind::Local as u8);
-    assert_eq!(sym.st_shndx as usize, text);
-    // jmp rel32 (5 bytes) + ret
-    assert_eq!(sym.st_value, 6);
-    assert_eq!(rela_symbols(&elf, text), vec![idx]);
+/// Names of the symbols (the null one excluded): labels must not be there
+fn symbol_names<T>(elf: &ElfFile<T>) -> Vec<String>
+where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
+{
+    elf.symtab.symbols[1..]
+        .iter()
+        .filter(|sym| sym.st_info & 0xF != StType::Section as u8)
+        .map(|sym| elf.strtab.from_usize(sym.st_name as usize).unwrap())
+        .collect()
 }
 
 #[test]
-fn locals_added_after_relocations_keep_indexes_right() {
-    // Each inserted local label shifts the globals: relocations must still
-    // target the right symbol
+fn labels_resolved_in_place() {
+    // GNU as ({disp32} forces the rel32 form):
+    //   f: .L0: nop ; jne .L0 ; jmp .L1 ; call .L1 ; lea rax, [rip+.L1] ; loop .L0 ; .L1: ret
     let mut elf = ElfFile::<u64>::default();
     let text = text_section(&mut elf);
-    function(&mut elf, text, "_start", vec![call("f"), call("exit"), label("a"), ret()]);
-    function(&mut elf, text, "f", vec![jmp("b"), label("b"), ret()]);
+    let (l0, l1) = (LabelId::new(), LabelId::new());
+    function(&mut elf, text, "f", vec![
+        label(l0),
+        Instruction::Nop(1),
+        jcc(ConditionCode::NE, l0),
+        jmp(l1),
+        call(l1),
+        lea(RAX, MemAddress::label(l1), QWORD),
+        ctrl(CtrlOp::Loop, l0),
+        label(l1),
+        ret(),
+    ]);
+    elf.resolve_relocations();
+
+    assert_eq!(elf.sections[text].get_data(), &[
+        0x90,
+        0x0F, 0x85, 0xF9, 0xFF, 0xFF, 0xFF,
+        0xE9, 0x0E, 0x00, 0x00, 0x00,
+        0xE8, 0x09, 0x00, 0x00, 0x00,
+        0x48, 0x8D, 0x05, 0x02, 0x00, 0x00, 0x00,
+        0xE2, 0xE6,
+        0xC3,
+    ]);
+    assert!(!elf.relas.contains_key(&text), "no relocation left for ld");
+    assert_eq!(symbol_names(&elf), vec!["f"], "labels are not symbols");
+}
+
+#[test]
+fn each_function_jumps_to_its_own_label() {
+    // the code generator can reuse the same pattern in every function
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    for name in ["f", "g"] {
+        let end = LabelId::new();
+        function(&mut elf, text, name, vec![jmp(end), ret(), label(end), ret()]);
+    }
+    elf.resolve_relocations();
+
+    // jmp +1 (over the ret), in both functions
+    let f = [0xE9, 0x01, 0x00, 0x00, 0x00, 0xC3, 0xC3];
+    assert_eq!(elf.sections[text].get_data(), &[f, f].concat());
+    assert_eq!(symbol_names(&elf), vec!["f", "g"]);
+}
+
+#[test]
+fn relocations_keep_indexes_right_after_section_symbols() {
+    // Each inserted section symbol (local) shifts the globals: relocations
+    // must still target the right symbol
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    let rodata = data_section(&mut elf, 8);
+    let case = LabelId::new();
+    function(&mut elf, text, "_start", vec![call("f"), call("exit"), label(case), ret()]);
+    function(&mut elf, text, "f", vec![ret()]);
+    relocated(&mut elf, rodata, "table", &[0; 8], 8, &[quad(0, case)]);
     elf.resolve_relocations();
 
     check_local_global_split(&elf);
-    let expected: Vec<usize> = ["f", "exit", "b"].iter().map(|n| symbol(&mut elf, n).0).collect();
+    let expected: Vec<usize> = ["f", "exit"].iter().map(|n| symbol(&mut elf, n).0).collect();
     assert_eq!(rela_symbols(&elf, text), expected);
+    assert_eq!(rela_symbols(&elf, rodata), vec![text_section_symbol(&elf, text)]);
+}
+
+#[test]
+fn loop_resolved_in_place_in_32_bits() {
+    // loop to itself: rel8 = -2
+    let mut elf = ElfFile::<u32>::default();
+    let text = text_section(&mut elf);
+    let top = LabelId::new();
+    function(&mut elf, text, "_start", vec![label(top), ctrl(CtrlOp::Loop, top)]);
+    elf.resolve_relocations();
+
+    assert_eq!(elf.sections[text].get_data(), &[0xE2, 0xFE]);
+    assert!(!elf.rels.contains_key(&text));
 }
 
 #[test]
@@ -130,10 +194,51 @@ fn rel8_addend_in_32_bits() {
     // In 32 bits the addend is written into the code: 1 byte for loop rel8
     let mut elf = ElfFile::<u32>::default();
     let text = text_section(&mut elf);
-    function(&mut elf, text, "_start", vec![label("top"), ctrl(CtrlOp::Loop, "top")]);
+    function(&mut elf, text, "_start", vec![ctrl(CtrlOp::Loop, "elsewhere")]);
     elf.resolve_relocations();
 
     assert_eq!(elf.sections[text].get_data(), &[0xE2, 0xFF]);
+}
+
+#[test]
+#[should_panic(expected = "is out of range of its 1-byte displacement (-131 bytes away)")]
+fn loop_too_far_panics() {
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    let top = LabelId::new();
+    let mut code = vec![label(top)];
+    code.extend((0..129).map(|_| Instruction::Nop(1)));
+    code.push(ctrl(CtrlOp::Loop, top));
+    function(&mut elf, text, "_start", code);
+    elf.resolve_relocations();
+}
+
+#[test]
+#[should_panic(expected = "is used but never defined")]
+fn undefined_label_panics() {
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    function(&mut elf, text, "_start", vec![jmp(LabelId::new())]);
+    elf.resolve_relocations();
+}
+
+#[test]
+#[should_panic(expected = "defined twice")]
+fn label_defined_twice_panics() {
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    let l = LabelId::new();
+    function(&mut elf, text, "_start", vec![label(l), ret(), label(l)]);
+}
+
+/// Index of the STT_SECTION symbol of `section`
+fn text_section_symbol<T>(elf: &ElfFile<T>, section: usize) -> usize
+where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
+{
+    let sym = elf.symtab.symbols.iter().position(|sym| {
+        sym.st_info == make_st_info(StBind::Local, StType::Section) && sym.st_shndx as usize == section
+    });
+    sym.unwrap_or_else(|| panic!("no section symbol for section {section}"))
 }
 
 fn data_section(elf: &mut ElfFile<u64>, align: u64) -> usize {
@@ -225,8 +330,8 @@ fn natural_alignment_values() {
 }
 
 /// 8-byte absolute address of `sym` at `offset` (`.quad sym`)
-fn quad(offset: usize, sym: &str) -> Relocation {
-    Relocation { sym: sym.to_string(), offset, size: 8, kind: RelocKind::Absolute, addend: 0 }
+fn quad(offset: usize, target: impl Into<Target>) -> Relocation {
+    Relocation { target: target.into(), offset, size: 8, kind: RelocKind::Absolute, addend: 0 }
 }
 
 fn relocated(elf: &mut ElfFile<u64>, section: usize, name: &str, bytes: &[u8], align: usize, relocs: &[Relocation]) {
@@ -276,21 +381,60 @@ fn function_table_resolves_later_and_external_symbols() {
 }
 
 #[test]
-fn jump_table_points_to_local_labels() {
+fn jump_table_points_to_the_text_section() {
     // switch table in .rodata: .quad .Lcase0, .Lcase1
+    // GNU as: R_X86_64_64 .text + offset of each label, no label symbol
     let mut elf = ElfFile::<u64>::default();
     let text = text_section(&mut elf);
     let rodata = data_section(&mut elf, 8);
-    function(&mut elf, text, "f", vec![label(".Lcase0"), ret(), label(".Lcase1"), ret()]);
-    relocated(&mut elf, rodata, "table", &[0; 16], 8, &[quad(0, ".Lcase0"), quad(8, ".Lcase1")]);
+    let (case0, case1) = (LabelId::new(), LabelId::new());
+    function(&mut elf, text, "f", vec![label(case0), ret(), label(case1), ret()]);
+    relocated(&mut elf, rodata, "table", &[0; 16], 8, &[quad(0, case0), quad(8, case1)]);
     elf.resolve_relocations();
 
     check_local_global_split(&elf);
-    let (case0, sym0) = symbol(&mut elf, ".Lcase0");
-    assert_eq!((bind(sym0), sym0.st_value), (StBind::Local as u8, 0));
-    let (case1, sym1) = symbol(&mut elf, ".Lcase1");
-    assert_eq!((bind(sym1), sym1.st_value), (StBind::Local as u8, 1));
-    assert_eq!(relas(&elf, rodata), vec![(0, case0, 1, 0), (8, case1, 1, 0)]);
+    let text_sym = text_section_symbol(&elf, text);
+    assert_eq!(relas(&elf, rodata), vec![(0, text_sym, 1, 0), (8, text_sym, 1, 1)]);
+    assert_eq!(symbol_names(&elf), vec!["f", "table"]);
+}
+
+#[test]
+fn rip_relative_label_in_another_section() {
+    // GNU as: lea rax, [rip+.LC0] with .LC0 at offset 8 of .rodata
+    //   -> R_X86_64_PC32 .rodata + 4 (8 - 4)
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    let rodata = data_section(&mut elf, 8);
+    object(&mut elf, rodata, "before", &[0; 8], 8);
+    let lc0 = LabelId::new();
+    elf.define_label(rodata, lc0);
+    elf.add_bytes_with_relocations(rodata, b"hi\0".to_vec(), &[]);
+    function(&mut elf, text, "g", vec![lea(RAX, MemAddress::label(lc0), QWORD), ret()]);
+    elf.resolve_relocations();
+
+    let rodata_sym = text_section_symbol(&elf, rodata);
+    assert_eq!(relas(&elf, text), vec![(3, rodata_sym, 2, 4)]);
+}
+
+#[test]
+fn label_in_32_bits_writes_offset_as_addend() {
+    // rel: the label offset goes into the data, the relocation points at .text
+    let mut elf = ElfFile::<u32>::default();
+    let text = text_section(&mut elf);
+    let data = elf.add_section(
+        SectionName::Data.as_str().to_string(),
+        ElfShdr { sh_type: ShType::ProgBits as u32, sh_flags: ShFlags::Alloc as u32, sh_addralign: 4, ..Default::default() },
+    );
+    let case = LabelId::new();
+    function(&mut elf, text, "f", vec![ret(), ret(), label(case), ret()]);
+    let info = make_st_info(StBind::Global, StType::Object);
+    let reloc = Relocation { target: case.into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 0 };
+    elf.add_symbol_to_section_relocated(data, "table".into(), &vec![0; 4], info, StVis::Default as u8, 4, &[reloc]);
+    elf.resolve_relocations();
+
+    assert_eq!(elf.sections[data].get_data(), &[2, 0, 0, 0]);
+    let rel = &elf.rels[&data][0];
+    assert_eq!(rel.r_info >> 8, text_section_symbol(&elf, text) as u32);
 }
 
 #[test]
@@ -311,8 +455,8 @@ fn data_relocation_keeps_kind_size_and_addend() {
     // .long sym + 4 (R_X86_64_32) and .long sym - . (R_X86_64_PC32, offset table)
     let mut elf = ElfFile::<u64>::default();
     let data = data_section(&mut elf, 4);
-    let abs32 = Relocation { sym: "x".into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 4 };
-    let pc32 = Relocation { sym: "x".into(), offset: 4, size: 4, kind: RelocKind::Relative, addend: 0 };
+    let abs32 = Relocation { target: "x".into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 4 };
+    let pc32 = Relocation { target: "x".into(), offset: 4, size: 4, kind: RelocKind::Relative, addend: 0 };
     relocated(&mut elf, data, "t", &[0; 8], 4, &[abs32, pc32]);
     elf.resolve_relocations();
 
@@ -337,7 +481,7 @@ fn data_relocation_in_32_bits_writes_the_addend() {
         ElfShdr { sh_type: ShType::ProgBits as u32, sh_flags: ShFlags::Alloc as u32, sh_addralign: 4, ..Default::default() },
     );
     let info = make_st_info(StBind::Global, StType::Object);
-    let reloc = Relocation { sym: "x".into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 0x10 };
+    let reloc = Relocation { target: "x".into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 0x10 };
     elf.add_symbol_to_section_relocated(data, "p".into(), &vec![0; 4], info, StVis::Default as u8, 4, &[reloc]);
     elf.resolve_relocations();
 

@@ -86,7 +86,7 @@ fn rip_relative_symbol_emits_relocation() {
 
     assert_eq!(info.data, [0xF2, 0x48, 0x0F, 0x2A, 0x15, 0x00, 0x00, 0x00, 0x00]);
     assert_eq!(info.relocations.len(), 1);
-    assert_eq!(info.relocations[0].sym, "my_float");
+    assert_eq!(info.relocations[0].target, "my_float");
     assert_eq!(info.relocations[0].offset, 5);
 }
 
@@ -179,7 +179,7 @@ fn ss_rip_relative_symbol_emits_relocation() {
 
     assert_eq!(info.data, [0xF3, 0x48, 0x0F, 0x2A, 0x15, 0x00, 0x00, 0x00, 0x00]);
     assert_eq!(info.relocations.len(), 1);
-    assert_eq!(info.relocations[0].sym, "my_float");
+    assert_eq!(info.relocations[0].target, "my_float");
     assert_eq!(info.relocations[0].offset, 5);
 }
 
@@ -234,7 +234,7 @@ fn cvttsd2si_rip_relative_symbol_emits_relocation() {
 
     assert_eq!(info.data, [0xF2, 0x48, 0x0F, 0x2C, 0x05, 0x00, 0x00, 0x00, 0x00]);
     assert_eq!(info.relocations.len(), 1);
-    assert_eq!(info.relocations[0].sym, "my_float");
+    assert_eq!(info.relocations[0].target, "my_float");
     assert_eq!(info.relocations[0].offset, 5);
 }
 
@@ -286,7 +286,7 @@ fn cvtsd2ss_rip_relative_symbol_emits_relocation() {
 
     assert_eq!(info.data, [0xF2, 0x0F, 0x5A, 0x15, 0x00, 0x00, 0x00, 0x00]);
     assert_eq!(info.relocations.len(), 1);
-    assert_eq!(info.relocations[0].sym, "my_float");
+    assert_eq!(info.relocations[0].target, "my_float");
     assert_eq!(info.relocations[0].offset, 4);
 }
 

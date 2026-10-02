@@ -117,23 +117,24 @@ pub fn prefixed(prefix: Vec<Prefix>, ins: Instruction) -> Instruction {
     Instruction::Prefix { prefix, ins: Box::new(ins) }
 }
 
-pub fn label(name: &str) -> Instruction {
-    Instruction::LocalSym(name.to_string())
+pub fn label(id: LabelId) -> Instruction {
+    Instruction::Label(id)
 }
 
-pub fn ctrl(op: CtrlOp, target: &str) -> Instruction {
-    Instruction::Ctrl { op, target: sym(target) }
+/// `target`: a symbol name (`&str`) or a `LabelId`
+pub fn ctrl(op: CtrlOp, target: impl Into<Operand>) -> Instruction {
+    Instruction::Ctrl { op, target: target.into() }
 }
 
-pub fn jmp(target: &str) -> Instruction {
+pub fn jmp(target: impl Into<Operand>) -> Instruction {
     ctrl(CtrlOp::Jmp, target)
 }
 
-pub fn jcc(cc: ConditionCode, target: &str) -> Instruction {
+pub fn jcc(cc: ConditionCode, target: impl Into<Operand>) -> Instruction {
     ctrl(CtrlOp::JmpCC(cc), target)
 }
 
-pub fn call(target: &str) -> Instruction {
+pub fn call(target: impl Into<Operand>) -> Instruction {
     ctrl(CtrlOp::Call, target)
 }
 

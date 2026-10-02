@@ -32,6 +32,11 @@ impl Section {
         self
     }
 
+    pub fn get_data_mut(&mut self) -> &mut Vec<u8>
+    {
+        &mut self.data
+    }
+
     pub fn set_data(&mut self, other: Vec<u8>) -> &mut Self
     {
         self.data = other;

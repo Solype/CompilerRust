@@ -242,6 +242,33 @@ where
         }
     }
 
+    /// Index of the `STT_SECTION` symbol of section `shndx`, added (LOCAL,
+    /// unnamed) if missing. Relocations to a label of another section, or to
+    /// its absolute address, point at it with the label offset as addend.
+    ///
+    /// Inserting a local shifts the globals: call it before reading their
+    /// indexes.
+    pub fn section_symbol(&mut self, shndx: u16) -> usize {
+        let info = make_st_info(StBind::Local, StType::Section);
+        let found = self.symbols[..self.first_global_index]
+            .iter()
+            .position(|s| s.st_info == info && s.st_shndx == shndx);
+        if let Some(idx) = found {
+            return idx;
+        }
+
+        // Unnamed: not in sym_map, whose key 0 is the null symbol
+        let insert_idx = self.first_global_index;
+        self.symbols.insert(insert_idx, ElfSym { st_info: info, st_shndx: shndx, ..Default::default() });
+        for value in self.sym_map.values_mut() {
+            if *value >= insert_idx {
+                *value += 1;
+            }
+        }
+        self.first_global_index += 1;
+        insert_idx
+    }
+
     /// Returns the symbol table index associated with a given name index.
     ///
     /// `name_idx` is usually an offset inside `.strtab`.

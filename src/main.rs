@@ -5,7 +5,7 @@ use std::fs::File;
 
 use elf::elfsym::{make_st_info, StBind, StType, StVis};
 use elf::file::{natural_alignment, ElfFile64, SymbolType};
-use elf::instructions::{Instruction, RelocKind, Relocation};
+use elf::instructions::{Instruction, RelocKind, Relocation, Target};
 use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
 
 const OUTPUT: &str = "output.elf";
@@ -63,7 +63,7 @@ fn add_pointers(elf_file: &mut ElfFile64, section: usize, name: &str, targets: &
         .iter()
         .enumerate()
         .map(|(i, sym)| Relocation {
-            sym: sym.to_string(),
+            target: Target::Sym(sym.to_string()),
             offset: i * 8,
             size: 8,
             kind: RelocKind::Absolute,

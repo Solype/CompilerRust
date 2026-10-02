@@ -180,6 +180,9 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             self.ehdr.e_phoff = T::from_usize(ehdr::ElfEhdr::<T>::mem_len());
         }
 
+        // Avant pack_strtab / pack_symtab : peut ajouter des symboles externes
+        self.resolve_relocations();
+
         let strtab_ndx = self.pack_strtab();
         let sym_ndx = self.pack_symtab(strtab_ndx);
         self.pack_rel(sym_ndx);

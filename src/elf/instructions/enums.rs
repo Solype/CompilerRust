@@ -97,6 +97,9 @@ pub enum BinOp {
     /// andpd (U64) / andps (U32): bitwise AND on the whole 128-bit register,
     /// a memory operand is 16 bytes and must be 16-byte aligned
     AndF,
+    /// movapd (U64) / movaps (U32): copies the whole 128-bit register. A
+    /// memory operand (either side) is 16 bytes and must be 16-byte aligned
+    MovF,
     /// sqrtsd (U64) / sqrtss (U32): dst = sqrt(src), scalar
     SqrtF,
     /// minsd (U64) / minss (U32): dst = min(dst, src). Not commutative: if

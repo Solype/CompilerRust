@@ -79,6 +79,15 @@ pub(super) fn encode_reg_mem(
             // actual opcode
             v.push(opcode);
         }
+
+        BinaryEncoding::SseMov { prefix, opcode_r_rm, opcode_rm_r } => {
+            if prefix != 0 {
+                v.push(prefix);
+            }
+            emit_rex(&mut v, Size::U8, Some(*reg), rm_op);
+            v.push(0x0F);
+            v.push(if is_reg_dst { opcode_r_rm } else { opcode_rm_r });
+        }
     }
 
     let modrm = mod_rm_encode(rm_op, reg_op);

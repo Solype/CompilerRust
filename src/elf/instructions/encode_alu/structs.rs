@@ -29,7 +29,15 @@ pub(super) enum BinaryEncoding {
     Sse {
         prefix: u8,
         opcode: u8,
-    }
+    },
+
+    /// SSE move whose direction follows the operands, like the integer Mov:
+    /// `opcode_r_rm` loads / copies into the register, `opcode_rm_r` stores it
+    SseMov {
+        prefix: u8,
+        opcode_r_rm: u8,
+        opcode_rm_r: u8,
+    },
 }
 
 pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
@@ -199,6 +207,13 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
             match size {
                 Size::U64 => BinaryEncoding::Sse { prefix: 0x66, opcode: 0x54, },
                 _ => BinaryEncoding::Sse { prefix: 0x00, opcode: 0x54, }
+            }
+        }
+
+        BinOp::MovF => {
+            match size {
+                Size::U64 => BinaryEncoding::SseMov { prefix: 0x66, opcode_r_rm: 0x28, opcode_rm_r: 0x29, },
+                _ => BinaryEncoding::SseMov { prefix: 0x00, opcode_r_rm: 0x28, opcode_rm_r: 0x29, }
             }
         }
 

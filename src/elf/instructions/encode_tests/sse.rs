@@ -196,4 +196,32 @@ cases! {
     ucomisd_xmm11_qword_rbx_plus_r8_x_2: bin(BinOp::UcomiF, reg(XMM11), mem(at(RBX).index_scale(R8, Scale::Two)), None) => [0x66, 0x46, 0x0F, 0x2E, 0x1C, 0x43];
     /// movsd qword ptr [r9], xmm12
     movsd_qword_r9_xmm12: bin(BinOp::StoreF, reg(XMM12), mem(at(R9)), None) => [0xF2, 0x45, 0x0F, 0x11, 0x21];
+    /// xorpd xmm1, xmm0
+    xorpd_xmm1_xmm0: bin(BinOp::XorF, reg(XMM1), reg(XMM0), None) => [0x66, 0x0F, 0x57, 0xC8];
+    /// xorpd xmm9, xmm2
+    xorpd_xmm9_xmm2: bin(BinOp::XorF, reg(XMM9), reg(XMM2), None) => [0x66, 0x44, 0x0F, 0x57, 0xCA];
+    /// xorpd xmm2, xmm15
+    xorpd_xmm2_xmm15: bin(BinOp::XorF, reg(XMM2), reg(XMM15), None) => [0x66, 0x41, 0x0F, 0x57, 0xD7];
+    /// xorpd xmm0, xmm0
+    xorpd_xmm0_xmm0: bin(BinOp::XorF, reg(XMM0), reg(XMM0), None) => [0x66, 0x0F, 0x57, 0xC0];
+    /// xorpd xmm0, xmmword ptr [rip+my_data]
+    xorpd_xmm0_xmmword_rip_plus_my_data: bin(BinOp::XorF, reg(XMM0), mem(MemAddress::symbol("my_data")), None) => [0x66, 0x0F, 0x57, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// xorpd xmm3, xmmword ptr [rbx+8]
+    xorpd_xmm3_xmmword_rbx_plus_8: bin(BinOp::XorF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0x66, 0x0F, 0x57, 0x5B, 0x08];
+    /// xorpd xmm3, xmmword ptr [r9]
+    xorpd_xmm3_xmmword_r9: bin(BinOp::XorF, reg(XMM3), mem(at(R9)), None) => [0x66, 0x41, 0x0F, 0x57, 0x19];
+    /// xorps xmm1, xmm0
+    xorps_xmm1_xmm0: bin(BinOp::XorF, reg(XMM1), reg(XMM0), DWORD) => [0x0F, 0x57, 0xC8];
+    /// xorps xmm9, xmm2
+    xorps_xmm9_xmm2: bin(BinOp::XorF, reg(XMM9), reg(XMM2), DWORD) => [0x44, 0x0F, 0x57, 0xCA];
+    /// xorps xmm2, xmm15
+    xorps_xmm2_xmm15: bin(BinOp::XorF, reg(XMM2), reg(XMM15), DWORD) => [0x41, 0x0F, 0x57, 0xD7];
+    /// xorps xmm0, xmm0
+    xorps_xmm0_xmm0: bin(BinOp::XorF, reg(XMM0), reg(XMM0), DWORD) => [0x0F, 0x57, 0xC0];
+    /// xorps xmm0, xmmword ptr [rip+my_data]
+    xorps_xmm0_xmmword_rip_plus_my_data: bin(BinOp::XorF, reg(XMM0), mem(MemAddress::symbol("my_data")), DWORD) => [0x0F, 0x57, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// xorps xmm3, xmmword ptr [rbx+8]
+    xorps_xmm3_xmmword_rbx_plus_8: bin(BinOp::XorF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0x0F, 0x57, 0x5B, 0x08];
+    /// xorps xmm3, xmmword ptr [r9]
+    xorps_xmm3_xmmword_r9: bin(BinOp::XorF, reg(XMM3), mem(at(R9)), DWORD) => [0x41, 0x0F, 0x57, 0x19];
 }

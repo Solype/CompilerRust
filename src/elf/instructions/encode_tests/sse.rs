@@ -252,4 +252,32 @@ cases! {
     andps_xmm3_xmmword_rbx_plus_8: bin(BinOp::AndF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0x0F, 0x54, 0x5B, 0x08];
     /// andps xmm3, xmmword ptr [r9]
     andps_xmm3_xmmword_r9: bin(BinOp::AndF, reg(XMM3), mem(at(R9)), DWORD) => [0x41, 0x0F, 0x54, 0x19];
+    /// sqrtsd xmm1, xmm0
+    sqrtsd_xmm1_xmm0: bin(BinOp::SqrtF, reg(XMM1), reg(XMM0), None) => [0xF2, 0x0F, 0x51, 0xC8];
+    /// sqrtsd xmm9, xmm2
+    sqrtsd_xmm9_xmm2: bin(BinOp::SqrtF, reg(XMM9), reg(XMM2), None) => [0xF2, 0x44, 0x0F, 0x51, 0xCA];
+    /// sqrtsd xmm2, xmm15
+    sqrtsd_xmm2_xmm15: bin(BinOp::SqrtF, reg(XMM2), reg(XMM15), None) => [0xF2, 0x41, 0x0F, 0x51, 0xD7];
+    /// sqrtsd xmm0, xmm0
+    sqrtsd_xmm0_xmm0: bin(BinOp::SqrtF, reg(XMM0), reg(XMM0), None) => [0xF2, 0x0F, 0x51, 0xC0];
+    /// sqrtsd xmm0, qword ptr [rip+my_data]
+    sqrtsd_xmm0_qword_rip_plus_my_data: bin(BinOp::SqrtF, reg(XMM0), mem(MemAddress::symbol("my_data")), None) => [0xF2, 0x0F, 0x51, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// sqrtsd xmm3, qword ptr [rbx+8]
+    sqrtsd_xmm3_qword_rbx_plus_8: bin(BinOp::SqrtF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0xF2, 0x0F, 0x51, 0x5B, 0x08];
+    /// sqrtsd xmm3, qword ptr [r9]
+    sqrtsd_xmm3_qword_r9: bin(BinOp::SqrtF, reg(XMM3), mem(at(R9)), None) => [0xF2, 0x41, 0x0F, 0x51, 0x19];
+    /// sqrtss xmm1, xmm0
+    sqrtss_xmm1_xmm0: bin(BinOp::SqrtF, reg(XMM1), reg(XMM0), DWORD) => [0xF3, 0x0F, 0x51, 0xC8];
+    /// sqrtss xmm9, xmm2
+    sqrtss_xmm9_xmm2: bin(BinOp::SqrtF, reg(XMM9), reg(XMM2), DWORD) => [0xF3, 0x44, 0x0F, 0x51, 0xCA];
+    /// sqrtss xmm2, xmm15
+    sqrtss_xmm2_xmm15: bin(BinOp::SqrtF, reg(XMM2), reg(XMM15), DWORD) => [0xF3, 0x41, 0x0F, 0x51, 0xD7];
+    /// sqrtss xmm0, xmm0
+    sqrtss_xmm0_xmm0: bin(BinOp::SqrtF, reg(XMM0), reg(XMM0), DWORD) => [0xF3, 0x0F, 0x51, 0xC0];
+    /// sqrtss xmm0, dword ptr [rip+my_data]
+    sqrtss_xmm0_dword_rip_plus_my_data: bin(BinOp::SqrtF, reg(XMM0), mem(MemAddress::symbol("my_data")), DWORD) => [0xF3, 0x0F, 0x51, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// sqrtss xmm3, dword ptr [rbx+8]
+    sqrtss_xmm3_dword_rbx_plus_8: bin(BinOp::SqrtF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0xF3, 0x0F, 0x51, 0x5B, 0x08];
+    /// sqrtss xmm3, dword ptr [r9]
+    sqrtss_xmm3_dword_r9: bin(BinOp::SqrtF, reg(XMM3), mem(at(R9)), DWORD) => [0xF3, 0x41, 0x0F, 0x51, 0x19];
 }

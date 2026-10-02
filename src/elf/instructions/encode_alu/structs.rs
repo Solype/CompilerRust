@@ -209,6 +209,20 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
             }
         }
 
+        BinOp::MinF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x5D, },
+                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x5D, }
+            }
+        }
+
+        BinOp::MaxF => {
+            match size {
+                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x5F, },
+                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x5F, }
+            }
+        }
+
         // --------------------------------------------------
         // SSE scalar single
         // --------------------------------------------------

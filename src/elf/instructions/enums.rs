@@ -99,6 +99,11 @@ pub enum BinOp {
     AndF,
     /// sqrtsd (U64) / sqrtss (U32): dst = sqrt(src), scalar
     SqrtF,
+    /// minsd (U64) / minss (U32): dst = min(dst, src). Not commutative: if
+    /// either is NaN, or both are zero, the result is src
+    MinF,
+    /// maxsd (U64) / maxss (U32): dst = max(dst, src), same NaN / zero rule
+    MaxF,
 }
 
 #[derive(Debug, Clone, Copy)]

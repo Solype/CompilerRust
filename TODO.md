@@ -67,7 +67,10 @@ SSE scalar floats (ss if U32, sd otherwise):
 [X] LoadF / StoreF (movss / movsd)
 [X] AddF / SubF / MulF / DivF
 [X] ComiF / UcomiF
-[X] Cvtsi2sd (integer -> double)
+[X] XorF / AndF (xorpd / andpd: sign flip, absolute value)
+[X] SqrtF / MinF / MaxF
+[X] MovF (movapd / movaps: XMM copy, aligned load and store)
+[X] Every int <-> float conversion, Movq / Movd (ConvOp)
 
 Control:
 [X] Jmp / Call / Ret / IRet
@@ -102,8 +105,8 @@ Atomics:
 [X] Cmpxchg
 
 Tests:
-[X] 1207 unit tests (src/elf/instructions/encode_tests/), reference bytes
-    produced by GNU as, one family per file
+[X] 1225 tests: 1214 encoding tests (src/elf/instructions/encode_tests/),
+    reference bytes produced by GNU as, one family per file
 [X] Relocation tests (offset, type, addend) compared with readelf
 [X] Symbol table tests (src/elf/file/symbol_tests.rs)
 [X] Fixed the 199 wrong encodings found (see TEST_REPORT.md)
@@ -140,13 +143,17 @@ Backend:
 [X] Movzx / Movsx into a 64-bit destination (REX.W)
 [X] Separate source/destination sizes (Extend family: src_size + size)
 [ ] Handle distinct memory sizes
-[ ] Separate Label and Sym
+[ ] Separate Label and Sym (before the code generator: changes its IR)
 [ ] Review the dst/src order of StoreF (the register is in dst)
-[ ] Common scalar SSE:
+[ ] .bss: reserve space without writing bytes (NoBits exists)
+[ ] Resolve local jmp / jcc in place instead of leaving a relocation
+    to ld (smaller .o, makes rel8 short jumps possible)
+[X] Common scalar SSE:
     [X] Xorps / Xorpd (zeroing, sign flip; BinOp::XorF, pd if U64, ps otherwise)
     [X] Andpd / Andps (absolute value; BinOp::AndF, pd if U64, ps otherwise)
     [X] Movq / Movd (GPR <-> XMM, bitcast and passing constants, in ConvOp)
-    [ ] Movaps / Movapd (XMM -> XMM copy)
+    [X] Movaps / Movapd (BinOp::MovF, pd if U64, ps otherwise; copy,
+        aligned load, aligned store)
     [X] Sqrtsd / Sqrtss (BinOp::SqrtF, sd if U64, ss otherwise)
     [X] Minsd / Maxsd / Minss / Maxss (BinOp::MinF / MaxF, sd if U64, ss otherwise)
 [ ] Add automated tests:
@@ -155,6 +162,8 @@ Backend:
     [ ] ndisasm
     [ ] decoding
     [ ] panic! on immediates outside i32 (emit_imm_sx32)
+    [ ] Keep the test generator (gen_encode_tests.py) in the repository:
+        it only exists in a temporary session folder
 
 Front-end:
 [ ] Lexer:
@@ -187,7 +196,8 @@ TODO: LATER (not needed by the compiler)
 [ ] Add segment registers
 [ ] Add control/debug registers
 
-[ ] Short jumps (jmp / jcc rel8) when the target is close
+[ ] Short jumps (jmp / jcc rel8) when the target is close (needs local
+    jumps resolved in place, see above)
 [ ] Ret imm16
 [ ] Int3 (short form CC instead of CD 03)
 [ ] Endbr64 (if the target enables CET / IBT)
@@ -196,8 +206,6 @@ TODO: LATER (not needed by the compiler)
     [ ] Remove the useless REX.W from push / pop
     [X] Remove the superfluous REX 0x40 from movzx esi, al
     [ ] Short accumulator form (05 / A9 instead of 81 / F7)
-
-[ ] Keep the test generator (gen_encode_tests.py) in the repository
 
 [ ] Add minimal SSE2:
     [ ] Movups

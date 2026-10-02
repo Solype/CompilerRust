@@ -336,4 +336,40 @@ cases! {
     maxss_xmm3_dword_rbx_plus_8: bin(BinOp::MaxF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0xF3, 0x0F, 0x5F, 0x5B, 0x08];
     /// maxss xmm3, dword ptr [r9]
     maxss_xmm3_dword_r9: bin(BinOp::MaxF, reg(XMM3), mem(at(R9)), DWORD) => [0xF3, 0x41, 0x0F, 0x5F, 0x19];
+    /// movapd xmm1, xmm0
+    movapd_xmm1_xmm0: bin(BinOp::MovF, reg(XMM1), reg(XMM0), None) => [0x66, 0x0F, 0x28, 0xC8];
+    /// movapd xmm9, xmm2
+    movapd_xmm9_xmm2: bin(BinOp::MovF, reg(XMM9), reg(XMM2), None) => [0x66, 0x44, 0x0F, 0x28, 0xCA];
+    /// movapd xmm2, xmm15
+    movapd_xmm2_xmm15: bin(BinOp::MovF, reg(XMM2), reg(XMM15), None) => [0x66, 0x41, 0x0F, 0x28, 0xD7];
+    /// movapd xmm0, xmmword ptr [rip+my_data]
+    movapd_xmm0_xmmword_rip_plus_my_data: bin(BinOp::MovF, reg(XMM0), mem(MemAddress::symbol("my_data")), None) => [0x66, 0x0F, 0x28, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// movapd xmm3, xmmword ptr [rbx+16]
+    movapd_xmm3_xmmword_rbx_plus_16: bin(BinOp::MovF, reg(XMM3), mem(at(RBX).disp(16)), None) => [0x66, 0x0F, 0x28, 0x5B, 0x10];
+    /// movapd xmm3, xmmword ptr [r9]
+    movapd_xmm3_xmmword_r9: bin(BinOp::MovF, reg(XMM3), mem(at(R9)), None) => [0x66, 0x41, 0x0F, 0x28, 0x19];
+    /// movapd xmmword ptr [rip+my_data], xmm0
+    movapd_xmmword_rip_plus_my_data_xmm0: bin(BinOp::MovF, mem(MemAddress::symbol("my_data")), reg(XMM0), None) => [0x66, 0x0F, 0x29, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// movapd xmmword ptr [rbx+16], xmm10
+    movapd_xmmword_rbx_plus_16_xmm10: bin(BinOp::MovF, mem(at(RBX).disp(16)), reg(XMM10), None) => [0x66, 0x44, 0x0F, 0x29, 0x53, 0x10];
+    /// movapd xmmword ptr [r9], xmm3
+    movapd_xmmword_r9_xmm3: bin(BinOp::MovF, mem(at(R9)), reg(XMM3), None) => [0x66, 0x41, 0x0F, 0x29, 0x19];
+    /// movaps xmm1, xmm0
+    movaps_xmm1_xmm0: bin(BinOp::MovF, reg(XMM1), reg(XMM0), DWORD) => [0x0F, 0x28, 0xC8];
+    /// movaps xmm9, xmm2
+    movaps_xmm9_xmm2: bin(BinOp::MovF, reg(XMM9), reg(XMM2), DWORD) => [0x44, 0x0F, 0x28, 0xCA];
+    /// movaps xmm2, xmm15
+    movaps_xmm2_xmm15: bin(BinOp::MovF, reg(XMM2), reg(XMM15), DWORD) => [0x41, 0x0F, 0x28, 0xD7];
+    /// movaps xmm0, xmmword ptr [rip+my_data]
+    movaps_xmm0_xmmword_rip_plus_my_data: bin(BinOp::MovF, reg(XMM0), mem(MemAddress::symbol("my_data")), DWORD) => [0x0F, 0x28, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// movaps xmm3, xmmword ptr [rbx+16]
+    movaps_xmm3_xmmword_rbx_plus_16: bin(BinOp::MovF, reg(XMM3), mem(at(RBX).disp(16)), DWORD) => [0x0F, 0x28, 0x5B, 0x10];
+    /// movaps xmm3, xmmword ptr [r9]
+    movaps_xmm3_xmmword_r9: bin(BinOp::MovF, reg(XMM3), mem(at(R9)), DWORD) => [0x41, 0x0F, 0x28, 0x19];
+    /// movaps xmmword ptr [rip+my_data], xmm0
+    movaps_xmmword_rip_plus_my_data_xmm0: bin(BinOp::MovF, mem(MemAddress::symbol("my_data")), reg(XMM0), DWORD) => [0x0F, 0x29, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// movaps xmmword ptr [rbx+16], xmm10
+    movaps_xmmword_rbx_plus_16_xmm10: bin(BinOp::MovF, mem(at(RBX).disp(16)), reg(XMM10), DWORD) => [0x44, 0x0F, 0x29, 0x53, 0x10];
+    /// movaps xmmword ptr [r9], xmm3
+    movaps_xmmword_r9_xmm3: bin(BinOp::MovF, mem(at(R9)), reg(XMM3), DWORD) => [0x41, 0x0F, 0x29, 0x19];
 }

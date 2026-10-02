@@ -1,6 +1,6 @@
 # Backend gaps
 
-State of the backend on October 2, 2026 (1201 tests passing), checked against the code rather than
+State of the backend on October 2, 2026 (1225 tests passing), checked against the code rather than
 only against `TODO.md`.
 
 **In short:** the instruction encoder is nearly complete for a compiler. What is mostly missing is
@@ -52,6 +52,7 @@ the symbol table.
 ## 3. Tests and tooling
 
 - Test the `panic!` of `emit_imm_sx32` (immediate outside i32).
+- Missing test tooling listed in `TODO.md`: `ndisasm`, decoding.
 - **Put `gen_encode_tests.py` in the repository**: it only exists in a temporary session folder,
   the one part of the project that can be lost.
 
@@ -60,7 +61,8 @@ the symbol table.
 - **Integers**: full arithmetic, `imul` / `idiv` / `cqo`, shifts, `setcc` / `cmovcc`,
   `movzx` / `movsx` / `movsxd`.
 - **Floats**: `sd` / `ss` arithmetic, `sqrt`, `min` / `max`, negation (`xorpd`), `fabs` (`andpd`),
-  comparisons (`comisd` / `ucomisd`), every int ↔ float conversion, `movd` / `movq`.
+  register copy and aligned 16-byte load / store (`movapd` / `movaps`), comparisons
+  (`comisd` / `ucomisd`), every int ↔ float conversion, `movd` / `movq`.
 - **Control**: direct and indirect `call` / `jmp`, libc calls in PIE (PLT32), `syscall`.
 - **ELF**: symbols resolved when writing (automatic externals, globals defined later), relocations
   matching GNU as.
@@ -68,7 +70,7 @@ the symbol table.
 ## 5. Later, not needed
 
 Short encodings (`05` / `A9`, `int3`, `REX.W` of `push` / `pop`), packed SSE and AVX, BMI,
-`popcnt` / `lzcnt` / `tzcnt` / `bswap`, fences, x87, `Movaps` / `Movapd`.
+`popcnt` / `lzcnt` / `tzcnt` / `bswap`, fences, x87.
 
 ## Recommended order
 

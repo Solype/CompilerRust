@@ -122,7 +122,7 @@ Backend :
     [X] call [rip+sym]              (relocation PC32)
     [ ] call [rip+sym@GOTPCREL]     (nouveau RelocKind, pour la libc dynamique / PIE)
 [ ] Corrections d'encodage repérées :
-    [ ] IRet encode CF (iretd) : en 64 bits, il faut 48 CF (iretq)
+    [X] IRet : 48 CF (iretq) en 64 bits, CF (iretd) en 32 bits
     [X] [disp32] absolu ([sym], [base+sym]) : R_X86_64_32S comme GNU as
     [X] add/sub/... r64, sym : émettait un imm64 (4 octets de trop), imm32 + 32S
     [X] Symboles des relocations résolus à l'écriture (resolve_relocations) :

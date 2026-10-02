@@ -7,7 +7,7 @@ use super::{
 };
 
 impl CtrlOp {
-    pub(super) fn encode(self, target: &Operand) -> EncodeInformation {
+    pub(super) fn encode(self, target: &Operand, size: Size) -> EncodeInformation {
         match self {
             // =====================================
             // unconditional
@@ -25,7 +25,11 @@ impl CtrlOp {
                 relocations: vec![],
             },
             CtrlOp::IRet => EncodeInformation {
-                data: vec![0xCF],
+                data: match size {
+                    Size::U32 => vec![0xCF],
+                    Size::U64 => vec![0x48, 0xCF],
+                    _ => unimplemented!("does not support IRet for U8 and U16"),
+                },
                 relocations: vec![],
             },
             // =====================================

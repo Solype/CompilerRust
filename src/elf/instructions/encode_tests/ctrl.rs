@@ -42,8 +42,8 @@ cases! {
     call_target: call("target") => [0xE8, 0x00, 0x00, 0x00, 0x00];
     /// ret
     ret_insn: ret() => [0xC3];
-    /// iret
-    iret_insn: iret() => [0xCF];
+    /// iretq
+    iretq_insn: iret() => [0x48, 0xCF];
     /// loop target
     loop_target: ctrl(CtrlOp::Loop, "target") => [0xE2, 0x00];
     /// loope target

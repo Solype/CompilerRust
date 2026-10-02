@@ -138,7 +138,6 @@ Backend:
 [X] Movzx / Movsx into a 64-bit destination (REX.W)
 [X] Separate source/destination sizes (Extend family: src_size + size)
 [ ] Handle distinct memory sizes
-[ ] Add ImmediateFloat(f64) (float constants in .data/.rodata)
 [ ] Separate Label and Sym
 [ ] Review the dst/src order of StoreF (the register is in dst)
 [ ] Common scalar SSE:

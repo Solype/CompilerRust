@@ -20,10 +20,24 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             (4, 4) => 1,   // R_386_32
 
             // ===== x86_64 =====
+            (8, 1) => 14,  // R_X86_64_8
+            (8, 2) => 12,  // R_X86_64_16
             (8, 4) => 10,  // R_X86_64_32
             (8, 8) => 1,   // R_X86_64_64
 
             _ => panic!("Unsupported absolute relocation size"),
+        }
+    }
+
+    fn get_abs_signed_reloc_type(&self, reloc_size: usize) -> u32 {
+        match (size_of::<T>(), reloc_size) {
+            // ===== x86 =====
+            (4, 4) => 1,   // R_386_32 (pas d'extension en 32 bits)
+
+            // ===== x86_64 =====
+            (8, 4) => 11,  // R_X86_64_32S
+
+            _ => panic!("Unsupported signed absolute relocation size"),
         }
     }
 
@@ -42,6 +56,18 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         }
     }
 
+    fn get_plt_reloc_type(&self, reloc_size: usize) -> u32 {
+        match (size_of::<T>(), reloc_size) {
+            // ===== x86 =====
+            (4, 4) => 2,  // R_386_PC32 (GNU as n'utilise pas la PLT hors PIC)
+
+            // ===== x86_64 =====
+            (8, 4) => 4,  // R_X86_64_PLT32
+
+            _ => panic!("Unsupported PLT relocation size"),
+        }
+    }
+
     fn add_relocation(
         &mut self,
         encode : &mut EncodeInformation,
@@ -52,7 +78,9 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     ) {
         let r_type = match info.kind {
             instructions::enums::RelocKind::Absolute => self.get_abs_reloc_type(info.size as usize),
+            instructions::enums::RelocKind::AbsoluteSigned => self.get_abs_signed_reloc_type(info.size as usize),
             instructions::enums::RelocKind::Relative => self.get_rel_reloc_type(info.size as usize),
+            instructions::enums::RelocKind::Plt32 => self.get_plt_reloc_type(info.size as usize),
         };
 
         let r_info = ElfRel::pack_info(sym_ndx as u32, r_type);

@@ -353,11 +353,16 @@ pub struct Relocation {
     pub addend: i32,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum RelocKind {
     Relative,
     #[default]
     Absolute,
+    /// Adresse absolue sur 32 bits étendue avec le signe par le CPU
+    /// (disp32 du ModRM, imm32 d'une opération 64 bits, push imm32)
+    AbsoluteSigned,
+    /// Branchement rel32 vers une fonction, passe par la PLT si elle est externe
+    Plt32,
 }
 
 pub const MEMNODISP: u8 = 0b00;

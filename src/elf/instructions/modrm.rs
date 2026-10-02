@@ -55,7 +55,7 @@ fn get_disp(
                 sym: sym.clone(),
                 offset: data_len,
                 size: 4,
-                kind: RelocKind::Absolute,
+                kind: RelocKind::AbsoluteSigned,
                 addend: 0,
             });
 
@@ -112,7 +112,7 @@ fn encode_absolute(
                 sym: sym.clone(),
                 offset,
                 size: 4,
-                kind: RelocKind::Absolute,
+                kind: RelocKind::AbsoluteSigned,
                 addend: 0,
             });
         }

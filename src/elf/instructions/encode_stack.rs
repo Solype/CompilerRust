@@ -156,7 +156,7 @@ pub(super) fn encode_stack(op: StackOp, value: &Operand, size: Size) -> EncodeIn
                     sym: sym.clone(),
                     offset,
                     size: 4,
-                    kind: RelocKind::Absolute,
+                    kind: RelocKind::AbsoluteSigned,
                     addend: 0,
                 });
 

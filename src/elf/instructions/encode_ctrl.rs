@@ -79,7 +79,7 @@ fn encode_rel32_with_prefix(prefix: Option<u8>, opcode: u8, target: &Operand) ->
                     sym: sym.clone(),
                     offset,
                     size: 4,
-                    kind: RelocKind::Relative,
+                    kind: RelocKind::Plt32,
                     addend: -4,
                 }],
             }

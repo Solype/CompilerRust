@@ -97,6 +97,8 @@ pub enum BinOp {
     /// andpd (U64) / andps (U32): bitwise AND on the whole 128-bit register,
     /// a memory operand is 16 bytes and must be 16-byte aligned
     AndF,
+    /// sqrtsd (U64) / sqrtss (U32): dst = sqrt(src), scalar
+    SqrtF,
 }
 
 #[derive(Debug, Clone, Copy)]

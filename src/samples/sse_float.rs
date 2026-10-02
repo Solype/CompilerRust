@@ -26,6 +26,8 @@ pub fn sse_float() -> Vec<Instruction> {
             bin(BinOp::XorF,   reg(XMM7), f(), size),
             bin(BinOp::AndF,   reg(XMM8), reg(XMM7), size),
             bin(BinOp::AndF,   reg(XMM8), f(), size),
+            bin(BinOp::SqrtF,  reg(XMM9), reg(XMM8), size),
+            bin(BinOp::SqrtF,  reg(XMM9), f(), size),
         ]);
     }
     code.push(ret());

@@ -3,8 +3,8 @@ use std::vec;
 use super::{
     encode_alu::encode_binary, encode_bitop::encode_bit, encode_bitscan::encode_bitscan,
     encode_complexbin::encode_complex_binary, encode_cond_mov::encode_cmovcc,
-    encode_conversion::encode_conversion, encode_extend::encode_extend,
-    encode_lea::encode_lea, encode_prefix::encode_prefix, encode_setcc::encode_setcc,
+    encode_conversion::encode_conversion, encode_extend::encode_extend, encode_lea::encode_lea,
+    encode_prefix::encode_prefix, encode_setcc::encode_setcc,
     encode_shift_rotate::encode_shift_rotate, encode_stack::encode_stack, encode_str::encode_str,
     encode_unary::encode_unary, enums::*, struct_encode_information::*,
 };
@@ -15,7 +15,7 @@ impl Instruction {
             Instruction::Binary { op, dst, src, size } => {
                 encode_binary(*op, dst, src, size.unwrap_or(default_size))
             }
-            Instruction::Ctrl { op, target } => op.encode(target),
+            Instruction::Ctrl { op, target } => op.encode(target, default_size),
             Instruction::Unary { op, dst, size } => {
                 encode_unary(*op, dst, size.unwrap_or(default_size))
             }
@@ -50,9 +50,13 @@ impl Instruction {
             Instruction::Convert { op, dst, src, size } => {
                 encode_conversion(*op, dst, src, size.unwrap_or(default_size))
             }
-            Instruction::Extend { op, dst, src, src_size, size } => {
-                encode_extend(*op, dst, src, *src_size, size.unwrap_or(default_size))
-            }
+            Instruction::Extend {
+                op,
+                dst,
+                src,
+                src_size,
+                size,
+            } => encode_extend(*op, dst, src, *src_size, size.unwrap_or(default_size)),
             Instruction::LocalSym(_) => EncodeInformation::default(),
             Instruction::Sys { op } => match op {
                 SysOp::Int(n) => EncodeInformation {

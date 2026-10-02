@@ -63,8 +63,6 @@ pub enum ConditionCode {
 pub enum BinOp {
     // Data movement
     Mov,
-    Movzx,
-    Movsx,
     Xchg,
 
     // Arithmetic
@@ -218,9 +216,24 @@ pub enum Prefix {
     Gs,
 }
 
+/// Extension d'un entier vers un registre plus large
+#[derive(Debug, Clone, Copy)]
+pub enum ExtendOp {
+    Movsx,
+    Movsxd,
+    Movzx,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum ConvOp {
+    Cvtsd2si,
+    Cvtsd2ss,
     Cvtsi2sd,
+    Cvtsi2ss,
+    Cvtss2sd,
+    Cvtss2si,
+    Cvttsd2si,
+    Cvttss2si,
 }
 
 #[derive(Debug)]
@@ -232,22 +245,23 @@ pub enum Instruction {
         size: Option<Size>,
     },
 
+    Bit {
+        op: BitOp,
+        dst: Operand,
+        src: Operand,
+        size: Option<Size>,
+    },
+
+    BitScan {
+        op: BitScanOp,
+        dst: Register,
+        src: Operand,
+        size: Option<Size>,
+    },
+
     CMovCC {
         cc: ConditionCode,
         dst: Register,
-        src: Operand,
-        size: Option<Size>,
-    },
-
-    Lea {
-        src: Operand,
-        dst: Register,
-        size: Option<Size>,
-    },
-
-    Shift {
-        op: ShiftOp,
-        dst: Operand,
         src: Operand,
         size: Option<Size>,
     },
@@ -260,32 +274,8 @@ pub enum Instruction {
         size: Option<Size>,
     },
 
-    Unary {
-        op: UnaryOp,
-        dst: Operand,
-        size: Option<Size>,
-    },
-
-    Stack {
-        op: StackOp,
-        value: Operand,
-        size: Option<Size>,
-    },
-
-    Bit {
-        op: BitOp,
-        dst: Operand,
-        src: Operand,
-        size: Option<Size>,
-    },
-
-    SetCC {
-        op: ConditionCode,
-        dst: Operand,
-    },
-
-    BitScan {
-        op: BitScanOp,
+    Convert {
+        op: ConvOp,
         dst: Register,
         src: Operand,
         size: Option<Size>,
@@ -296,15 +286,50 @@ pub enum Instruction {
         target: Operand,
     },
 
-    String {
-        op: StringOp,
+    /// `src_size` est la taille de la source, `size` celle de la destination
+    Extend {
+        op: ExtendOp,
+        dst: Register,
+        src: Operand,
+        src_size: Option<Size>,
         size: Option<Size>,
     },
 
-    Convert {
-        op: ConvOp,
-        dst: Register,
+    Lea {
         src: Operand,
+        dst: Register,
+        size: Option<Size>,
+    },
+
+    LocalSym(String),
+
+    Nop(u8),
+
+    Prefix {
+        prefix: Vec<Prefix>,
+        ins: Box<Instruction>,
+    },
+
+    SetCC {
+        op: ConditionCode,
+        dst: Operand,
+    },
+
+    Shift {
+        op: ShiftOp,
+        dst: Operand,
+        src: Operand,
+        size: Option<Size>,
+    },
+
+    Stack {
+        op: StackOp,
+        value: Operand,
+        size: Option<Size>,
+    },
+
+    String {
+        op: StringOp,
         size: Option<Size>,
     },
 
@@ -312,14 +337,11 @@ pub enum Instruction {
         op: SysOp,
     },
 
-    Prefix {
-        prefix: Vec<Prefix>,
-        ins: Box<Instruction>,
+    Unary {
+        op: UnaryOp,
+        dst: Operand,
+        size: Option<Size>,
     },
-
-    Nop(u8),
-
-    LocalSym(String),
 }
 
 #[derive(Debug, Clone, Default)]

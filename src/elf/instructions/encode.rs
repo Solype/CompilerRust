@@ -3,7 +3,7 @@ use std::vec;
 use super::{
     encode_alu::encode_binary, encode_bitop::encode_bit, encode_bitscan::encode_bitscan,
     encode_complexbin::encode_complex_binary, encode_cond_mov::encode_cmovcc,
-    encode_conversion::encode_conversion,
+    encode_conversion::encode_conversion, encode_extend::encode_extend,
     encode_lea::encode_lea, encode_prefix::encode_prefix, encode_setcc::encode_setcc,
     encode_shift_rotate::encode_shift_rotate, encode_stack::encode_stack, encode_str::encode_str,
     encode_unary::encode_unary, enums::*, struct_encode_information::*,
@@ -49,6 +49,9 @@ impl Instruction {
             Instruction::String { op, size } => encode_str(op, size.unwrap_or(default_size)),
             Instruction::Convert { op, dst, src, size } => {
                 encode_conversion(*op, dst, src, size.unwrap_or(default_size))
+            }
+            Instruction::Extend { op, dst, src, src_size, size } => {
+                encode_extend(*op, dst, src, *src_size, size.unwrap_or(default_size))
             }
             Instruction::LocalSym(_) => EncodeInformation::default(),
             Instruction::Sys { op } => match op {

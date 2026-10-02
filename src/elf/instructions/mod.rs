@@ -24,5 +24,6 @@ mod encode_xadd_cmp;
 mod utils;
 mod encode_alu;
 mod encode_conversion;
+mod encode_extend;
 #[cfg(test)]
 mod encode_tests;

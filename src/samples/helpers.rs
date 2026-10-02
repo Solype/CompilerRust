@@ -84,6 +84,11 @@ pub fn convert(op: ConvOp, dst: Register, src: Operand, size: Option<Size>) -> I
     Instruction::Convert { op, dst, src, size }
 }
 
+/// `src_size` est la taille de la source, `size` celle de la destination
+pub fn extend(op: ExtendOp, dst: Register, src: Operand, src_size: Option<Size>, size: Option<Size>) -> Instruction {
+    Instruction::Extend { op, dst, src, src_size, size }
+}
+
 pub fn shift(op: ShiftOp, dst: Operand, src: Operand, size: Option<Size>) -> Instruction {
     Instruction::Shift { op, dst, src, size }
 }

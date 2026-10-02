@@ -22,11 +22,6 @@ pub(super) enum BinaryEncoding {
         opcode_imm: u8,
     },
 
-    MovExtend {
-        prefix: u8,
-        opcode: u8,
-    },
-
     Xchg {
         opcode: u8,
     },
@@ -47,19 +42,6 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
             opcode_rm_r: if size == Size::U8 { 0x88 } else { 0x89 },
             opcode_r_rm: if size == Size::U8 { 0x8A } else { 0x8B },
             opcode_imm:  if size == Size::U8 { 0xC6 } else { 0xC7 },
-        },
-
-        // --------------------------------------------------
-        // MOVZX / MOVSX
-        // --------------------------------------------------
-        BinOp::Movzx => BinaryEncoding::MovExtend {
-            prefix: 0x0F,
-            opcode: if size == Size::U8 { 0xB6 } else { 0xB7 },
-        },
-
-        BinOp::Movsx => BinaryEncoding::MovExtend {
-            prefix: 0x0F,
-            opcode: if size == Size::U8 { 0xBE } else { 0xBF },
         },
 
         // --------------------------------------------------

@@ -79,32 +79,6 @@ where
 }
 
 
-pub fn shift_r_info<T>(info: T, inserted_at: usize) -> T
-where T: UsizeCompatible
-{
-    let raw = T::to_usize(&info);
-
-    if size_of::<T>() == 4 {
-        let sym = raw >> 8;
-        let typ = raw & 0xff;
-
-        if sym >= inserted_at {
-            T::from_usize(((sym + 1) << 8) | typ)
-        } else {
-            info
-        }
-    } else {
-        let sym = raw >> 32;
-        let typ = raw & 0xffffffff;
-
-        if sym >= inserted_at {
-            T::from_usize(((sym + 1) << 32) | typ)
-        } else {
-            info
-        }
-    }
-}
-
 impl<T> ElfRel<T>
 where
     T: Copy + ElfWritable,

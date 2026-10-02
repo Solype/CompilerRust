@@ -28,7 +28,18 @@ where T: Copy + ElfWritable + Debug + Default,
     pub shstrtab: Strtab,
     pub symtab: SymbolCollection<T>,
     pub rels: HashMap<usize, Vec<ElfRel<T>>>,
-    pub relas: HashMap<usize, Vec<ElfRela<T>>>
+    pub relas: HashMap<usize, Vec<ElfRela<T>>>,
+    pub(super) pending_relocs: Vec<PendingReloc>,
+}
+
+/// Relocation émise à l'encodage, dont le symbole n'est pas encore résolu
+#[derive(Debug, Clone)]
+pub(super) struct PendingReloc {
+    pub section: usize,
+    pub offset: usize,
+    pub sym: String,
+    pub r_type: u32,
+    pub addend: i32,
 }
 
 #[allow(dead_code)]
@@ -51,6 +62,7 @@ where
             shstrtab: Strtab::default(),
             rels: HashMap::<usize, Vec<ElfRel<T>>>::default(),
             relas: HashMap::<usize, Vec<ElfRela<T>>>::default(),
+            pending_relocs: Vec::new(),
         }
     }
 }

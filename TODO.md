@@ -100,9 +100,10 @@ Atomiques :
 [X] Cmpxchg
 
 Tests :
-[X] 1114 tests unitaires (src/elf/instructions/encode_tests/), octets de
+[X] 1119 tests unitaires (src/elf/instructions/encode_tests/), octets de
     référence produits par GNU as, une famille par fichier
 [X] Tests de relocations (offset, type, addend) comparés à readelf
+[X] Tests de la table des symboles (src/elf/file/symbol_tests.rs)
 [X] Correction des 199 encodages faux trouvés (voir RAPPORT_TESTS.md)
 
 Organisation :
@@ -124,9 +125,10 @@ Backend :
     [ ] IRet encode CF (iretd) : en 64 bits, il faut 48 CF (iretq)
     [X] [disp32] absolu ([sym], [base+sym]) : R_X86_64_32S comme GNU as
     [X] add/sub/... r64, sym : émettait un imm64 (4 octets de trop), imm32 + 32S
-    [ ] Symbole externe non déclaré (sans declare_non_defined_sym) : ajouté
-        en StBind::Local + SHN_UNDEF, ld le linke sans erreur mais l'appel
-        segfault ; doit être Global (encode_single_instruction)
+    [X] Symboles des relocations résolus à l'écriture (resolve_relocations) :
+        un nom jamais défini devient GLOBAL UND (il était LOCAL UND : segfault),
+        un global appelé avant sa définition n'est plus rangé parmi les locaux
+    [X] Addend 32 bits (rel) écrit sur la taille du champ (loop rel8 paniquait)
 [X] Conversions int <-> float (une ligne par opcode dans ConvOp) :
     [X] Cvtsi2sd
     [X] Cvtsi2ss

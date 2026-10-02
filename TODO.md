@@ -22,6 +22,8 @@ ELF:
 [X] ELF headers (ehdr, shdr, phdr), in 32 and 64 bits
 [X] Strtab / shstrtab
 [X] Sections with alignment padding
+[X] Per-object alignment (add_symbol_to_section_raw pads to `align`,
+    natural_alignment as default, raises sh_addralign)
 [X] Global symbols (functions and data)
 [X] Undefined symbols (external, resolved at link time)
 [X] Local symbols (labels)
@@ -100,7 +102,7 @@ Atomics:
 [X] Cmpxchg
 
 Tests:
-[X] 1201 unit tests (src/elf/instructions/encode_tests/), reference bytes
+[X] 1207 unit tests (src/elf/instructions/encode_tests/), reference bytes
     produced by GNU as, one family per file
 [X] Relocation tests (offset, type, addend) compared with readelf
 [X] Symbol table tests (src/elf/file/symbol_tests.rs)

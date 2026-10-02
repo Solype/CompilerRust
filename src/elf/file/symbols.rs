@@ -11,14 +11,29 @@ use super::super::{
 
 use super::{
     ElfFile,
-    SymbolType
+    SymbolType,
+    packing::align_up,
 };
+
+use super::super::shdr::ShFlags;
+
+/// Default alignment of an object: its size rounded up to a power of two,
+/// capped at 16 (f64 -> 8, 16-byte SSE mask -> 16). Over-aligning is
+/// harmless; pass 1 for strings to avoid the padding.
+pub fn natural_alignment(size: usize) -> usize {
+    size.max(1).next_power_of_two().min(16)
+}
 
 impl <T> ElfFile <T>
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
-    pub fn add_symbol_to_section_raw(&mut self, section_ndx: usize, name: String, data: &Vec<u8>, info: u8, other: u8)
+    /// Adds `data` as a symbol placed at an offset multiple of `align` (a power
+    /// of two), padding the section before it. The section alignment is raised
+    /// to `align` so the final address is aligned too.
+    pub fn add_symbol_to_section_raw(&mut self, section_ndx: usize, name: String, data: &Vec<u8>, info: u8, other: u8, align: usize)
     {
+        self.align_section(section_ndx, align);
+
         let name_ndx = self.strtab.name(&name);
         println!("adding symbol : {}, ndx in strtab: {}", name, name_ndx);
 
@@ -31,6 +46,26 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             st_other: other,
         });
         self.sections[section_ndx].add_data(&data);
+    }
+
+    fn align_section(&mut self, section_ndx: usize, align: usize)
+    {
+        if !align.is_power_of_two() {
+            panic!("alignment {} is not a power of two", align);
+        }
+
+        let shdr = &mut self.shdrs[section_ndx];
+        if shdr.sh_addralign.to_usize() < align {
+            shdr.sh_addralign = T::from_usize(align);
+        }
+
+        // int3 between objects of an executable section, zeros elsewhere
+        let exec = shdr.sh_flags.to_usize() & ShFlags::ExecInstr as usize != 0;
+        let fill = if exec { 0xCC } else { 0x00 };
+
+        let len = self.sections[section_ndx].get_data().len();
+        let padding = align_up(len, align) - len;
+        self.sections[section_ndx].add_data(&vec![fill; padding]);
     }
 
     pub fn declare_non_defined_sym(&mut self, name: &String, ty: SymbolType)

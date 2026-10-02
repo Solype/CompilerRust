@@ -83,19 +83,36 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         instr: &instructions::enums::Instruction,
         sec_ndx: usize,
     ){
-        let mut encode = instr.encode(Size::from(size_of::<T>()));
+        let encode = instr.encode(Size::from(size_of::<T>()));
+        self.add_bytes_with_relocations(sec_ndx, encode.data, &encode.relocations);
+    }
 
+    /// Appends `data` to the section; each relocation's `offset` is relative
+    /// to the start of `data`. Used for both instructions and data objects.
+    pub(super) fn add_bytes_with_relocations(
+        &mut self,
+        sec_ndx: usize,
+        mut data: Vec<u8>,
+        relocations: &[Relocation],
+    ){
         let base_offset = self.sections[sec_ndx].get_data().len();
 
         // The symbol is resolved when writing (resolve_relocations), once
         // we know whether it is local, global or external
-        for info in &encode.relocations {
+        for info in relocations {
+            let size = info.size as usize;
+            if info.offset + size > data.len() {
+                panic!(
+                    "relocation of {} at offset {} ({} bytes) goes past the end of the data ({} bytes)",
+                    info.sym, info.offset, size, data.len()
+                );
+            }
+
             // In 32 bits (rel), the addend is written into the code, on the
             // size of the relocated field
             if size_of::<T>() == 4 {
-                let size = info.size as usize;
                 let bytes = info.addend.to_le_bytes();
-                encode.data[info.offset..info.offset + size].copy_from_slice(&bytes[..size]);
+                data[info.offset..info.offset + size].copy_from_slice(&bytes[..size]);
             }
 
             self.pending_relocs.push(PendingReloc {
@@ -107,7 +124,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             });
         }
 
-        self.sections[sec_ndx].add_data(&encode.data);
+        self.sections[sec_ndx].add_data(&data);
     }
 
     /// Builds the rel / rela entries once every symbol is known.

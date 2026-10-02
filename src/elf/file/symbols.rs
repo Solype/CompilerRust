@@ -32,6 +32,23 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     /// to `align` so the final address is aligned too.
     pub fn add_symbol_to_section_raw(&mut self, section_ndx: usize, name: String, data: &Vec<u8>, info: u8, other: u8, align: usize)
     {
+        self.add_symbol_to_section_relocated(section_ndx, name, data, info, other, align, &[]);
+    }
+
+    /// Same as `add_symbol_to_section_raw`, with relocations inside the data:
+    /// each `Relocation` patches `size` bytes at `offset` (from the start of
+    /// `data`) with the address of `sym`, e.g. a pointer or a jump table entry.
+    /// `sym` is resolved when writing, like a relocation from an instruction.
+    pub fn add_symbol_to_section_relocated(
+        &mut self,
+        section_ndx: usize,
+        name: String,
+        data: &Vec<u8>,
+        info: u8,
+        other: u8,
+        align: usize,
+        relocations: &[Relocation],
+    ) {
         self.align_section(section_ndx, align);
 
         let name_ndx = self.strtab.name(&name);
@@ -45,7 +62,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             st_size: T::from_usize(data.len()),
             st_other: other,
         });
-        self.sections[section_ndx].add_data(&data);
+        self.add_bytes_with_relocations(section_ndx, data.clone(), relocations);
     }
 
     fn align_section(&mut self, section_ndx: usize, align: usize)

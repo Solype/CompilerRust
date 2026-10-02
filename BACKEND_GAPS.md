@@ -1,6 +1,6 @@
 # Backend gaps
 
-State of the backend on October 2, 2026 (1225 tests passing), checked against the code rather than
+State of the backend on October 2, 2026 (1232 tests passing), checked against the code rather than
 only against `TODO.md`.
 
 **In short:** the instruction encoder is nearly complete for a compiler. What is mostly missing is
@@ -21,17 +21,23 @@ ends up at offset 8, misaligned, and the program crashes. See [Alignment in deta
 
 → Add an `align` parameter when adding an object, which inserts padding before it.
 
-### b. Relocations in data
+### b. ~~Relocations in data~~ (done)
 
-Relocations can **only come from instructions**. There is no way to put the address of a symbol
+**Fixed:** `add_symbol_to_section_relocated(…, relocations: &[Relocation])` adds an object whose
+bytes hold symbol addresses. Relocations go through the same `pending_relocs` as instructions, so
+labels, later globals and externals all resolve. Checked running, static and PIE (`ld` turns them
+into `R_X86_64_RELATIVE` loaded at startup). The issue was:
+
+Relocations could **only come from instructions**. There is no way to put the address of a symbol
 into `.data` / `.rodata`, which is needed for:
 
 - `char *msg = "hello";` (a global pointer to a string);
 - function pointer arrays, vtables;
 - **`switch` jump tables**: `jmp [rbx+rcx*8]` exists, but the table it reads cannot be filled.
 
-→ An API such as `add_object_with_relocs(…, bytes, &[(offset, sym, RelocKind)])` feeding the same
-`pending_relocs` as instructions. With `R_X86_64_64` this is the equivalent of `.quad sym`.
+In PIE, keep pointer tables in a writable section (`.data`): the loader has to patch them, and
+with a pointer table in `.rodata` `gcc -pie` fails (`error: read-only segment has dynamic
+relocations`). Static links accept both. gcc uses `.data.rel.ro` for this.
 
 ### c. Separate `Label` and `Sym` (already in `TODO.md`)
 
@@ -75,7 +81,7 @@ Short encodings (`05` / `A9`, `int3`, `REX.W` of `push` / `pop`), packed SSE and
 ## Recommended order
 
 1. ~~**Per-object alignment**~~: done.
-2. **Relocations in data**: no `switch`, global pointers or function tables without it.
+2. ~~**Relocations in data**~~: done.
 3. **Separate `Label` / `Sym`** before writing the code generator, since it changes the IR it emits.
 
 ---

@@ -24,6 +24,8 @@ ELF:
 [X] Sections with alignment padding
 [X] Per-object alignment (add_symbol_to_section_raw pads to `align`,
     natural_alignment as default, raises sh_addralign)
+[X] Relocations in data (add_symbol_to_section_relocated): pointers,
+    function tables, switch jump tables
 [X] Global symbols (functions and data)
 [X] Undefined symbols (external, resolved at link time)
 [X] Local symbols (labels)
@@ -105,7 +107,7 @@ Atomics:
 [X] Cmpxchg
 
 Tests:
-[X] 1225 tests: 1214 encoding tests (src/elf/instructions/encode_tests/),
+[X] 1232 tests: 1214 encoding tests (src/elf/instructions/encode_tests/),
     reference bytes produced by GNU as, one family per file
 [X] Relocation tests (offset, type, addend) compared with readelf
 [X] Symbol table tests (src/elf/file/symbol_tests.rs)

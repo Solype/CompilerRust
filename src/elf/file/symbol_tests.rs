@@ -1,7 +1,8 @@
 //! Relocation symbols resolved when writing: a name that is never defined
 //! becomes external (GLOBAL UND), a global defined after its call stays
 //! among the globals, a forward-referenced label stays LOCAL.
-//! Objects are placed at an offset multiple of their alignment.
+//! Objects are placed at an offset multiple of their alignment, and can hold
+//! relocations (pointers, jump tables) resolved like those of instructions.
 
 use std::fmt::Debug;
 
@@ -11,7 +12,7 @@ use super::super::{
     elfsym::{make_st_info, ElfSym, StBind, StType, StVis, SHN_UNDEF},
     shdr::{ElfShdr, SectionName, ShFlags, ShType},
     traits::{ElfWritable, UsizeCompatible},
-    instructions::{CtrlOp, Instruction},
+    instructions::{CtrlOp, Instruction, Relocation, RelocKind},
 };
 use crate::samples::helpers::*;
 
@@ -221,4 +222,126 @@ fn natural_alignment_values() {
     assert_eq!(natural_alignment(16), 16); // SSE mask
     assert_eq!(natural_alignment(24), 16); // capped
     assert_eq!(natural_alignment(4096), 16);
+}
+
+/// 8-byte absolute address of `sym` at `offset` (`.quad sym`)
+fn quad(offset: usize, sym: &str) -> Relocation {
+    Relocation { sym: sym.to_string(), offset, size: 8, kind: RelocKind::Absolute, addend: 0 }
+}
+
+fn relocated(elf: &mut ElfFile<u64>, section: usize, name: &str, bytes: &[u8], align: usize, relocs: &[Relocation]) {
+    let info = make_st_info(StBind::Global, StType::Object);
+    elf.add_symbol_to_section_relocated(section, name.to_string(), &bytes.to_vec(), info, StVis::Default as u8, align, relocs);
+}
+
+/// (offset, symbol index, type, addend) of the rela entries of `section`
+fn relas(elf: &ElfFile<u64>, section: usize) -> Vec<(u64, usize, u32, i64)> {
+    elf.relas[&section]
+        .iter()
+        .map(|r| (r.r_offset, (r.r_info >> 32) as usize, r.r_info as u32, r.r_addend as i64))
+        .collect()
+}
+
+#[test]
+fn data_pointer_to_a_string() {
+    // char *msg = "hello";  ->  msg: .quad hello  (R_X86_64_64)
+    let mut elf = ElfFile::<u64>::default();
+    let rodata = data_section(&mut elf, 1);
+    let data = data_section(&mut elf, 8);
+    object(&mut elf, rodata, "hello", b"hello\0", 1);
+    relocated(&mut elf, data, "msg", &[0; 8], 8, &[quad(0, "hello")]);
+    elf.resolve_relocations();
+
+    let hello = symbol(&mut elf, "hello").0;
+    assert_eq!(relas(&elf, data), vec![(0, hello, 1, 0)]);
+    assert_eq!(elf.sections[data].get_data(), &[0; 8], "rela: the data keeps zeros");
+}
+
+#[test]
+fn function_table_resolves_later_and_external_symbols() {
+    // ops: .quad add_fn, strlen  (add_fn defined afterwards, strlen never)
+    let mut elf = ElfFile::<u64>::default();
+    let data = data_section(&mut elf, 8);
+    let text = text_section(&mut elf);
+    relocated(&mut elf, data, "ops", &[0; 16], 8, &[quad(0, "add_fn"), quad(8, "strlen")]);
+    function(&mut elf, text, "add_fn", vec![ret()]);
+    elf.resolve_relocations();
+
+    check_local_global_split(&elf);
+    let (add_fn, _) = symbol(&mut elf, "add_fn");
+    let (strlen, sym) = symbol(&mut elf, "strlen");
+    assert_eq!(bind(sym), StBind::Global as u8);
+    assert_eq!(sym.st_shndx, SHN_UNDEF);
+    assert_eq!(relas(&elf, data), vec![(0, add_fn, 1, 0), (8, strlen, 1, 0)]);
+}
+
+#[test]
+fn jump_table_points_to_local_labels() {
+    // switch table in .rodata: .quad .Lcase0, .Lcase1
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    let rodata = data_section(&mut elf, 8);
+    function(&mut elf, text, "f", vec![label(".Lcase0"), ret(), label(".Lcase1"), ret()]);
+    relocated(&mut elf, rodata, "table", &[0; 16], 8, &[quad(0, ".Lcase0"), quad(8, ".Lcase1")]);
+    elf.resolve_relocations();
+
+    check_local_global_split(&elf);
+    let (case0, sym0) = symbol(&mut elf, ".Lcase0");
+    assert_eq!((bind(sym0), sym0.st_value), (StBind::Local as u8, 0));
+    let (case1, sym1) = symbol(&mut elf, ".Lcase1");
+    assert_eq!((bind(sym1), sym1.st_value), (StBind::Local as u8, 1));
+    assert_eq!(relas(&elf, rodata), vec![(0, case0, 1, 0), (8, case1, 1, 0)]);
+}
+
+#[test]
+fn data_relocation_offset_includes_alignment_padding() {
+    // a 1-byte object then a pointer aligned on 8: the pointer is at 8, and so is its relocation
+    let mut elf = ElfFile::<u64>::default();
+    let data = data_section(&mut elf, 8);
+    object(&mut elf, data, "flag", &[1], 1);
+    relocated(&mut elf, data, "ptr", &[0; 8], 8, &[quad(0, "flag")]);
+    elf.resolve_relocations();
+
+    assert_eq!(symbol(&mut elf, "ptr").1.st_value, 8);
+    assert_eq!(relas(&elf, data)[0].0, 8);
+}
+
+#[test]
+fn data_relocation_keeps_kind_size_and_addend() {
+    // .long sym + 4 (R_X86_64_32) and .long sym - . (R_X86_64_PC32, offset table)
+    let mut elf = ElfFile::<u64>::default();
+    let data = data_section(&mut elf, 4);
+    let abs32 = Relocation { sym: "x".into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 4 };
+    let pc32 = Relocation { sym: "x".into(), offset: 4, size: 4, kind: RelocKind::Relative, addend: 0 };
+    relocated(&mut elf, data, "t", &[0; 8], 4, &[abs32, pc32]);
+    elf.resolve_relocations();
+
+    let x = symbol(&mut elf, "x").0;
+    assert_eq!(relas(&elf, data), vec![(0, x, 10, 4), (4, x, 2, 0)]);
+}
+
+#[test]
+#[should_panic(expected = "relocation of target at offset 4 (8 bytes) goes past the end of the data (8 bytes)")]
+fn data_relocation_past_the_end_panics() {
+    let mut elf = ElfFile::<u64>::default();
+    let data = data_section(&mut elf, 8);
+    relocated(&mut elf, data, "p", &[0; 8], 8, &[quad(4, "target")]);
+}
+
+#[test]
+fn data_relocation_in_32_bits_writes_the_addend() {
+    // rel (32 bits): no r_addend field, the addend goes into the data
+    let mut elf = ElfFile::<u32>::default();
+    let data = elf.add_section(
+        SectionName::Data.as_str().to_string(),
+        ElfShdr { sh_type: ShType::ProgBits as u32, sh_flags: ShFlags::Alloc as u32, sh_addralign: 4, ..Default::default() },
+    );
+    let info = make_st_info(StBind::Global, StType::Object);
+    let reloc = Relocation { sym: "x".into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 0x10 };
+    elf.add_symbol_to_section_relocated(data, "p".into(), &vec![0; 4], info, StVis::Default as u8, 4, &[reloc]);
+    elf.resolve_relocations();
+
+    assert_eq!(elf.sections[data].get_data(), &[0x10, 0, 0, 0]);
+    let rel = &elf.rels[&data][0];
+    assert_eq!(rel.r_info & 0xFF, 1, "R_386_32");
 }

@@ -5,7 +5,7 @@ use std::fs::File;
 
 use elf::elfsym::{make_st_info, StBind, StType, StVis};
 use elf::file::{natural_alignment, ElfFile64, SymbolType};
-use elf::instructions::Instruction;
+use elf::instructions::{Instruction, RelocKind, Relocation};
 use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
 
 const OUTPUT: &str = "output.elf";
@@ -18,6 +18,8 @@ fn main() -> std::io::Result<()> {
     add_object(&mut elf_file, data, "my_data", b"abcdefg\0");
     add_object(&mut elf_file, data, "my_float", &0.1f64.to_le_bytes());
     add_object(&mut elf_file, data, "my_lock", &0u32.to_le_bytes());
+    // pointers resolved by ld: a data symbol and a function defined below
+    add_pointers(&mut elf_file, data, "my_ptrs", &["my_data", "jumps_and_calls"]);
 
     let text = add_section(&mut elf_file, SectionName::Text, ShFlags::ExecInstr, 16);
     for (name, code) in samples::families() {
@@ -52,6 +54,31 @@ fn add_object(elf_file: &mut ElfFile64, section: usize, name: &str, bytes: &[u8]
         make_st_info(StBind::Global, StType::Object),
         StVis::Default as u8,
         natural_alignment(bytes.len()),
+    );
+}
+
+/// Adds a global array of 8-byte pointers to `targets` (`.quad a, b, ...`)
+fn add_pointers(elf_file: &mut ElfFile64, section: usize, name: &str, targets: &[&str]) {
+    let relocations: Vec<Relocation> = targets
+        .iter()
+        .enumerate()
+        .map(|(i, sym)| Relocation {
+            sym: sym.to_string(),
+            offset: i * 8,
+            size: 8,
+            kind: RelocKind::Absolute,
+            addend: 0,
+        })
+        .collect();
+
+    elf_file.add_symbol_to_section_relocated(
+        section,
+        name.to_string(),
+        &vec![0; targets.len() * 8],
+        make_st_info(StBind::Global, StType::Object),
+        StVis::Default as u8,
+        8,
+        &relocations,
     );
 }
 

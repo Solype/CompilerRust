@@ -1,6 +1,6 @@
-//! Résolution des symboles des relocations à l'écriture : un nom jamais
-//! défini devient externe (GLOBAL UND), un global défini après son appel
-//! reste dans la zone des globaux, un label référencé en avant reste LOCAL.
+//! Relocation symbols resolved when writing: a name that is never defined
+//! becomes external (GLOBAL UND), a global defined after its call stays
+//! among the globals, a forward-referenced label stays LOCAL.
 
 use std::fmt::Debug;
 
@@ -38,7 +38,7 @@ fn symbol<'a, T>(elf: &'a mut ElfFile<T>, name: &str) -> (usize, &'a ElfSym<T>)
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
     let name_idx = elf.strtab.name(&name.to_string());
-    let idx = elf.symtab.get_index_from_name(name_idx).unwrap_or_else(|| panic!("{name} absent"));
+    let idx = elf.symtab.get_index_from_name(name_idx).unwrap_or_else(|| panic!("{name} missing"));
     (idx, elf.symtab.get(idx).unwrap())
 }
 
@@ -46,18 +46,18 @@ fn bind<T: Default>(sym: &ElfSym<T>) -> u8 {
     sym.st_info >> 4
 }
 
-/// Tous les locaux avant sh_info (first_global_index), tous les globaux après
+/// Every local before sh_info (first_global_index), every global after it
 fn check_local_global_split<T>(elf: &ElfFile<T>)
 where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
     let first_global = elf.symtab.first_global_index;
     for (i, sym) in elf.symtab.symbols.iter().enumerate() {
         let local = bind(sym) == StBind::Local as u8;
-        assert_eq!(local, i < first_global, "symbole {i} du mauvais côté de sh_info ({first_global})");
+        assert_eq!(local, i < first_global, "symbol {i} on the wrong side of sh_info ({first_global})");
     }
 }
 
-/// Index des symboles visés par les relocations rela de `section`
+/// Indexes of the symbols targeted by the rela relocations of `section`
 fn rela_symbols(elf: &ElfFile<u64>, section: usize) -> Vec<usize> {
     elf.relas[&section].iter().map(|r| (r.r_info >> 32) as usize).collect()
 }
@@ -102,15 +102,15 @@ fn forward_label_stays_local() {
     let (idx, sym) = symbol(&mut elf, "done");
     assert_eq!(bind(sym), StBind::Local as u8);
     assert_eq!(sym.st_shndx as usize, text);
-    // jmp rel32 (5 octets) + ret
+    // jmp rel32 (5 bytes) + ret
     assert_eq!(sym.st_value, 6);
     assert_eq!(rela_symbols(&elf, text), vec![idx]);
 }
 
 #[test]
 fn locals_added_after_relocations_keep_indexes_right() {
-    // Chaque label local inséré décale les globaux : les relocations doivent
-    // quand même viser le bon symbole
+    // Each inserted local label shifts the globals: relocations must still
+    // target the right symbol
     let mut elf = ElfFile::<u64>::default();
     let text = text_section(&mut elf);
     function(&mut elf, text, "_start", vec![call("f"), call("exit"), label("a"), ret()]);
@@ -124,7 +124,7 @@ fn locals_added_after_relocations_keep_indexes_right() {
 
 #[test]
 fn rel8_addend_in_32_bits() {
-    // En 32 bits l'addend est écrit dans le code : sur 1 octet pour loop rel8
+    // In 32 bits the addend is written into the code: 1 byte for loop rel8
     let mut elf = ElfFile::<u32>::default();
     let text = text_section(&mut elf);
     function(&mut elf, text, "_start", vec![label("top"), ctrl(CtrlOp::Loop, "top")]);

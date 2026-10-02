@@ -1,5 +1,5 @@
-//! Tests d'encodage générés : octets de référence produits par GNU as.
-//! `#[ignore = "BUG: ..."]` marque un encodage faux (voir `cargo test -- --ignored`).
+//! Generated encoding tests: reference bytes produced by GNU as.
+//! `#[ignore = "BUG: ..."]` marks a wrong encoding (see `cargo test -- --ignored`).
 
 use super::*;
 
@@ -44,22 +44,22 @@ cases! {
     cwd: unary(UnaryOp::Cwd, Operand::NoOperand, WORD) => [0x66, 0x99];
     /// cdq
     cdq: unary(UnaryOp::Cdq, Operand::NoOperand, DWORD) => [0x99];
-    /// nop 1 octets (SDM)
+    /// nop 1 bytes (SDM)
     nop_1_bytes: Instruction::Nop(1) => [0x90];
-    /// nop 2 octets (SDM)
+    /// nop 2 bytes (SDM)
     nop_2_bytes: Instruction::Nop(2) => [0x66, 0x90];
-    /// nop 3 octets (SDM)
+    /// nop 3 bytes (SDM)
     nop_3_bytes: Instruction::Nop(3) => [0x0F, 0x1F, 0x00];
-    /// nop 4 octets (SDM)
+    /// nop 4 bytes (SDM)
     nop_4_bytes: Instruction::Nop(4) => [0x0F, 0x1F, 0x40, 0x00];
-    /// nop 5 octets (SDM)
+    /// nop 5 bytes (SDM)
     nop_5_bytes: Instruction::Nop(5) => [0x0F, 0x1F, 0x44, 0x00, 0x00];
-    /// nop 6 octets (SDM)
+    /// nop 6 bytes (SDM)
     nop_6_bytes: Instruction::Nop(6) => [0x66, 0x0F, 0x1F, 0x44, 0x00, 0x00];
-    /// nop 7 octets (SDM)
+    /// nop 7 bytes (SDM)
     nop_7_bytes: Instruction::Nop(7) => [0x0F, 0x1F, 0x80, 0x00, 0x00, 0x00, 0x00];
-    /// nop 8 octets (SDM)
+    /// nop 8 bytes (SDM)
     nop_8_bytes: Instruction::Nop(8) => [0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00];
-    /// nop 9 octets (SDM)
+    /// nop 9 bytes (SDM)
     nop_9_bytes: Instruction::Nop(9) => [0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00];
 }

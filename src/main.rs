@@ -26,11 +26,11 @@ fn main() -> std::io::Result<()> {
     add_function(&mut elf_file, text, "_start", samples::start());
 
     elf_file.write(&mut File::create(OUTPUT)?)?;
-    println!("ELF généré : {OUTPUT}");
+    println!("ELF written: {OUTPUT}");
     Ok(())
 }
 
-/// Ajoute une section PROGBITS allouée, avec un flag en plus (Write, ExecInstr, ...)
+/// Adds an allocated PROGBITS section, with one extra flag (Write, ExecInstr, ...)
 fn add_section(elf_file: &mut ElfFile64, name: SectionName, flag: ShFlags, align: u64) -> usize {
     elf_file.add_section(
         name.as_str().to_string(),
@@ -43,7 +43,7 @@ fn add_section(elf_file: &mut ElfFile64, name: SectionName, flag: ShFlags, align
     )
 }
 
-/// Ajoute une variable globale initialisée
+/// Adds an initialized global variable
 fn add_object(elf_file: &mut ElfFile64, section: usize, name: &str, bytes: &[u8]) {
     elf_file.add_symbol_to_section_raw(
         section,
@@ -54,7 +54,7 @@ fn add_object(elf_file: &mut ElfFile64, section: usize, name: &str, bytes: &[u8]
     );
 }
 
-/// Ajoute une fonction globale dont le corps est encodé depuis `code`
+/// Adds a global function whose body is encoded from `code`
 fn add_function(elf_file: &mut ElfFile64, section: usize, name: &str, code: Vec<Instruction>) {
     elf_file.add_symbol_to_section(
         section,

@@ -12,7 +12,7 @@ use super::*;
 
 fn encode_reg_sym(reg: Register, sym: &str, size: Size, enc: &BinaryEncoding) -> EncodeInformation {
     if !matches!(reg.class, RegisterClass::Gpr) {
-        panic!("registre invalide");
+        panic!("invalid register");
     }
     let mut v = EncodeInformation::new();
 
@@ -50,8 +50,8 @@ fn encode_reg_sym(reg: Register, sym: &str, size: Size, enc: &BinaryEncoding) ->
         _ => unimplemented!(),
     }
 
-    // mov r64, imm64 garde ses 8 octets ; une opération ALU 64 bits n'a
-    // qu'un imm32, étendu avec le signe
+    // mov r64, imm64 keeps its 8 bytes; a 64-bit ALU operation only has
+    // an imm32, sign-extended
     let (imm_size, kind) = match (enc, size) {
         (BinaryEncoding::Alu { .. }, Size::U64) => (Size::U32, RelocKind::AbsoluteSigned),
         _ => (size, RelocKind::Absolute),
@@ -143,4 +143,4 @@ pub(in super::super) fn encode_binary(
         _ => unimplemented!("unsupported operands: {:?}, {:?}", dst, src),
     }
 }
-// Von 18 bis 6
+// From 18 to 6

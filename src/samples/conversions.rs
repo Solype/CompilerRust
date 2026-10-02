@@ -1,7 +1,7 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// Conversions entier <-> flottant et double <-> simple, depuis un registre puis depuis la mémoire
+/// Integer <-> float and double <-> single conversions, from a register then from memory
 pub fn conversions() -> Vec<Instruction> {
     let mut code = Vec::new();
     for op in [ConvOp::Cvtsi2sd, ConvOp::Cvtsi2ss] {

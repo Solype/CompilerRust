@@ -1,13 +1,13 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// jmp, call (directs et indirects), jcc, loop*, ret, iret
+/// jmp, call (direct and indirect), jcc, loop*, ret, iret
 pub fn jumps_and_calls() -> Vec<Instruction> {
     let mut code = vec![
-        jmp("jump_target"),           // label local, en avant
+        jmp("jump_target"),           // local label, forward
         call("jumps_and_calls"),      // symbole global
         jmp("jumps_and_calls"),
-        call("my_exit"),              // symbole externe, défini dans test.asm
+        call("my_exit"),              // external symbol, defined in test.asm
         call_indirect(reg(R11)),      // pointeur de fonction
         call_indirect(mem(at(RAX).disp(8))),
         call_indirect(var("my_data")),

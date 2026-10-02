@@ -45,7 +45,7 @@ where
         writer.write_all(&self.e_machine.to_le_bytes())?;
         writer.write_all(&self.e_version.to_le_bytes())?;
 
-        // champs génériques (32/64)
+        // generic fields (32/64)
         self.e_entry.write(writer)?;
         self.e_phoff.write(writer)?;
         self.e_shoff.write(writer)?;

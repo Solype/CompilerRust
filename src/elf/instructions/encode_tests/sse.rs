@@ -1,5 +1,5 @@
-//! Tests d'encodage générés : octets de référence produits par GNU as.
-//! `#[ignore = "BUG: ..."]` marque un encodage faux (voir `cargo test -- --ignored`).
+//! Generated encoding tests: reference bytes produced by GNU as.
+//! `#[ignore = "BUG: ..."]` marks a wrong encoding (see `cargo test -- --ignored`).
 
 use super::*;
 

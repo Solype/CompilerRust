@@ -5,7 +5,7 @@ use super::{
     register::{Register, RegisterClass},
 };
 
-/// spl, bpl, sil, dil : sans REX, les index 4 à 7 en 8 bits désignent ah, ch, dh, bh
+/// spl, bpl, sil, dil: without REX, 8-bit indexes 4 to 7 mean ah, ch, dh, bh
 pub(super) fn is_rex_byte_register(r: Register) -> bool {
     r.class == RegisterClass::Gpr && (4..8).contains(&r.index)
 }
@@ -62,7 +62,7 @@ pub(super) fn emit_imm_sx32(val: i64, size: Size) -> Vec<u8> {
     match size {
         Size::U64 => {
             let v = i32::try_from(val).unwrap_or_else(|_| {
-                panic!("immédiate {val:#x} hors de i32 : seul `mov reg, imm64` accepte 64 bits")
+                panic!("immediate {val:#x} out of i32 range: only `mov reg, imm64` takes 64 bits")
             });
             v.to_le_bytes().to_vec()
         }

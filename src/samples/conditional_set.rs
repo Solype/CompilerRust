@@ -1,7 +1,7 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// setcc pour chaque condition, vers un registre puis vers `[rbx + i]`
+/// setcc for each condition, into a register then into `[rbx + i]`
 pub fn conditional_set() -> Vec<Instruction> {
     let mut code = vec![bin(BinOp::Cmp, reg(RAX), reg(RBX), DWORD)];
     for (i, cc) in ALL_CC.into_iter().enumerate() {

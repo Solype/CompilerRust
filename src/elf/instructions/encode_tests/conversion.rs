@@ -1,4 +1,4 @@
-//! Tests des conversions (famille `ConvOp`) : octets de référence produits par GNU as.
+//! Conversion tests (`ConvOp` family): reference bytes produced by GNU as.
 
 use super::*;
 use crate::elf::instructions::encode_conversion::encode_conversion;
@@ -8,7 +8,7 @@ fn encode(dst: Register, src: Operand, size: Size) -> Vec<u8> {
 }
 
 // ==========================================
-// Source registre
+// Register source
 // ==========================================
 
 #[test]
@@ -45,7 +45,7 @@ fn prefix_comes_before_rex() {
 }
 
 // ==========================================
-// Source mémoire
+// Memory source
 // ==========================================
 
 #[test]
@@ -108,7 +108,7 @@ fn instruction_explicit_size_wins() {
 }
 
 // ==========================================
-// cvtsi2ss : même forme que cvtsi2sd, préfixe F3
+// cvtsi2ss: same form as cvtsi2sd, F3 prefix
 // ==========================================
 
 fn encode_ss(dst: Register, src: Operand, size: Size) -> Vec<u8> {
@@ -314,14 +314,14 @@ fn cvtss2sd_rip_relative_symbol_emits_relocation() {
 
 #[test]
 fn float_to_float_ignores_size() {
-    // pas de REX.W même avec une taille 64 bits par défaut
+    // no REX.W even with a 64-bit default size
     let ins = Instruction::Convert { op: ConvOp::Cvtsd2ss, dst: XMM0, src: Operand::Reg(XMM1), size: None };
     assert_eq!(ins.encode(Size::U64).data, [0xF2, 0x0F, 0x5A, 0xC1]);
     assert_eq!(ins.encode(Size::U32).data, [0xF2, 0x0F, 0x5A, 0xC1]);
 }
 
 // ==========================================
-// Opérandes invalides
+// Invalid operands
 // ==========================================
 
 #[test]

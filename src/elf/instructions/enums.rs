@@ -78,7 +78,7 @@ pub enum BinOp {
     Or,
     Xor,
 
-    // Comparaison
+    // Comparison
     Cmp,
     Test,
 
@@ -100,7 +100,7 @@ pub enum ShiftOp {
     Shr,
     Sar,
 
-    // Rotations (souvent utile)
+    // Rotations (often useful)
     Rol,
     Ror,
 }
@@ -216,7 +216,7 @@ pub enum Prefix {
     Gs,
 }
 
-/// Extension d'un entier vers un registre plus large
+/// Extension of an integer into a wider register
 #[derive(Debug, Clone, Copy)]
 pub enum ExtendOp {
     Movsx,
@@ -286,7 +286,7 @@ pub enum Instruction {
         target: Operand,
     },
 
-    /// `src_size` est la taille de la source, `size` celle de la destination
+    /// `src_size` is the source size, `size` the destination size
     Extend {
         op: ExtendOp,
         dst: Register,
@@ -348,7 +348,7 @@ pub enum Instruction {
 pub struct Relocation {
     pub sym: String,
     pub offset: usize,
-    pub size: u8, // en bytes (1, 2, 4, 8)
+    pub size: u8, // in bytes (1, 2, 4, 8)
     pub kind: RelocKind,
     pub addend: i32,
 }
@@ -358,10 +358,10 @@ pub enum RelocKind {
     Relative,
     #[default]
     Absolute,
-    /// Adresse absolue sur 32 bits étendue avec le signe par le CPU
-    /// (disp32 du ModRM, imm32 d'une opération 64 bits, push imm32)
+    /// 32-bit absolute address sign-extended by the CPU
+    /// (ModRM disp32, imm32 of a 64-bit operation, push imm32)
     AbsoluteSigned,
-    /// Branchement rel32 vers une fonction, passe par la PLT si elle est externe
+    /// rel32 branch to a function, goes through the PLT if it is external
     Plt32,
 }
 

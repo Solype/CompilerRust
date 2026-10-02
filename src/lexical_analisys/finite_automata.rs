@@ -83,7 +83,7 @@ impl FiniteAutomata {
             }
 
             if self.final_states.contains(&current_state) {
-                return Some(i + 1); // +1 = position après le match
+                return Some(i + 1); // +1 = position after the match
             }
         }
         None

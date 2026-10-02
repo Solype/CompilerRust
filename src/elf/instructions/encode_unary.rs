@@ -8,7 +8,7 @@ use super::{
 
 #[derive(Debug, Clone, Copy)]
 enum UnaryEncoding {
-    /// opcode simple sans ModRM
+    /// plain opcode without ModRM
     Simple { opcode: &'static [u8] },
 
     /// opcode + ModRM /digit

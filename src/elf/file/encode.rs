@@ -32,7 +32,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     fn get_abs_signed_reloc_type(&self, reloc_size: usize) -> u32 {
         match (size_of::<T>(), reloc_size) {
             // ===== x86 =====
-            (4, 4) => 1,   // R_386_32 (pas d'extension en 32 bits)
+            (4, 4) => 1,   // R_386_32 (no sign extension in 32 bits)
 
             // ===== x86_64 =====
             (8, 4) => 11,  // R_X86_64_32S
@@ -59,7 +59,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     fn get_plt_reloc_type(&self, reloc_size: usize) -> u32 {
         match (size_of::<T>(), reloc_size) {
             // ===== x86 =====
-            (4, 4) => 2,  // R_386_PC32 (GNU as n'utilise pas la PLT hors PIC)
+            (4, 4) => 2,  // R_386_PC32 (GNU as only uses the PLT for PIC)
 
             // ===== x86_64 =====
             (8, 4) => 4,  // R_X86_64_PLT32
@@ -87,11 +87,11 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 
         let base_offset = self.sections[sec_ndx].get_data().len();
 
-        // Le symbole est résolu à l'écriture (resolve_relocations), quand
-        // on sait s'il est local, global ou externe
+        // The symbol is resolved when writing (resolve_relocations), once
+        // we know whether it is local, global or external
         for info in &encode.relocations {
-            // En 32 bits (rel), l'addend est écrit dans le code, sur la
-            // taille du champ relogé
+            // In 32 bits (rel), the addend is written into the code, on the
+            // size of the relocated field
             if size_of::<T>() == 4 {
                 let size = info.size as usize;
                 let bytes = info.addend.to_le_bytes();
@@ -110,15 +110,15 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         self.sections[sec_ndx].add_data(&encode.data);
     }
 
-    /// Construit les entrées rel / rela une fois tous les symboles connus.
-    /// Un symbole jamais défini devient global non défini (externe), comme
-    /// avec GNU as.
+    /// Builds the rel / rela entries once every symbol is known.
+    /// A symbol that is never defined becomes global undefined (external),
+    /// as with GNU as.
     pub(super) fn resolve_relocations(&mut self)
     {
         let pending = std::mem::take(&mut self.pending_relocs);
 
-        // Ajouter un global en fin de table ne décale aucun index : on crée
-        // d'abord tous les externes, puis on lit les index définitifs
+        // Appending a global at the end of the table shifts no index: create
+        // every external first, then read the final indexes
         for reloc in &pending {
             let name_idx = self.strtab.name(&reloc.sym);
             if self.symtab.get_index_from_name(name_idx).is_none() {

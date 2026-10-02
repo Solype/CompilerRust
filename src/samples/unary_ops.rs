@@ -1,7 +1,7 @@
 use super::helpers::*;
 use crate::elf::instructions::{register::*, *};
 
-/// inc, dec, neg, not sur 8, 16, 32 bits et en mémoire
+/// inc, dec, neg, not on 8, 16, 32 bits and in memory
 pub fn unary_ops() -> Vec<Instruction> {
     let mut code = Vec::new();
     for (i, op) in [UnaryOp::Inc, UnaryOp::Dec, UnaryOp::Neg, UnaryOp::Not]

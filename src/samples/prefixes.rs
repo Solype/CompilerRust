@@ -1,7 +1,7 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// Préfixes de segment et lock (rep/repe/repne sont dans string_ops)
+/// Segment and lock prefixes (rep/repe/repne are in string_ops)
 pub fn prefixes() -> Vec<Instruction> {
     vec![
         prefixed(
@@ -9,7 +9,7 @@ pub fn prefixes() -> Vec<Instruction> {
             bin(BinOp::Mov, reg(RAX), mem(MemAddress::new().disp(0x28)), QWORD),
         ),
 
-        // Même add avec et sans lock
+        // Same add with and without lock
         prefixed(vec![Prefix::Lock], bin(BinOp::Add, var("my_data"), imm(1), BYTE)),
         bin(BinOp::Add, var("my_data"), imm(1), BYTE),
         ret(),

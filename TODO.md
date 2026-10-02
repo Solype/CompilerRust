@@ -1,92 +1,92 @@
 TODO x86/x86_64 IR
 
 ==================================================
-AVANCEMENT (estimation)
+PROGRESS (estimate)
 ==================================================
 
-Backend (encodeur x86-64 + ELF) : ~75-80 %
-Compilateur complet              : ~30 %
+Backend (x86-64 encoder + ELF) : ~75-80 %
+Full compiler                  : ~30 %
 
-    Encodeur x86-64 + ELF          ~75-80 %
-    Lexer                          ~5 %  (automate, pas encore branché)
+    x86-64 encoder + ELF           ~75-80 %
+    Lexer                          ~5 %  (automaton, not wired in yet)
     Parser + AST                   0 %
-    Analyse sémantique             0 %
-    Génération de code AST -> IR   0 %
+    Semantic analysis              0 %
+    Code generation AST -> IR      0 %
     CLI                            0 %
 
 ==================================================
-FAIT
+DONE
 ==================================================
 
-ELF :
-[X] Headers ELF (ehdr, shdr, phdr), en 32 et 64 bits
+ELF:
+[X] ELF headers (ehdr, shdr, phdr), in 32 and 64 bits
 [X] Strtab / shstrtab
-[X] Sections avec padding d'alignement
-[X] Symboles globaux (fonctions et données)
-[X] Symboles non définis (externes, résolus au link)
-[X] Symboles locaux (labels)
-[X] Relocations (rela), y compris 8 bits et sous préfixe lock
-[X] R_X86_64_PLT32 pour call / jmp / jcc rel32 (comme GNU as >= 2.31),
-    nécessaire pour appeler la libc dynamique en PIE (gcc -pie)
-[X] R_X86_64_32S pour les absolus étendus avec le signe (disp32 du ModRM,
-    imm32 d'une ALU 64 bits, push imm32), R_X86_64_8 / 16 pour mov r8/r16, sym
-[X] Fichier objet linkable avec ld
+[X] Sections with alignment padding
+[X] Global symbols (functions and data)
+[X] Undefined symbols (external, resolved at link time)
+[X] Local symbols (labels)
+[X] Relocations (rela), including 8-bit ones and under a lock prefix
+[X] R_X86_64_PLT32 for call / jmp / jcc rel32 (as GNU as >= 2.31 does),
+    needed to call the dynamic libc in PIE (gcc -pie)
+[X] R_X86_64_32S for sign-extended absolutes (ModRM disp32, imm32 of a
+    64-bit ALU op, push imm32), R_X86_64_8 / 16 for mov r8/r16, sym
+[X] Object file linkable with ld
 
-Encodage :
+Encoding:
 [X] ModRM / SIB / displacements
-[X] Adressage [base + index * scale + disp]
-[X] Adressage RIP-relative et absolu
-[X] Préfixe REX, registres étendus R8 à R15
-[X] Tailles 8 / 16 / 32 / 64 bits
-[X] Immédiats en i64
-[X] Registres XMM0 à XMM15
-[X] EncodeInformation pour factoriser l'encodage
+[X] Addressing [base + index * scale + disp]
+[X] RIP-relative and absolute addressing
+[X] REX prefix, extended registers R8 to R15
+[X] 8 / 16 / 32 / 64-bit sizes
+[X] Immediates as i64
+[X] Registers XMM0 to XMM15
+[X] EncodeInformation to factor the encoding
 
-Transfert de données :
+Data transfer:
 [X] Mov (reg, imm, mem, sym, imm64)
 [X] Movzx / Movsx
 [X] Xchg
 [X] Lea
-[X] CMovCC (toutes les conditions)
+[X] CMovCC (every condition)
 
-Arithmétique / logique :
+Arithmetic / logic:
 [X] Add / Sub / Adc / Sbb
 [X] And / Or / Xor
 [X] Cmp / Test
 [X] Inc / Dec / Neg / Not
 [X] Mul / Div / Idiv
-[X] Imul à 1, 2 et 3 opérandes
-[X] Shl / Shr / Sar / Rol / Ror (imm et cl)
+[X] Imul with 1, 2 and 3 operands
+[X] Shl / Shr / Sar / Rol / Ror (imm and cl)
 [X] Bt / Bts / Btr / Btc
 [X] Bsf / Bsr
-[X] SetCC (toutes les conditions)
+[X] SetCC (every condition)
 
-Flottants SSE scalaires (ss si U32, sd sinon) :
+SSE scalar floats (ss if U32, sd otherwise):
 [X] LoadF / StoreF (movss / movsd)
 [X] AddF / SubF / MulF / DivF
 [X] ComiF / UcomiF
-[X] Cvtsi2sd (entier -> double)
+[X] Cvtsi2sd (integer -> double)
 
-Contrôle :
+Control:
 [X] Jmp / Call / Ret / IRet
-[X] JmpCC (toutes les conditions)
+[X] JmpCC (every condition)
 [X] Loop / Loope / Loopne
 [X] Syscall / Sysenter / Int
 
-Pile :
+Stack:
 [X] Push / Pop
 [X] Pushf / Popf
 [X] Enter / Leave
 
-Chaînes :
+Strings:
 [X] Movs / Cmps / Scas / Lods / Stos
 
-Préfixes :
-[X] Lock / Rep / Repe / Repne (avec validation)
+Prefixes:
+[X] Lock / Rep / Repe / Repne (with validation)
 [X] Segment override (Cs, Ds, Es, Ss, Fs, Gs)
 
-Instructions sans opérande :
-[X] Nop (1 à 9 octets)
+Instructions without operand:
+[X] Nop (1 to 9 bytes)
 [X] Cbw / Cwde / Cdqe
 [X] Cwd / Cdq / Cqo
 [X] Clc / Stc / Cmc
@@ -95,110 +95,110 @@ Instructions sans opérande :
 [X] Lahf / Sahf
 [X] Ud2 / Hlt / Pause / Fwait
 
-Atomiques :
+Atomics:
 [X] Xadd
 [X] Cmpxchg
 
-Tests :
-[X] 1119 tests unitaires (src/elf/instructions/encode_tests/), octets de
-    référence produits par GNU as, une famille par fichier
-[X] Tests de relocations (offset, type, addend) comparés à readelf
-[X] Tests de la table des symboles (src/elf/file/symbol_tests.rs)
-[X] Correction des 199 encodages faux trouvés (voir RAPPORT_TESTS.md)
+Tests:
+[X] 1119 unit tests (src/elf/instructions/encode_tests/), reference bytes
+    produced by GNU as, one family per file
+[X] Relocation tests (offset, type, addend) compared with readelf
+[X] Symbol table tests (src/elf/file/symbol_tests.rs)
+[X] Fixed the 199 wrong encodings found (see TEST_REPORT.md)
 
-Organisation :
-[X] main.rs réduit à la construction de l'ELF
-[X] Programmes de test déplacés dans src/samples/
-[X] Une fonction de test par famille d'instructions (même nom dans le binaire)
+Organization:
+[X] main.rs reduced to building the ELF
+[X] Test programs moved to src/samples/
+[X] One test function per instruction family (same name in the binary)
 
 ==================================================
-À FAIRE : PRIORITAIRE (nécessaire au compilateur)
+TODO: PRIORITY (needed by the compiler)
 ==================================================
 
-Backend :
-[ ] Call / Jmp indirects (pointeurs de fonction, GOT, tables de switch) :
+Backend:
+[ ] Indirect call / jmp (function pointers, GOT, switch tables):
     [X] call reg / jmp reg          (FF /2, FF /4)
-    [X] call [mem] / jmp [mem]      (FF /2, FF /4 + ModRM mémoire)
-    [X] call [rip+sym]              (relocation PC32)
-    [ ] call [rip+sym@GOTPCREL]     (nouveau RelocKind, pour la libc dynamique / PIE)
-[ ] Corrections d'encodage repérées :
-    [X] IRet : 48 CF (iretq) en 64 bits, CF (iretd) en 32 bits
-    [X] [disp32] absolu ([sym], [base+sym]) : R_X86_64_32S comme GNU as
-    [X] add/sub/... r64, sym : émettait un imm64 (4 octets de trop), imm32 + 32S
-    [X] Symboles des relocations résolus à l'écriture (resolve_relocations) :
-        un nom jamais défini devient GLOBAL UND (il était LOCAL UND : segfault),
-        un global appelé avant sa définition n'est plus rangé parmi les locaux
-    [X] Addend 32 bits (rel) écrit sur la taille du champ (loop rel8 paniquait)
-[X] Conversions int <-> float (une ligne par opcode dans ConvOp) :
+    [X] call [mem] / jmp [mem]      (FF /2, FF /4 + memory ModRM)
+    [X] call [rip+sym]              (PC32 relocation)
+    [ ] call [rip+sym@GOTPCREL]     (new RelocKind, for the dynamic libc / PIE)
+[X] Encoding fixes found:
+    [X] IRet: 48 CF (iretq) in 64 bits, CF (iretd) in 32 bits
+    [X] Absolute [disp32] ([sym], [base+sym]): R_X86_64_32S like GNU as
+    [X] add/sub/... r64, sym: emitted an imm64 (4 extra bytes), now imm32 + 32S
+    [X] Relocation symbols resolved when writing (resolve_relocations):
+        a name never defined becomes GLOBAL UND (it was LOCAL UND: segfault),
+        a global called before its definition is no longer stored among locals
+    [X] 32-bit addend (rel) written on the field size (loop rel8 panicked)
+[X] int <-> float conversions (one line per opcode in ConvOp):
     [X] Cvtsi2sd
     [X] Cvtsi2ss
     [X] Cvttsd2si / Cvttss2si / Cvtsd2si / Cvtss2si
     [X] Cvtsd2ss / Cvtss2sd
-[X] Ajouter Movsxd
-[X] Movzx / Movsx vers une destination 64 bits (REX.W)
-[X] Séparer taille source/destination (famille Extend : src_size + size)
-[ ] Gérer tailles mémoire distinctes
-[ ] Ajouter ImmediateFloat(f64) (constantes flottantes en .data/.rodata)
-[ ] Séparer Label et Sym
-[ ] Revoir l'ordre dst/src de StoreF (le registre est dans dst)
-[ ] SSE scalaire courant :
-    [ ] Xorps / Xorpd (mise à zéro, changement de signe)
-    [ ] Andpd / Andps (valeur absolue)
-    [ ] Movq / Movd (GPR <-> XMM, bitcast et passage de constantes)
-    [ ] Movaps / Movapd (copie XMM -> XMM)
+[X] Add Movsxd
+[X] Movzx / Movsx into a 64-bit destination (REX.W)
+[X] Separate source/destination sizes (Extend family: src_size + size)
+[ ] Handle distinct memory sizes
+[ ] Add ImmediateFloat(f64) (float constants in .data/.rodata)
+[ ] Separate Label and Sym
+[ ] Review the dst/src order of StoreF (the register is in dst)
+[ ] Common scalar SSE:
+    [ ] Xorps / Xorpd (zeroing, sign flip)
+    [ ] Andpd / Andps (absolute value)
+    [ ] Movq / Movd (GPR <-> XMM, bitcast and passing constants)
+    [ ] Movaps / Movapd (XMM -> XMM copy)
     [ ] Sqrtsd / Sqrtss
     [ ] Minsd / Maxsd / Minss / Maxss
-[ ] Ajouter tests automatiques :
-    [X] encodage (comparer les octets à une référence GNU as)
-    [X] objdump (tri des encodages équivalents)
+[ ] Add automated tests:
+    [X] encoding (compare bytes with a GNU as reference)
+    [X] objdump (sorting out equivalent encodings)
     [ ] ndisasm
-    [ ] décodage
-    [ ] panic! des immédiates hors de i32 (emit_imm_sx32)
+    [ ] decoding
+    [ ] panic! on immediates outside i32 (emit_imm_sx32)
 
-Front-end :
-[ ] Lexer :
-    [ ] Brancher lexical_analisys dans main.rs
-    [ ] Définir les tokens du langage
-    [ ] Positions (ligne/colonne) pour les erreurs
-[ ] Parser :
-    [ ] Grammaire du langage source
-    [ ] Construction de l'AST
-    [ ] Messages d'erreur de syntaxe
-[ ] Analyse sémantique :
-    [ ] Table des symboles / portées
-    [ ] Vérification des types
-[ ] Génération de code :
+Front-end:
+[ ] Lexer:
+    [ ] Wire lexical_analisys into main.rs
+    [ ] Define the language tokens
+    [ ] Positions (line/column) for errors
+[ ] Parser:
+    [ ] Source language grammar
+    [ ] AST construction
+    [ ] Syntax error messages
+[ ] Semantic analysis:
+    [ ] Symbol table / scopes
+    [ ] Type checking
+[ ] Code generation:
     [ ] AST -> Vec<Instruction>
-    [ ] Allocation de registres
-    [ ] Gestion de la pile (variables locales, prologue/épilogue)
-    [ ] Convention d'appel x86_64 SysV
-    [ ] Variables globales et constantes dans .data/.rodata
-[ ] CLI :
-    [ ] Fichier d'entrée
-    [ ] Fichier de sortie
+    [ ] Register allocation
+    [ ] Stack handling (local variables, prologue/epilogue)
+    [ ] x86_64 SysV calling convention
+    [ ] Global variables and constants in .data/.rodata
+[ ] CLI:
+    [ ] Input file
+    [ ] Output file
     [ ] Options
 
 ==================================================
-À FAIRE : PLUS TARD (non nécessaire au compilateur)
+TODO: LATER (not needed by the compiler)
 ==================================================
 
-[ ] Ajouter registres SIMD YMM, ZMM (XMM fait)
-[ ] Ajouter registres segment
-[ ] Ajouter registres contrôle/debug
+[ ] Add SIMD registers YMM, ZMM (XMM done)
+[ ] Add segment registers
+[ ] Add control/debug registers
 
-[ ] Sauts courts (jmp / jcc rel8) quand la cible est proche
+[ ] Short jumps (jmp / jcc rel8) when the target is close
 [ ] Ret imm16
-[ ] Int3 (forme courte CC au lieu de CD 03)
-[ ] Endbr64 (si la cible active CET / IBT)
+[ ] Int3 (short form CC instead of CD 03)
+[ ] Endbr64 (if the target enables CET / IBT)
 
-[ ] Optimisations d'encodage (valides mais un octet de trop) :
-    [ ] Supprimer le REX.W inutile de push / pop
-    [X] Supprimer le REX 0x40 superflu de movzx esi, al
-    [ ] Forme courte de l'accumulateur (05 / A9 au lieu de 81 / F7)
+[ ] Encoding optimizations (valid but one byte too long):
+    [ ] Remove the useless REX.W from push / pop
+    [X] Remove the superfluous REX 0x40 from movzx esi, al
+    [ ] Short accumulator form (05 / A9 instead of 81 / F7)
 
-[ ] Garder le générateur de tests (gen_encode_tests.py) dans le dépôt
+[ ] Keep the test generator (gen_encode_tests.py) in the repository
 
-[ ] Ajouter SSE2 minimum :
+[ ] Add minimal SSE2:
     [ ] Movups
     [ ] Movdqa
     [ ] Movdqu
@@ -207,63 +207,63 @@ Front-end :
     [ ] Mulps
     [ ] Divps
 
-[ ] Ajouter SIMD integer :
+[ ] Add SIMD integer:
     [ ] Pxor
     [ ] Pand
     [ ] Paddd
 
-[ ] Ajouter shuffle SIMD :
+[ ] Add SIMD shuffle:
     [ ] Shufps
     [ ] Pshufd
 
-[ ] Ajouter AVX de base
-[ ] Ajouter BMI1/BMI2
+[ ] Add basic AVX
+[ ] Add BMI1/BMI2
 
-[ ] Ajouter Popcnt
-[ ] Ajouter Lzcnt
-[ ] Ajouter Tzcnt
-[ ] Ajouter Bswap
+[ ] Add Popcnt
+[ ] Add Lzcnt
+[ ] Add Tzcnt
+[ ] Add Bswap
 
-[ ] Ajouter memory fences :
+[ ] Add memory fences:
     [ ] Mfence
     [ ] Lfence
     [ ] Sfence
 
-[ ] Ajouter :
+[ ] Add:
     [ ] Cmpxchg8b
     [ ] Cmpxchg16b
 
-[ ] Ajouter :
+[ ] Add:
     [ ] Cpuid
     [ ] Rdtsc
     [ ] Rdmsr
     [ ] Wrmsr
 
-[ ] Ajouter :
+[ ] Add:
     [ ] Jecxz
     [ ] Jrcxz
 
-[ ] Ajouter string ops :
+[ ] Add string ops:
     [ ] Ins
     [ ] Outs
 
-[ ] Ajouter support x87 FPU :
+[ ] Add x87 FPU support:
     [ ] Fld
     [ ] Fstp
     [ ] Fadd
     [ ] Fmul
     [ ] Fcom
 
-[ ] Ajouter :
+[ ] Add:
     [ ] Prefetch
     [ ] Clflush
 
-[ ] Réfléchir à un modèle générique :
+[ ] Think about a generic model:
     [ ] Opcode
     [ ] Nullary
     [ ] Unary
     [ ] Binary
     [ ] Ternary
 
-[ ] Vérifier couverture complète x86_64 SysV ABI
-[ ] Vérifier encodage REX/VEX/EVEX
+[ ] Check full x86_64 SysV ABI coverage
+[ ] Check REX/VEX/EVEX encoding

@@ -1,7 +1,7 @@
 use crate::elf::instructions::*;
 use super::helpers::*;
 
-/// movs, cmps, scas, lods, stos, seules puis avec rep/repe/repne
+/// movs, cmps, scas, lods, stos, alone then with rep/repe/repne
 pub fn string_ops() -> Vec<Instruction> {
     vec![
         string(StringOp::Movs, None),

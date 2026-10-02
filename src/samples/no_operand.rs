@@ -1,7 +1,7 @@
 use crate::elf::instructions::*;
 use super::helpers::*;
 
-/// Instructions sans opérande explicite : nop, flags, extensions de signe, ...
+/// Instructions without explicit operand: nop, flags, sign extensions, ...
 pub fn no_operand() -> Vec<Instruction> {
     let mut code: Vec<Instruction> = (1..=9).map(Instruction::Nop).collect();
     code.extend([

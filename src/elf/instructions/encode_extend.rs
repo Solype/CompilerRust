@@ -3,7 +3,7 @@ use super::{
     utils::{emit_rex, emit_size_prefix, is_rex_byte_register},
 };
 
-/// (préfixe 0x0F ou non, opcode) selon la taille de la source
+/// (0x0F prefix or not, opcode) depending on the source size
 fn get_opcode(op: ExtendOp, src_size: Size) -> (Option<u8>, u8) {
     match (op, src_size) {
         // MOVSX r16 | r32 | r64, r/m8 | r/m16 : [66] [REX.W] 0F BE | BF /r
@@ -17,7 +17,7 @@ fn get_opcode(op: ExtendOp, src_size: Size) -> (Option<u8>, u8) {
     }
 }
 
-/// `src_size` est la taille de la source, `size` celle de la destination
+/// `src_size` is the source size, `size` the destination size
 pub(super) fn encode_extend(
     op: ExtendOp,
     dst: &Register,
@@ -58,8 +58,8 @@ pub(super) fn encode_extend(
 
     emit_size_prefix(&mut v, size);
 
-    // REX.W vient de la destination ; un REX vide n'est nécessaire que pour
-    // une source spl / bpl / sil / dil (la destination n'est jamais 8 bits)
+    // REX.W comes from the destination; an empty REX is only needed for an
+    // spl / bpl / sil / dil source (the destination is never 8 bits)
     let before = v.len();
     emit_rex(&mut v, size, Some(*dst), src);
     let byte_src = matches!(src, Operand::Reg(r) if src_size == Size::U8 && is_rex_byte_register(*r));

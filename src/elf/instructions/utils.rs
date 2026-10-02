@@ -6,7 +6,7 @@ use super::{
 };
 
 /// spl, bpl, sil, dil : sans REX, les index 4 à 7 en 8 bits désignent ah, ch, dh, bh
-fn is_rex_byte_register(r: Register) -> bool {
+pub(super) fn is_rex_byte_register(r: Register) -> bool {
     r.class == RegisterClass::Gpr && (4..8).contains(&r.index)
 }
 

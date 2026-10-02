@@ -1,15 +1,35 @@
 use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
 
-/// Conversions entier -> flottant, depuis un registre puis depuis la mémoire
+/// Conversions entier <-> flottant et double <-> simple, depuis un registre puis depuis la mémoire
 pub fn conversions() -> Vec<Instruction> {
     let mut code = Vec::new();
-    for size in [None, DWORD] {
+    for op in [ConvOp::Cvtsi2sd, ConvOp::Cvtsi2ss] {
+        for size in [None, DWORD] {
+            code.extend([
+                convert(op, XMM0, reg(RAX), size),
+                convert(op, XMM9, reg(R12), size),
+                convert(op, XMM1, mem(at(RBX)), size),
+                convert(op, XMM2, var("my_float"), size),
+            ]);
+        }
+    }
+    for op in [ConvOp::Cvtsd2si, ConvOp::Cvtss2si, ConvOp::Cvttsd2si, ConvOp::Cvttss2si] {
+        for size in [None, DWORD] {
+            code.extend([
+                convert(op, RAX, reg(XMM0), size),
+                convert(op, R12, reg(XMM9), size),
+                convert(op, RCX, mem(at(RBX)), size),
+                convert(op, RDX, var("my_float"), size),
+            ]);
+        }
+    }
+    for op in [ConvOp::Cvtsd2ss, ConvOp::Cvtss2sd] {
         code.extend([
-            convert(ConvOp::Cvtsi2sd, XMM0, reg(RAX), size),
-            convert(ConvOp::Cvtsi2sd, XMM9, reg(R12), size),
-            convert(ConvOp::Cvtsi2sd, XMM1, mem(at(RBX)), size),
-            convert(ConvOp::Cvtsi2sd, XMM2, var("my_float"), size),
+            convert(op, XMM0, reg(XMM1), None),
+            convert(op, XMM8, reg(XMM15), None),
+            convert(op, XMM1, mem(at(RBX)), None),
+            convert(op, XMM2, var("my_float"), None),
         ]);
     }
     code.push(ret());

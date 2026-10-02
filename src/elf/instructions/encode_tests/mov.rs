@@ -157,33 +157,115 @@ cases! {
     /// mov rax, offset my_data
     mov_rax_my_data: bin(BinOp::Mov, reg(RAX), sym("my_data"), QWORD) => [0x48, 0xC7, 0xC0, 0x00, 0x00, 0x00, 0x00] | [0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     /// movzx eax, bl
-    movzx_eax_bl: bin(BinOp::Movzx, reg(RAX), reg(RBX), BYTE) => [0x0F, 0xB6, 0xC3];
+    movzx_eax_bl: extend(ExtendOp::Movzx, RAX, reg(RBX), BYTE, DWORD) => [0x0F, 0xB6, 0xC3];
     /// movzx eax, r10b
-    movzx_eax_r10b: bin(BinOp::Movzx, reg(RAX), reg(R10), BYTE) => [0x41, 0x0F, 0xB6, 0xC2];
+    movzx_eax_r10b: extend(ExtendOp::Movzx, RAX, reg(R10), BYTE, DWORD) => [0x41, 0x0F, 0xB6, 0xC2];
     /// movzx r9d, cl
-    movzx_r9d_cl: bin(BinOp::Movzx, reg(R9), reg(RCX), BYTE) => [0x44, 0x0F, 0xB6, 0xC9];
+    movzx_r9d_cl: extend(ExtendOp::Movzx, R9, reg(RCX), BYTE, DWORD) => [0x44, 0x0F, 0xB6, 0xC9];
     /// movzx eax, sil
-    movzx_eax_sil: bin(BinOp::Movzx, reg(RAX), reg(RSI), BYTE) => [0x40, 0x0F, 0xB6, 0xC6];
+    movzx_eax_sil: extend(ExtendOp::Movzx, RAX, reg(RSI), BYTE, DWORD) => [0x40, 0x0F, 0xB6, 0xC6];
     /// movzx ecx, byte ptr [rbx]
-    movzx_ecx_byte_rbx: bin(BinOp::Movzx, reg(RCX), mem(at(RBX)), BYTE) => [0x0F, 0xB6, 0x0B];
+    movzx_ecx_byte_rbx: extend(ExtendOp::Movzx, RCX, mem(at(RBX)), BYTE, DWORD) => [0x0F, 0xB6, 0x0B];
     /// movzx eax, bx
-    movzx_eax_bx: bin(BinOp::Movzx, reg(RAX), reg(RBX), WORD) => [0x0F, 0xB7, 0xC3];
+    movzx_eax_bx: extend(ExtendOp::Movzx, RAX, reg(RBX), WORD, DWORD) => [0x0F, 0xB7, 0xC3];
     /// movzx ebx, word ptr [rbx]
-    movzx_ebx_word_rbx: bin(BinOp::Movzx, reg(RBX), mem(at(RBX)), WORD) => [0x0F, 0xB7, 0x1B];
+    movzx_ebx_word_rbx: extend(ExtendOp::Movzx, RBX, mem(at(RBX)), WORD, DWORD) => [0x0F, 0xB7, 0x1B];
     /// movsx eax, bl
-    movsx_eax_bl: bin(BinOp::Movsx, reg(RAX), reg(RBX), BYTE) => [0x0F, 0xBE, 0xC3];
+    movsx_eax_bl: extend(ExtendOp::Movsx, RAX, reg(RBX), BYTE, DWORD) => [0x0F, 0xBE, 0xC3];
     /// movsx eax, r10b
-    movsx_eax_r10b: bin(BinOp::Movsx, reg(RAX), reg(R10), BYTE) => [0x41, 0x0F, 0xBE, 0xC2];
+    movsx_eax_r10b: extend(ExtendOp::Movsx, RAX, reg(R10), BYTE, DWORD) => [0x41, 0x0F, 0xBE, 0xC2];
     /// movsx r9d, cl
-    movsx_r9d_cl: bin(BinOp::Movsx, reg(R9), reg(RCX), BYTE) => [0x44, 0x0F, 0xBE, 0xC9];
+    movsx_r9d_cl: extend(ExtendOp::Movsx, R9, reg(RCX), BYTE, DWORD) => [0x44, 0x0F, 0xBE, 0xC9];
     /// movsx eax, sil
-    movsx_eax_sil: bin(BinOp::Movsx, reg(RAX), reg(RSI), BYTE) => [0x40, 0x0F, 0xBE, 0xC6];
+    movsx_eax_sil: extend(ExtendOp::Movsx, RAX, reg(RSI), BYTE, DWORD) => [0x40, 0x0F, 0xBE, 0xC6];
     /// movsx ecx, byte ptr [rbx]
-    movsx_ecx_byte_rbx: bin(BinOp::Movsx, reg(RCX), mem(at(RBX)), BYTE) => [0x0F, 0xBE, 0x0B];
+    movsx_ecx_byte_rbx: extend(ExtendOp::Movsx, RCX, mem(at(RBX)), BYTE, DWORD) => [0x0F, 0xBE, 0x0B];
     /// movsx eax, bx
-    movsx_eax_bx: bin(BinOp::Movsx, reg(RAX), reg(RBX), WORD) => [0x0F, 0xBF, 0xC3];
+    movsx_eax_bx: extend(ExtendOp::Movsx, RAX, reg(RBX), WORD, DWORD) => [0x0F, 0xBF, 0xC3];
     /// movsx ebx, word ptr [rbx]
-    movsx_ebx_word_rbx: bin(BinOp::Movsx, reg(RBX), mem(at(RBX)), WORD) => [0x0F, 0xBF, 0x1B];
+    movsx_ebx_word_rbx: extend(ExtendOp::Movsx, RBX, mem(at(RBX)), WORD, DWORD) => [0x0F, 0xBF, 0x1B];
+    /// movzx rax, bl
+    movzx_rax_bl: extend(ExtendOp::Movzx, RAX, reg(RBX), BYTE, QWORD) => [0x48, 0x0F, 0xB6, 0xC3];
+    /// movzx rax, r10b
+    movzx_rax_r10b: extend(ExtendOp::Movzx, RAX, reg(R10), BYTE, QWORD) => [0x49, 0x0F, 0xB6, 0xC2];
+    /// movzx r9, cl
+    movzx_r9_cl: extend(ExtendOp::Movzx, R9, reg(RCX), BYTE, QWORD) => [0x4C, 0x0F, 0xB6, 0xC9];
+    /// movzx rax, sil
+    movzx_rax_sil: extend(ExtendOp::Movzx, RAX, reg(RSI), BYTE, QWORD) => [0x48, 0x0F, 0xB6, 0xC6];
+    /// movzx rcx, byte ptr [rbx]
+    movzx_rcx_byte_rbx: extend(ExtendOp::Movzx, RCX, mem(at(RBX)), BYTE, QWORD) => [0x48, 0x0F, 0xB6, 0x0B];
+    /// movzx rax, bx
+    movzx_rax_bx: extend(ExtendOp::Movzx, RAX, reg(RBX), WORD, QWORD) => [0x48, 0x0F, 0xB7, 0xC3];
+    /// movzx rbx, word ptr [rbx]
+    movzx_rbx_word_rbx: extend(ExtendOp::Movzx, RBX, mem(at(RBX)), WORD, QWORD) => [0x48, 0x0F, 0xB7, 0x1B];
+    /// movzx r9, byte ptr [r9]
+    movzx_r9_byte_r9: extend(ExtendOp::Movzx, R9, mem(at(R9)), BYTE, QWORD) => [0x4D, 0x0F, 0xB6, 0x09];
+    /// movsx rax, bl
+    movsx_rax_bl: extend(ExtendOp::Movsx, RAX, reg(RBX), BYTE, QWORD) => [0x48, 0x0F, 0xBE, 0xC3];
+    /// movsx rax, r10b
+    movsx_rax_r10b: extend(ExtendOp::Movsx, RAX, reg(R10), BYTE, QWORD) => [0x49, 0x0F, 0xBE, 0xC2];
+    /// movsx r9, cl
+    movsx_r9_cl: extend(ExtendOp::Movsx, R9, reg(RCX), BYTE, QWORD) => [0x4C, 0x0F, 0xBE, 0xC9];
+    /// movsx rax, sil
+    movsx_rax_sil: extend(ExtendOp::Movsx, RAX, reg(RSI), BYTE, QWORD) => [0x48, 0x0F, 0xBE, 0xC6];
+    /// movsx rcx, byte ptr [rbx]
+    movsx_rcx_byte_rbx: extend(ExtendOp::Movsx, RCX, mem(at(RBX)), BYTE, QWORD) => [0x48, 0x0F, 0xBE, 0x0B];
+    /// movsx rax, bx
+    movsx_rax_bx: extend(ExtendOp::Movsx, RAX, reg(RBX), WORD, QWORD) => [0x48, 0x0F, 0xBF, 0xC3];
+    /// movsx rbx, word ptr [rbx]
+    movsx_rbx_word_rbx: extend(ExtendOp::Movsx, RBX, mem(at(RBX)), WORD, QWORD) => [0x48, 0x0F, 0xBF, 0x1B];
+    /// movsx r9, byte ptr [r9]
+    movsx_r9_byte_r9: extend(ExtendOp::Movsx, R9, mem(at(R9)), BYTE, QWORD) => [0x4D, 0x0F, 0xBE, 0x09];
+    /// movsx rax, byte ptr [rbx+r8*2]
+    movsx_rax_byte_rbx_plus_r8_x_2: extend(ExtendOp::Movsx, RAX, mem(at(RBX).index_scale(R8, Scale::Two)), BYTE, QWORD) => [0x4A, 0x0F, 0xBE, 0x04, 0x43];
+    /// movsxd rax, ebx
+    movsxd_rax_ebx: extend(ExtendOp::Movsxd, RAX, reg(RBX), DWORD, QWORD) => [0x48, 0x63, 0xC3];
+    /// movsxd rax, r10d
+    movsxd_rax_r10d: extend(ExtendOp::Movsxd, RAX, reg(R10), DWORD, QWORD) => [0x49, 0x63, 0xC2];
+    /// movsxd r9, ecx
+    movsxd_r9_ecx: extend(ExtendOp::Movsxd, R9, reg(RCX), DWORD, QWORD) => [0x4C, 0x63, 0xC9];
+    /// movsxd r15, r8d
+    movsxd_r15_r8d: extend(ExtendOp::Movsxd, R15, reg(R8), DWORD, QWORD) => [0x4D, 0x63, 0xF8];
+    /// movsxd rcx, dword ptr [rbx]
+    movsxd_rcx_dword_rbx: extend(ExtendOp::Movsxd, RCX, mem(at(RBX)), DWORD, QWORD) => [0x48, 0x63, 0x0B];
+    /// movsxd rdx, dword ptr [rsp]
+    movsxd_rdx_dword_rsp: extend(ExtendOp::Movsxd, RDX, mem(at(RSP)), DWORD, QWORD) => [0x48, 0x63, 0x14, 0x24];
+    /// movsxd r9, dword ptr [r9]
+    movsxd_r9_dword_r9: extend(ExtendOp::Movsxd, R9, mem(at(R9)), DWORD, QWORD) => [0x4D, 0x63, 0x09];
+    /// movsxd rax, dword ptr [rbx+r8*2]
+    movsxd_rax_dword_rbx_plus_r8_x_2: extend(ExtendOp::Movsxd, RAX, mem(at(RBX).index_scale(R8, Scale::Two)), DWORD, QWORD) => [0x4A, 0x63, 0x04, 0x43];
+    /// movsxd rax, dword ptr [rbp+8]
+    movsxd_rax_dword_rbp_plus_8: extend(ExtendOp::Movsxd, RAX, mem(at(RBP).disp(8)), DWORD, QWORD) => [0x48, 0x63, 0x45, 0x08];
+    /// movsxd rax, dword ptr [rip+my_data]
+    movsxd_rax_dword_rip_plus_my_data: extend(ExtendOp::Movsxd, RAX, mem(MemAddress::symbol("my_data")), DWORD, QWORD) => [0x48, 0x63, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// movsxd rax, ebx (tailles par défaut : source 32, destination 64)
+    movsxd_rax_ebx_default_size: extend(ExtendOp::Movsxd, RAX, reg(RBX), None, None) => [0x48, 0x63, 0xC3];
+    /// movzx rax, bl (destination par défaut : 64 bits)
+    movzx_rax_bl_default_size: extend(ExtendOp::Movzx, RAX, reg(RBX), BYTE, None) => [0x48, 0x0F, 0xB6, 0xC3];
+    /// movzx ax, bl
+    movzx_ax_bl: extend(ExtendOp::Movzx, RAX, reg(RBX), BYTE, WORD) => [0x66, 0x0F, 0xB6, 0xC3];
+    /// movzx r9w, cl
+    movzx_r9w_cl: extend(ExtendOp::Movzx, R9, reg(RCX), BYTE, WORD) => [0x66, 0x44, 0x0F, 0xB6, 0xC9];
+    /// movzx cx, byte ptr [rbx]
+    movzx_cx_byte_rbx: extend(ExtendOp::Movzx, RCX, mem(at(RBX)), BYTE, WORD) => [0x66, 0x0F, 0xB6, 0x0B];
+    /// movsx ax, bl
+    movsx_ax_bl: extend(ExtendOp::Movsx, RAX, reg(RBX), BYTE, WORD) => [0x66, 0x0F, 0xBE, 0xC3];
+    /// movsx dx, sil
+    movsx_dx_sil: extend(ExtendOp::Movsx, RDX, reg(RSI), BYTE, WORD) => [0x66, 0x40, 0x0F, 0xBE, 0xD6];
+    /// movsx cx, byte ptr [r12]
+    movsx_cx_byte_r12: extend(ExtendOp::Movsx, RCX, mem(at(R12)), BYTE, WORD) => [0x66, 0x41, 0x0F, 0xBE, 0x0C, 0x24];
+    /// movzx esi, al (pas de REX : seule une source 8 bits peut en exiger un)
+    movzx_esi_al: extend(ExtendOp::Movzx, RSI, reg(RAX), BYTE, DWORD) => [0x0F, 0xB6, 0xF0];
+    /// movzx edi, bl
+    movzx_edi_bl: extend(ExtendOp::Movzx, RDI, reg(RBX), BYTE, DWORD) => [0x0F, 0xB6, 0xFB];
+    /// movsx esi, al
+    movsx_esi_al: extend(ExtendOp::Movsx, RSI, reg(RAX), BYTE, DWORD) => [0x0F, 0xBE, 0xF0];
+    /// movzx esi, sil
+    movzx_esi_sil: extend(ExtendOp::Movzx, RSI, reg(RSI), BYTE, DWORD) => [0x40, 0x0F, 0xB6, 0xF6];
+    /// movsx edi, bpl
+    movsx_edi_bpl: extend(ExtendOp::Movsx, RDI, reg(RBP), BYTE, DWORD) => [0x40, 0x0F, 0xBE, 0xFD];
+    /// movzx rsi, al
+    movzx_rsi_al: extend(ExtendOp::Movzx, RSI, reg(RAX), BYTE, QWORD) => [0x48, 0x0F, 0xB6, 0xF0];
     /// xchg bl, cl
     xchg_bl_cl: bin(BinOp::Xchg, reg(RBX), reg(RCX), BYTE) => [0x86, 0xCB] | [0x86, 0xD9];
     /// xchg bx, cx
@@ -219,13 +301,13 @@ cases! {
     /// mov qword ptr [r10+rax], r11
     mov_qword_r10_plus_rax_r11: bin(BinOp::Mov, mem(at(R10).index(RAX)), reg(R11), QWORD) => [0x4D, 0x89, 0x1C, 0x02];
     /// movzx r9d, byte ptr [r9]
-    movzx_r9d_byte_r9: bin(BinOp::Movzx, reg(R9), mem(at(R9)), BYTE) => [0x45, 0x0F, 0xB6, 0x09];
+    movzx_r9d_byte_r9: extend(ExtendOp::Movzx, R9, mem(at(R9)), BYTE, DWORD) => [0x45, 0x0F, 0xB6, 0x09];
     /// movzx eax, byte ptr [rbx+r8*2]
-    movzx_eax_byte_rbx_plus_r8_x_2: bin(BinOp::Movzx, reg(RAX), mem(at(RBX).index_scale(R8, Scale::Two)), BYTE) => [0x42, 0x0F, 0xB6, 0x04, 0x43];
+    movzx_eax_byte_rbx_plus_r8_x_2: extend(ExtendOp::Movzx, RAX, mem(at(RBX).index_scale(R8, Scale::Two)), BYTE, DWORD) => [0x42, 0x0F, 0xB6, 0x04, 0x43];
     /// movsx r9d, byte ptr [r9]
-    movsx_r9d_byte_r9: bin(BinOp::Movsx, reg(R9), mem(at(R9)), BYTE) => [0x45, 0x0F, 0xBE, 0x09];
+    movsx_r9d_byte_r9: extend(ExtendOp::Movsx, R9, mem(at(R9)), BYTE, DWORD) => [0x45, 0x0F, 0xBE, 0x09];
     /// movsx eax, byte ptr [rbx+r8*2]
-    movsx_eax_byte_rbx_plus_r8_x_2: bin(BinOp::Movsx, reg(RAX), mem(at(RBX).index_scale(R8, Scale::Two)), BYTE) => [0x42, 0x0F, 0xBE, 0x04, 0x43];
+    movsx_eax_byte_rbx_plus_r8_x_2: extend(ExtendOp::Movsx, RAX, mem(at(RBX).index_scale(R8, Scale::Two)), BYTE, DWORD) => [0x42, 0x0F, 0xBE, 0x04, 0x43];
     /// xchg r12, qword ptr [r9]
     xchg_r12_qword_r9: bin(BinOp::Xchg, reg(R12), mem(at(R9)), QWORD) => [0x4D, 0x87, 0x21];
     /// mov eax, dword ptr [r13+rcx*4]

@@ -116,14 +116,14 @@ Backend :
     [X] call [mem] / jmp [mem]      (FF /2, FF /4 + ModRM mémoire)
     [X] call [rip+sym]              (relocation PC32)
     [ ] call [rip+sym@GOTPCREL]     (nouveau RelocKind, pour la libc dynamique / PIE)
-[ ] Conversions int <-> float (une ligne par opcode dans ConvOp) :
+[X] Conversions int <-> float (une ligne par opcode dans ConvOp) :
     [X] Cvtsi2sd
-    [ ] Cvtsi2ss
-    [ ] Cvttsd2si / Cvttss2si (destination GPR : inverser la validation)
-    [ ] Cvtsd2ss / Cvtss2sd
-[ ] Ajouter Movsxd
-[ ] Movzx / Movsx vers une destination 64 bits (REX.W)
-[ ] Séparer taille source/destination
+    [X] Cvtsi2ss
+    [X] Cvttsd2si / Cvttss2si / Cvtsd2si / Cvtss2si
+    [X] Cvtsd2ss / Cvtss2sd
+[X] Ajouter Movsxd
+[X] Movzx / Movsx vers une destination 64 bits (REX.W)
+[X] Séparer taille source/destination (famille Extend : src_size + size)
 [ ] Gérer tailles mémoire distinctes
 [ ] Ajouter ImmediateFloat(f64) (constantes flottantes en .data/.rodata)
 [ ] Séparer Label et Sym
@@ -180,7 +180,7 @@ Front-end :
 
 [ ] Optimisations d'encodage (valides mais un octet de trop) :
     [ ] Supprimer le REX.W inutile de push / pop
-    [ ] Supprimer le REX 0x40 superflu de movzx esi, al
+    [X] Supprimer le REX 0x40 superflu de movzx esi, al
     [ ] Forme courte de l'accumulateur (05 / A9 au lieu de 81 / F7)
 
 [ ] Garder le générateur de tests (gen_encode_tests.py) dans le dépôt

@@ -321,6 +321,81 @@ fn float_to_float_ignores_size() {
 }
 
 // ==========================================
+// Movd / Movq: raw bit copy, the size comes from the op
+// ==========================================
+
+#[test]
+fn movd_xmm_from_gpr() {
+    // movd xmm0, eax / movd xmm9, r10d
+    assert_eq!(enc(ConvOp::Movd, XMM0, Operand::Reg(RAX), Size::U64), [0x66, 0x0F, 0x6E, 0xC0]);
+    assert_eq!(enc(ConvOp::Movd, XMM9, Operand::Reg(R10), Size::U64), [0x66, 0x45, 0x0F, 0x6E, 0xCA]);
+}
+
+#[test]
+fn movd_xmm_from_mem() {
+    // movd xmm1, dword ptr [rbx+8] / movd xmm12, dword ptr [r9+rcx*4]
+    assert_eq!(enc(ConvOp::Movd, XMM1, mem(at(RBX).disp(8)), Size::U64), [0x66, 0x0F, 0x6E, 0x4B, 0x08]);
+    let src = mem(at(R9).index_scale(RCX, Scale::Four));
+    assert_eq!(enc(ConvOp::Movd, XMM12, src, Size::U64), [0x66, 0x45, 0x0F, 0x6E, 0x24, 0x89]);
+}
+
+#[test]
+fn movd_gpr_from_xmm() {
+    // movd eax, xmm0 / movd r11d, xmm13
+    assert_eq!(enc(ConvOp::Movd, RAX, Operand::Reg(XMM0), Size::U64), [0x66, 0x0F, 0x7E, 0xC0]);
+    assert_eq!(enc(ConvOp::Movd, R11, Operand::Reg(XMM13), Size::U64), [0x66, 0x45, 0x0F, 0x7E, 0xEB]);
+}
+
+#[test]
+fn movq_xmm_from_gpr() {
+    // movq xmm0, rax / movq xmm9, r10
+    assert_eq!(enc(ConvOp::Movq, XMM0, Operand::Reg(RAX), Size::U64), [0x66, 0x48, 0x0F, 0x6E, 0xC0]);
+    assert_eq!(enc(ConvOp::Movq, XMM9, Operand::Reg(R10), Size::U64), [0x66, 0x4D, 0x0F, 0x6E, 0xCA]);
+}
+
+#[test]
+fn movq_gpr_from_xmm() {
+    // movq rax, xmm0 / movq r11, xmm13
+    assert_eq!(enc(ConvOp::Movq, RAX, Operand::Reg(XMM0), Size::U64), [0x66, 0x48, 0x0F, 0x7E, 0xC0]);
+    assert_eq!(enc(ConvOp::Movq, R11, Operand::Reg(XMM13), Size::U64), [0x66, 0x4D, 0x0F, 0x7E, 0xEB]);
+}
+
+#[test]
+fn movq_xmm_from_xmm_or_mem() {
+    // movq xmm0, xmm1 / movq xmm10, xmm3 : F3 0F 7E, as GNU as picks
+    assert_eq!(enc(ConvOp::Movq, XMM0, Operand::Reg(XMM1), Size::U64), [0xF3, 0x0F, 0x7E, 0xC1]);
+    assert_eq!(enc(ConvOp::Movq, XMM10, Operand::Reg(XMM3), Size::U64), [0xF3, 0x44, 0x0F, 0x7E, 0xD3]);
+    // movq xmm1, qword ptr [rbx+8] / movq xmm12, qword ptr [r9+rcx*4]
+    assert_eq!(enc(ConvOp::Movq, XMM1, mem(at(RBX).disp(8)), Size::U64), [0xF3, 0x0F, 0x7E, 0x4B, 0x08]);
+    let src = mem(at(R9).index_scale(RCX, Scale::Four));
+    assert_eq!(enc(ConvOp::Movq, XMM12, src, Size::U64), [0xF3, 0x45, 0x0F, 0x7E, 0x24, 0x89]);
+}
+
+#[test]
+fn movd_movq_rip_relative_symbol_emits_relocation() {
+    let src = Operand::MemoryAddress(MemAddress::symbol("my_float"));
+
+    let info = encode_conversion(ConvOp::Movq, &XMM2, &src, Size::U64);
+    assert_eq!(info.data, [0xF3, 0x0F, 0x7E, 0x15, 0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(info.relocations[0].offset, 4);
+
+    let info = encode_conversion(ConvOp::Movd, &XMM2, &src, Size::U64);
+    assert_eq!(info.data, [0x66, 0x0F, 0x6E, 0x15, 0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(info.relocations[0].offset, 4);
+}
+
+#[test]
+fn movd_movq_ignore_size() {
+    // the size comes from the op, not from the default size
+    for size in [None, Some(Size::U32), Some(Size::U64)] {
+        let movd = Instruction::Convert { op: ConvOp::Movd, dst: XMM0, src: Operand::Reg(RAX), size };
+        let movq = Instruction::Convert { op: ConvOp::Movq, dst: XMM0, src: Operand::Reg(RAX), size };
+        assert_eq!(movd.encode(Size::U64).data, [0x66, 0x0F, 0x6E, 0xC0]);
+        assert_eq!(movq.encode(Size::U64).data, [0x66, 0x48, 0x0F, 0x6E, 0xC0]);
+    }
+}
+
+// ==========================================
 // Invalid operands
 // ==========================================
 
@@ -388,4 +463,29 @@ fn float_to_float_gpr_source_panics() {
 #[should_panic(expected = "source must be an XMM register or a memory address")]
 fn float_to_float_immediate_source_panics() {
     enc(ConvOp::Cvtss2sd, XMM0, Operand::Imm(1), Size::U64);
+}
+
+#[test]
+#[should_panic(expected = "Movd: source must be a GPR or a memory address")]
+fn movd_xmm_from_xmm_panics() {
+    enc(ConvOp::Movd, XMM0, Operand::Reg(XMM1), Size::U64);
+}
+
+#[test]
+#[should_panic(expected = "Movq: source must be an XMM register")]
+fn movq_gpr_from_gpr_panics() {
+    enc(ConvOp::Movq, RAX, Operand::Reg(RBX), Size::U64);
+}
+
+#[test]
+#[should_panic(expected = "Movd: source must be an XMM register")]
+fn movd_gpr_from_mem_panics() {
+    // a GPR load from memory is a plain mov
+    enc(ConvOp::Movd, RAX, mem(at(RBX)), Size::U64);
+}
+
+#[test]
+#[should_panic(expected = "Movq: source must be a GPR or a memory address")]
+fn movq_xmm_from_immediate_panics() {
+    enc(ConvOp::Movq, XMM0, Operand::Imm(1), Size::U64);
 }

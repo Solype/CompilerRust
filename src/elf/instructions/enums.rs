@@ -234,6 +234,10 @@ pub enum ConvOp {
     Cvtss2si,
     Cvttsd2si,
     Cvttss2si,
+    /// Raw 32-bit copy between a GPR and an XMM register, no conversion
+    Movd,
+    /// Raw 64-bit copy between a GPR and an XMM register (or XMM <- xmm/m64)
+    Movq,
 }
 
 #[derive(Debug)]

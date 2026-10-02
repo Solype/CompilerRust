@@ -94,6 +94,9 @@ pub enum BinOp {
     /// xorpd (U64) / xorps (U32): bitwise XOR on the whole 128-bit register,
     /// a memory operand is 16 bytes and must be 16-byte aligned
     XorF,
+    /// andpd (U64) / andps (U32): bitwise AND on the whole 128-bit register,
+    /// a memory operand is 16 bytes and must be 16-byte aligned
+    AndF,
 }
 
 #[derive(Debug, Clone, Copy)]

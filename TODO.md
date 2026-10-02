@@ -100,7 +100,7 @@ Atomics:
 [X] Cmpxchg
 
 Tests:
-[X] 1145 unit tests (src/elf/instructions/encode_tests/), reference bytes
+[X] 1159 unit tests (src/elf/instructions/encode_tests/), reference bytes
     produced by GNU as, one family per file
 [X] Relocation tests (offset, type, addend) compared with readelf
 [X] Symbol table tests (src/elf/file/symbol_tests.rs)
@@ -142,7 +142,7 @@ Backend:
 [ ] Review the dst/src order of StoreF (the register is in dst)
 [ ] Common scalar SSE:
     [X] Xorps / Xorpd (zeroing, sign flip; BinOp::XorF, pd if U64, ps otherwise)
-    [ ] Andpd / Andps (absolute value)
+    [X] Andpd / Andps (absolute value; BinOp::AndF, pd if U64, ps otherwise)
     [X] Movq / Movd (GPR <-> XMM, bitcast and passing constants, in ConvOp)
     [ ] Movaps / Movapd (XMM -> XMM copy)
     [ ] Sqrtsd / Sqrtss

@@ -224,4 +224,32 @@ cases! {
     xorps_xmm3_xmmword_rbx_plus_8: bin(BinOp::XorF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0x0F, 0x57, 0x5B, 0x08];
     /// xorps xmm3, xmmword ptr [r9]
     xorps_xmm3_xmmword_r9: bin(BinOp::XorF, reg(XMM3), mem(at(R9)), DWORD) => [0x41, 0x0F, 0x57, 0x19];
+    /// andpd xmm1, xmm0
+    andpd_xmm1_xmm0: bin(BinOp::AndF, reg(XMM1), reg(XMM0), None) => [0x66, 0x0F, 0x54, 0xC8];
+    /// andpd xmm9, xmm2
+    andpd_xmm9_xmm2: bin(BinOp::AndF, reg(XMM9), reg(XMM2), None) => [0x66, 0x44, 0x0F, 0x54, 0xCA];
+    /// andpd xmm2, xmm15
+    andpd_xmm2_xmm15: bin(BinOp::AndF, reg(XMM2), reg(XMM15), None) => [0x66, 0x41, 0x0F, 0x54, 0xD7];
+    /// andpd xmm0, xmm0
+    andpd_xmm0_xmm0: bin(BinOp::AndF, reg(XMM0), reg(XMM0), None) => [0x66, 0x0F, 0x54, 0xC0];
+    /// andpd xmm0, xmmword ptr [rip+my_data]
+    andpd_xmm0_xmmword_rip_plus_my_data: bin(BinOp::AndF, reg(XMM0), mem(MemAddress::symbol("my_data")), None) => [0x66, 0x0F, 0x54, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// andpd xmm3, xmmword ptr [rbx+8]
+    andpd_xmm3_xmmword_rbx_plus_8: bin(BinOp::AndF, reg(XMM3), mem(at(RBX).disp(8)), None) => [0x66, 0x0F, 0x54, 0x5B, 0x08];
+    /// andpd xmm3, xmmword ptr [r9]
+    andpd_xmm3_xmmword_r9: bin(BinOp::AndF, reg(XMM3), mem(at(R9)), None) => [0x66, 0x41, 0x0F, 0x54, 0x19];
+    /// andps xmm1, xmm0
+    andps_xmm1_xmm0: bin(BinOp::AndF, reg(XMM1), reg(XMM0), DWORD) => [0x0F, 0x54, 0xC8];
+    /// andps xmm9, xmm2
+    andps_xmm9_xmm2: bin(BinOp::AndF, reg(XMM9), reg(XMM2), DWORD) => [0x44, 0x0F, 0x54, 0xCA];
+    /// andps xmm2, xmm15
+    andps_xmm2_xmm15: bin(BinOp::AndF, reg(XMM2), reg(XMM15), DWORD) => [0x41, 0x0F, 0x54, 0xD7];
+    /// andps xmm0, xmm0
+    andps_xmm0_xmm0: bin(BinOp::AndF, reg(XMM0), reg(XMM0), DWORD) => [0x0F, 0x54, 0xC0];
+    /// andps xmm0, xmmword ptr [rip+my_data]
+    andps_xmm0_xmmword_rip_plus_my_data: bin(BinOp::AndF, reg(XMM0), mem(MemAddress::symbol("my_data")), DWORD) => [0x0F, 0x54, 0x05, 0x00, 0x00, 0x00, 0x00];
+    /// andps xmm3, xmmword ptr [rbx+8]
+    andps_xmm3_xmmword_rbx_plus_8: bin(BinOp::AndF, reg(XMM3), mem(at(RBX).disp(8)), DWORD) => [0x0F, 0x54, 0x5B, 0x08];
+    /// andps xmm3, xmmword ptr [r9]
+    andps_xmm3_xmmword_r9: bin(BinOp::AndF, reg(XMM3), mem(at(R9)), DWORD) => [0x41, 0x0F, 0x54, 0x19];
 }

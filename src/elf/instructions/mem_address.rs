@@ -1,4 +1,5 @@
 use super::register::{Register};
+use super::enums::{LabelId, Target};
 
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(u8)]
@@ -23,6 +24,18 @@ pub enum AddressingMode {
 pub enum MemDisplacement {
     Imm(i32),
     Sym(String),
+    Label(LabelId),
+}
+
+impl MemDisplacement {
+    /// Target of a `Sym` or `Label` displacement
+    pub fn target(&self) -> Option<Target> {
+        match self {
+            MemDisplacement::Imm(_) => None,
+            MemDisplacement::Sym(name) => Some(Target::Sym(name.clone())),
+            MemDisplacement::Label(id) => Some(Target::Label(*id)),
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -61,6 +74,14 @@ impl MemAddress {
     pub fn symbol(sym: impl Into<String>) -> Self {
         Self {
             disp: MemDisplacement::Sym(sym.into()),
+            ..Default::default()
+        }
+    }
+
+    /// `[rip + label]`, e.g. the address of a jump table
+    pub fn label(id: LabelId) -> Self {
+        Self {
+            disp: MemDisplacement::Label(id),
             ..Default::default()
         }
     }
@@ -128,6 +149,12 @@ impl MemAddress {
 
     pub fn sym(mut self, sym: impl Into<String>) -> Self {
         self.disp = MemDisplacement::Sym(sym.into());
+        self
+    }
+
+    /// Label as displacement, e.g. `[rcx*8 + table]`
+    pub fn disp_label(mut self, id: LabelId) -> Self {
+        self.disp = MemDisplacement::Label(id);
         self
     }
 }

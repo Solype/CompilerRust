@@ -1,4 +1,70 @@
+use std::fmt;
+use std::sync::atomic::{AtomicU32, Ordering};
+
 use super::{MemAddress, register::*};
+
+/// A position in the code, local to the object file: never in the symbol
+/// table, so it cannot collide with a function or a global. Each `new()` is
+/// unique within the process; it is defined by `Instruction::Label` and
+/// targeted by `Operand::Label` (or `Target::Label` in a relocation).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LabelId(u32);
+
+impl LabelId {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        static NEXT: AtomicU32 = AtomicU32::new(0);
+        LabelId(NEXT.fetch_add(1, Ordering::Relaxed))
+    }
+}
+
+impl fmt::Display for LabelId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, ".L{}", self.0)
+    }
+}
+
+/// What a relocation points to
+#[derive(Debug, Clone, PartialEq)]
+pub enum Target {
+    /// Symbol known to the linker: function or global, defined here or external
+    Sym(String),
+    /// Label of this object file, resolved by the assembler
+    Label(LabelId),
+}
+
+impl Default for Target {
+    fn default() -> Self {
+        Target::Sym(String::new())
+    }
+}
+
+impl fmt::Display for Target {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Target::Sym(name) => f.write_str(name),
+            Target::Label(id) => id.fmt(f),
+        }
+    }
+}
+
+impl From<&str> for Target {
+    fn from(name: &str) -> Self {
+        Target::Sym(name.to_string())
+    }
+}
+
+impl From<LabelId> for Target {
+    fn from(id: LabelId) -> Self {
+        Target::Label(id)
+    }
+}
+
+impl PartialEq<&str> for Target {
+    fn eq(&self, name: &&str) -> bool {
+        matches!(self, Target::Sym(s) if s == name)
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
@@ -25,7 +91,31 @@ pub enum Operand {
     Reg(Register),
     Imm(i64),
     Sym(String),
+    Label(LabelId),
     MemoryAddress(MemAddress),
+}
+
+impl Operand {
+    /// Target of a `Sym` or `Label` operand
+    pub fn target(&self) -> Option<Target> {
+        match self {
+            Operand::Sym(name) => Some(Target::Sym(name.clone())),
+            Operand::Label(id) => Some(Target::Label(*id)),
+            _ => None,
+        }
+    }
+}
+
+impl From<&str> for Operand {
+    fn from(name: &str) -> Self {
+        Operand::Sym(name.to_string())
+    }
+}
+
+impl From<LabelId> for Operand {
+    fn from(id: LabelId) -> Self {
+        Operand::Label(id)
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -321,7 +411,8 @@ pub enum Instruction {
         size: Option<Size>,
     },
 
-    LocalSym(String),
+    /// Defines the label at this position (emits no byte)
+    Label(LabelId),
 
     Nop(u8),
 
@@ -366,7 +457,7 @@ pub enum Instruction {
 
 #[derive(Debug, Clone, Default)]
 pub struct Relocation {
-    pub sym: String,
+    pub target: Target,
     pub offset: usize,
     pub size: u8, // in bytes (1, 2, 4, 8)
     pub kind: RelocKind,

@@ -10,7 +10,7 @@ use super::*;
 
 ///////////////////////////////////////////////////////////////////
 
-fn encode_reg_sym(reg: Register, sym: &str, size: Size, enc: &BinaryEncoding) -> EncodeInformation {
+fn encode_reg_sym(reg: Register, target: Target, size: Size, enc: &BinaryEncoding) -> EncodeInformation {
     if !matches!(reg.class, RegisterClass::Gpr) {
         panic!("invalid register");
     }
@@ -62,7 +62,7 @@ fn encode_reg_sym(reg: Register, sym: &str, size: Size, enc: &BinaryEncoding) ->
     v.extend_vec(emit_imm(0, imm_size));
 
     v.add_relocation(Relocation {
-        sym: sym.to_string(),
+        target,
         offset,
         size: imm_size as u8,
         kind,
@@ -132,7 +132,9 @@ pub(in super::super) fn encode_binary(
 
     match (dst, src) {
         (Operand::Reg(reg), Operand::Imm(val)) => encode_reg_int(reg, *val, size, &enc),
-        (Operand::Reg(reg), Operand::Sym(sym)) => encode_reg_sym(*reg, sym, size, &enc),
+        (Operand::Reg(reg), Operand::Sym(_) | Operand::Label(_)) => {
+            encode_reg_sym(*reg, src.target().unwrap(), size, &enc)
+        }
         (Operand::MemoryAddress(_), Operand::Imm(val)) => encode_mem_imm(dst, *val, size, &enc),
 
         (

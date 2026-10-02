@@ -9,9 +9,9 @@ fn reloc(ins: Instruction) -> Relocation {
     info.relocations[0].clone()
 }
 
-fn check(ins: Instruction, sym: &str, offset: usize, size: u8, kind: RelocKind, addend: i32) {
+fn check(ins: Instruction, target: impl Into<Target>, offset: usize, size: u8, kind: RelocKind, addend: i32) {
     let r = reloc(ins);
-    assert_eq!(r.sym, sym);
+    assert_eq!(r.target, target.into());
     assert_eq!(r.offset, offset, "offset");
     assert_eq!(r.size, size, "size");
     assert_eq!(r.kind, kind, "kind");
@@ -164,4 +164,64 @@ fn alu32_symbol() {
 fn push_symbol() {
     // push offset my_data : 68 <imm32>, R_X86_64_32S
     check(stack(StackOp::Push, sym("my_data"), None), "my_data", 1, 4, RelocKind::AbsoluteSigned, 0);
+}
+
+
+// Labels: same fields as a symbol, but PC-relative instead of PLT32 for a
+// branch (resolved in place by the ELF layer, see symbol_tests.rs)
+
+#[test]
+fn jmp_label_is_relative() {
+    let l = LabelId::new();
+    check(jmp(l), l, 1, 4, RelocKind::Relative, -4);
+}
+
+#[test]
+fn jcc_label_is_relative() {
+    let l = LabelId::new();
+    check(jcc(ConditionCode::NE, l), l, 2, 4, RelocKind::Relative, -4);
+}
+
+#[test]
+fn call_label_is_relative() {
+    let l = LabelId::new();
+    check(call(l), l, 1, 4, RelocKind::Relative, -4);
+}
+
+#[test]
+fn loop_label_rel8() {
+    let l = LabelId::new();
+    check(ctrl(CtrlOp::Loop, l), l, 1, 1, RelocKind::Relative, -1);
+}
+
+#[test]
+fn lea_rip_label() {
+    // lea rax, [rip+.L] : 48 8D 05 <disp32>, PC32 addend -4
+    let l = LabelId::new();
+    check(lea(RAX, MemAddress::label(l), QWORD), l, 3, 4, RelocKind::Relative, -4);
+}
+
+#[test]
+fn jump_table_indexed_by_label() {
+    // jmp [rcx*8 + .Ltable] : FF 24 CD <disp32>, R_X86_64_32S
+    let l = LabelId::new();
+    let table = mem(MemAddress::new().index_scale(RCX, Scale::Eight).disp_label(l));
+    check(jmp_indirect(table), l, 3, 4, RelocKind::AbsoluteSigned, 0);
+}
+
+#[test]
+fn push_label() {
+    let l = LabelId::new();
+    check(stack(StackOp::Push, Operand::Label(l), None), l, 1, 4, RelocKind::AbsoluteSigned, 0);
+}
+
+#[test]
+fn mov_label_imm64() {
+    let l = LabelId::new();
+    check(bin(BinOp::Mov, reg(RAX), Operand::Label(l), QWORD), l, 2, 8, RelocKind::Absolute, 0);
+}
+
+#[test]
+fn labels_are_unique() {
+    assert_ne!(LabelId::new(), LabelId::new());
 }

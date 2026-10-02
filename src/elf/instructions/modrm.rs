@@ -50,9 +50,9 @@ fn get_disp(
     match disp {
         MemDisplacement::Imm(val) => *val,
 
-        MemDisplacement::Sym(sym) => {
+        MemDisplacement::Sym(_) | MemDisplacement::Label(_) => {
             relocs.push(Relocation {
-                sym: sym.clone(),
+                target: disp.target().unwrap(),
                 offset: data_len,
                 size: 4,
                 kind: RelocKind::AbsoluteSigned,
@@ -74,11 +74,11 @@ fn encode_rip_relative(
     let offset = data.len();
 
     match disp {
-        MemDisplacement::Sym(sym) => {
+        MemDisplacement::Sym(_) | MemDisplacement::Label(_) => {
             data.extend(&0u32.to_le_bytes());
 
             relocs.push(Relocation {
-                sym: sym.clone(),
+                target: disp.target().unwrap(),
                 offset,
                 size: 4,
                 kind: RelocKind::Relative,
@@ -105,11 +105,11 @@ fn encode_absolute(
     let offset = data.len();
 
     match disp {
-        MemDisplacement::Sym(sym) => {
+        MemDisplacement::Sym(_) | MemDisplacement::Label(_) => {
             data.extend(&0u32.to_le_bytes());
 
             relocs.push(Relocation {
-                sym: sym.clone(),
+                target: disp.target().unwrap(),
                 offset,
                 size: 4,
                 kind: RelocKind::AbsoluteSigned,
@@ -160,7 +160,7 @@ fn encode_base_disp(
     let val = get_disp(disp, data.len(), relocs);
 
     let (mod_bits, disp_bytes) =
-        encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
+        encode_disp(val, disp.target().is_some());
 
     data[0] = (mod_bits << 6) | rm;
 
@@ -231,7 +231,7 @@ fn encode_base_index_scale_disp(
     let val = get_disp(disp, data.len(), relocs);
 
     let (mod_bits, disp_bytes) =
-        encode_disp(val, matches!(disp, MemDisplacement::Sym(_)));
+        encode_disp(val, disp.target().is_some());
 
     data[0] = (mod_bits << 6) | 0b100;
 

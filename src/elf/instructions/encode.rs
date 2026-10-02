@@ -57,7 +57,7 @@ impl Instruction {
                 src_size,
                 size,
             } => encode_extend(*op, dst, src, *src_size, size.unwrap_or(default_size)),
-            Instruction::LocalSym(_) => EncodeInformation::default(),
+            Instruction::Label(_) => EncodeInformation::default(),
             Instruction::Sys { op } => match op {
                 SysOp::Int(n) => EncodeInformation {
                     data: vec![0xCD, *n],

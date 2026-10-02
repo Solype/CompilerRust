@@ -63,9 +63,19 @@ impl CtrlOp {
     }
 }
 
+/// A label is resolved in place by the assembler (PC-relative); a symbol may
+/// be external and goes through the PLT, like GNU as >= 2.31
+fn branch_kind(target: &Target) -> RelocKind {
+    match target {
+        Target::Sym(_) => RelocKind::Plt32,
+        Target::Label(_) => RelocKind::Relative,
+    }
+}
+
 fn encode_rel32_with_prefix(prefix: Option<u8>, opcode: u8, target: &Operand) -> EncodeInformation {
     match target {
-        Operand::Sym(sym) => {
+        Operand::Sym(_) | Operand::Label(_) => {
+            let target = target.target().unwrap();
             let mut v = Vec::with_capacity(6); // micro-opt
 
             if let Some(p) = prefix {
@@ -80,10 +90,10 @@ fn encode_rel32_with_prefix(prefix: Option<u8>, opcode: u8, target: &Operand) ->
             EncodeInformation {
                 data: v,
                 relocations: vec![Relocation {
-                    sym: sym.clone(),
+                    kind: branch_kind(&target),
+                    target,
                     offset,
                     size: 4,
-                    kind: RelocKind::Plt32,
                     addend: -4,
                 }],
             }
@@ -123,7 +133,7 @@ fn encode_indirect(ext: u8, target: &Operand) -> EncodeInformation {
 
 fn encode_rel8(opcode: u8, target: &Operand) -> EncodeInformation {
     match target {
-        Operand::Sym(sym) => {
+        Operand::Sym(_) | Operand::Label(_) => {
             let mut v = Vec::with_capacity(2);
 
             v.push(opcode);
@@ -134,7 +144,7 @@ fn encode_rel8(opcode: u8, target: &Operand) -> EncodeInformation {
             EncodeInformation {
                 data: v,
                 relocations: vec![Relocation {
-                    sym: sym.clone(),
+                    target: target.target().unwrap(),
                     offset,
                     size: 1,
                     kind: RelocKind::Relative,

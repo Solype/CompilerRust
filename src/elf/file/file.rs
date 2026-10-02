@@ -13,6 +13,7 @@ use super::super::{
     traits::{ElfWritable, UsizeCompatible},
     rel::{ElfRel, ElfRela},
     elfsym::SymbolCollection,
+    instructions::{LabelId, RelocKind, Target},
 };
 
 #[allow(dead_code)]
@@ -30,15 +31,18 @@ where T: Copy + ElfWritable + Debug + Default,
     pub rels: HashMap<usize, Vec<ElfRel<T>>>,
     pub relas: HashMap<usize, Vec<ElfRela<T>>>,
     pub(super) pending_relocs: Vec<PendingReloc>,
+    /// Defined labels: (section, offset in the section)
+    pub(super) labels: HashMap<LabelId, (usize, usize)>,
 }
 
-/// Relocation emitted while encoding, whose symbol is not resolved yet
+/// Relocation emitted while encoding, whose target is not resolved yet
 #[derive(Debug, Clone)]
 pub(super) struct PendingReloc {
     pub section: usize,
     pub offset: usize,
-    pub sym: String,
-    pub r_type: u32,
+    pub target: Target,
+    pub kind: RelocKind,
+    pub size: u8,
     pub addend: i32,
 }
 
@@ -63,6 +67,7 @@ where
             rels: HashMap::<usize, Vec<ElfRel<T>>>::default(),
             relas: HashMap::<usize, Vec<ElfRela<T>>>::default(),
             pending_relocs: Vec::new(),
+            labels: HashMap::new(),
         }
     }
 }

@@ -28,7 +28,9 @@ ELF:
     function tables, switch jump tables
 [X] Global symbols (functions and data)
 [X] Undefined symbols (external, resolved at link time)
-[X] Local symbols (labels)
+[X] Labels separate from symbols (LabelId): never in the symbol table,
+    resolved in place in the same section, section symbol + offset
+    otherwise (jump tables, other sections)
 [X] Relocations (rela), including 8-bit ones and under a lock prefix
 [X] R_X86_64_PLT32 for call / jmp / jcc rel32 (as GNU as >= 2.31 does),
     needed to call the dynamic libc in PIE (gcc -pie)
@@ -107,7 +109,7 @@ Atomics:
 [X] Cmpxchg
 
 Tests:
-[X] 1232 tests: 1214 encoding tests (src/elf/instructions/encode_tests/),
+[X] 1248 tests: 1223 encoding tests (src/elf/instructions/encode_tests/),
     reference bytes produced by GNU as, one family per file
 [X] Relocation tests (offset, type, addend) compared with readelf
 [X] Symbol table tests (src/elf/file/symbol_tests.rs)
@@ -145,11 +147,11 @@ Backend:
 [X] Movzx / Movsx into a 64-bit destination (REX.W)
 [X] Separate source/destination sizes (Extend family: src_size + size)
 [ ] Handle distinct memory sizes
-[ ] Separate Label and Sym (before the code generator: changes its IR)
+[X] Separate Label and Sym (Operand::Label, Instruction::Label, Target)
 [ ] Review the dst/src order of StoreF (the register is in dst)
 [ ] .bss: reserve space without writing bytes (NoBits exists)
-[ ] Resolve local jmp / jcc in place instead of leaving a relocation
-    to ld (smaller .o, makes rel8 short jumps possible)
+[X] Resolve local jmp / jcc / call / loop / lea [rip+label] in place
+    instead of leaving a relocation to ld
 [X] Common scalar SSE:
     [X] Xorps / Xorpd (zeroing, sign flip; BinOp::XorF, pd if U64, ps otherwise)
     [X] Andpd / Andps (absolute value; BinOp::AndF, pd if U64, ps otherwise)
@@ -198,8 +200,8 @@ TODO: LATER (not needed by the compiler)
 [ ] Add segment registers
 [ ] Add control/debug registers
 
-[ ] Short jumps (jmp / jcc rel8) when the target is close (needs local
-    jumps resolved in place, see above)
+[ ] Short jumps (jmp / jcc rel8) when the target is close (labels are
+    resolved in place; needs a relaxation pass, shrinking moves labels)
 [ ] Ret imm16
 [ ] Int3 (short form CC instead of CD 03)
 [ ] Endbr64 (if the target enables CET / IBT)

@@ -9,7 +9,7 @@ ORGANISATION
 
 src/
   lexer/      tokens + positions
-  hangul/     décomposition des syllabes, 받침, conjugaison
+  hangeul/    décomposition des syllabes, 받침, conjugaison
   parser/     tokens -> AST (avec découpage des particules)
   ast.rs      types de l'AST
   codegen/    AST -> Vec<Instruction>
@@ -245,11 +245,11 @@ Cas d'erreur (entrée -> erreur, span) :
 ÉTAPE 2 : MODULE HANGUL (indépendant, faisable en parallèle)
 ==================================================
 
-[ ] Décomposer / recomposer une syllabe :
+[X] Décomposer / recomposer une syllabe :
     code = c - 0xAC00 ; initiale = code / 588 ;
     voyelle = (code % 588) / 28 ; finale = code % 28
-[ ] a_batchim(syllabe) : finale != 0 (을/를, 이에요/예요, 과/와, (으)로)
-[ ] Conjugaison réguliers + 하다 : -아/어서, -아/어요, -(으)ㄴ
+[X] a_batchim(syllabe) : finale != 0 (을/를, 이에요/예요, 과/와, (으)로)
+[X] Conjugaison réguliers + 하다 : -아/어서, -아/어요, -(으)ㄴ
     (tableaux de LANGUAGE_DESIGN.md)
 
 Vérification : tests unitaires

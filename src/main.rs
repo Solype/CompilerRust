@@ -1,4 +1,5 @@
 mod elf;
+mod hangeul;
 mod lexer;
 mod samples;
 

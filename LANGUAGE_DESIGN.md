@@ -228,6 +228,7 @@ le choix selon le 받침 (`나을` → « 받침이 없으니 '를'을 쓰세요
 평균은 0.5예요              // 실수, vaut 0.5
 개수는 정수예요             // 정수, valeur par défaut 0
 이름은 문자 주소예요        // 문자 주소 (char*), vaut 빈 주소
+이름은 문자&예요            // pareil, avec l'abréviation &
 점수는 정수 10개예요        // tableau de 10 정수, tous à 0
 ```
 
@@ -249,7 +250,7 @@ pour toujours.
 | | flottant (32 bits) | `짧은 실수` | même modificateur que `짧은 정수` |
 | | booléen | `논리` | « logique » ; `논리를` |
 | | caractère | `문자` | `문자를` |
-| | pointeur | `TYPE 주소` | « adresse » : `정수 주소 가` = 가, adresse d'un entier |
+| | pointeur | `TYPE 주소` ou `TYPE&` | « adresse » : `정수 주소 가` = `정수& 가` = 가, adresse d'un entier ; `&` est une abréviation de `주소`, collée ou non (`정수&`, `정수 &`), répétable (`정수&&` = `정수 주소 주소`) |
 | | tableau | `TYPE N개` | compteur 개 : `정수 10개 가` = 가, 10 entiers ; concept : 배열 |
 
 ## Valeurs
@@ -318,6 +319,10 @@ suivante). L'affectation (`=`, `+=`…) et `++` / `--` n'existent pas : on utili
 | 11 | `또는` (`\|\|`) | gauche |
 
 `>>` sur un entier signé est arithmétique (`sar`), sur un `부호 없는` logique (`shr`).
+
+Après un mot de type (`정수`, `문자`…), `&` n'est pas le ET bit à bit mais l'abréviation de
+`주소` (voir Types). Le parser connaît les mots de type, il n'y a donc pas d'ambiguïté :
+`문자& 형식` est un type, `가 & 3` un ET bit à bit.
 
 ## Opérateurs en mots
 

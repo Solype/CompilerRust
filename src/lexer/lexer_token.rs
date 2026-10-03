@@ -2,9 +2,10 @@ use std::fmt;
 
 use super::span::Span;
 
-/// What a token is; the lexer knows no keyword: 정수를, 만약, 줘요 are all `HangulWord`
+/// What a token is; the lexer knows no keyword: 정수를, 만약, 줘요 are all `HangulWord`,
+/// the pre-parser turns them into `ParserToken`s
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TokenKind {
+pub enum LexerTokenKind {
     /// Hangul syllables only, particle included: `나를`, `정수를`, `해요`
     HangulWord(String),
     /// Latin letters and `_`, no digits: `main`, `printf`
@@ -74,18 +75,18 @@ pub enum Operator {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Token {
-    pub kind: TokenKind,
+pub struct LexerToken {
+    pub kind: LexerTokenKind,
     pub span: Span,
 }
 
-impl Token {
-    pub fn new(kind: TokenKind, span: Span) -> Self {
+impl LexerToken {
+    pub fn new(kind: LexerTokenKind, span: Span) -> Self {
         Self { kind, span }
     }
 }
 
-impl TokenKind {
+impl LexerTokenKind {
     /// The variant name, without its value
     pub fn name(&self) -> &'static str {
         match self {
@@ -101,7 +102,7 @@ impl TokenKind {
 }
 
 /// `HangulWord  외부`, `Punctuation LParen`, `Eof`: the format of `--tokens`
-impl fmt::Display for TokenKind {
+impl fmt::Display for LexerTokenKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = self.name();
         match self {

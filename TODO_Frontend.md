@@ -29,7 +29,7 @@ FAIT
 ÉTAPE 1 : LEXER
 ==================================================
 
-But : texte -> Vec<Token>, chaque token avec un Span en octets.
+But : texte -> Vec<LexerToken>, chaque token avec un Span en octets.
 Le lexer ne connaît AUCUN mot-clé : 정수를, 만약, 줘요 sont tous des mots
 hangul. Comme les particules sont collées (정수를 = 정수 + 를), c'est le parser
 qui reconnaît les mots-clés en découpant les mots.
@@ -38,9 +38,9 @@ qui reconnaît les mots-clés en découpant les mots.
 1.1 Fichiers
 --------------------------------------------------
 
-[X] src/lexer/mod.rs     pub fn tokenize(src: &str) -> Result<Vec<Token>, LexError>
+[X] src/lexer/mod.rs     pub fn tokenize(src: &str) -> Result<Vec<LexerToken>, LexError>
 [X] src/lexer/span.rs    Span
-[X] src/lexer/token.rs   Token, TokenKind
+[X] src/lexer/lexer_token.rs   LexerToken, LexerTokenKind
 [X] src/lexer/lexer_error.rs   LexError, LexErrorKind
 [X] main.rs : mod lexer; appeler tokenize sur la source lue
 
@@ -51,9 +51,9 @@ qui reconnaît les mots-clés en découpant les mots.
 [X] Span { start: usize, end: usize }
     octets, end exclu : &src[span.start..span.end] redonne le texte du token
 
-[X] Token { kind: TokenKind, span: Span }
+[X] LexerToken { kind: LexerTokenKind, span: Span }
 
-[X] TokenKind :
+[X] LexerTokenKind :
     Mots et littéraux
       HangulWord(String)     나를, 정수를, 해요
       LatinWord(String)      main, printf

@@ -1,6 +1,7 @@
 mod elf;
 mod hangeul;
 mod lexer;
+mod parser;
 mod samples;
 
 use std::fs::{self, File};

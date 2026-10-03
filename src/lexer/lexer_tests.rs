@@ -1,22 +1,22 @@
 use super::lexer_error::LexErrorKind::*;
 use super::span::Span;
-use super::token::Operator::*;
-use super::token::Punctuation::*;
-use super::token::TokenKind::{self, *};
+use super::lexer_token::Operator::*;
+use super::lexer_token::Punctuation::*;
+use super::lexer_token::LexerTokenKind::{self, *};
 use super::tokenize;
 
 /// The kinds of `src`, without the final `Eof`
-fn kinds(src: &str) -> Vec<TokenKind> {
+fn kinds(src: &str) -> Vec<LexerTokenKind> {
     let mut tokens = tokenize(src).unwrap_or_else(|err| panic!("{src:?}: {err}"));
     assert_eq!(tokens.pop().map(|t| t.kind), Some(Eof));
     tokens.into_iter().map(|t| t.kind).collect()
 }
 
-fn hangul(word: &str) -> TokenKind {
+fn hangul(word: &str) -> LexerTokenKind {
     HangulWord(word.to_string())
 }
 
-fn latin(word: &str) -> TokenKind {
+fn latin(word: &str) -> LexerTokenKind {
     LatinWord(word.to_string())
 }
 

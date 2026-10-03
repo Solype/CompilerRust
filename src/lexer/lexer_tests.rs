@@ -105,6 +105,19 @@ fn one_char_operators() {
     );
 }
 
+/// `&` after a type is `주소`: the lexer only sees an `Amp`, the parser decides
+#[test]
+fn pointer_ampersand() {
+    assert_eq!(
+        kinds("문자& 형식"),
+        [hangul("문자"), Operator(Amp), hangul("형식")]
+    );
+    assert_eq!(
+        kinds("정수&&"),
+        [hangul("정수"), Operator(Amp), Operator(Amp)]
+    );
+}
+
 #[test]
 fn string_is_decoded() {
     assert_eq!(

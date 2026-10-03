@@ -59,7 +59,7 @@ qui reconnaît les mots-clés en découpant les mots.
       LatinWord(String)      main, printf
       Int(i64)               42 (sans signe)
       Str(String)            contenu décodé : "%ld\n" -> %ld + vrai saut de ligne
-    Ponctuation
+    Ponctuation              Punctuation(Punctuation), enum à part :
       LParen RParen LBrace RBrace Comma
       Dot                    .
       Ellipsis               … ou ...
@@ -194,7 +194,7 @@ Pièges :
       7:4   HangulWord  정수를
       7:8   HangulWord  주는
       7:11  LatinWord   printf
-      7:17  LParen
+      7:17  Punctuation LParen
 [X] Erreur : fichier:ligne:colonne: message, code de sortie 1
 
 --------------------------------------------------

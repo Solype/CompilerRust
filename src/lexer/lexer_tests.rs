@@ -1,5 +1,6 @@
 use super::lexer_error::LexErrorKind::*;
 use super::span::Span;
+use super::token::Punctuation::*;
 use super::token::TokenKind::{self, *};
 use super::tokenize;
 
@@ -29,7 +30,7 @@ fn error(src: &str) -> (super::lexer_error::LexErrorKind, Span) {
 fn return_with_dot() {
     assert_eq!(
         kinds("42를 줘요."),
-        [Int(42), hangul("를"), hangul("줘요"), Dot]
+        [Int(42), hangul("를"), hangul("줘요"), Punctuation(Dot)]
     );
 }
 
@@ -49,11 +50,11 @@ fn particle_after_paren() {
     assert_eq!(
         kinds("(가 + 나)를"),
         [
-            LParen,
+            Punctuation(LParen),
             hangul("가"),
             Plus,
             hangul("나"),
-            RParen,
+            Punctuation(RParen),
             hangul("를")
         ]
     );
@@ -89,7 +90,13 @@ fn string_is_decoded() {
 
 #[test]
 fn ellipsis_both_spellings() {
-    let expected = [LParen, hangul("형식"), Comma, Ellipsis, RParen];
+    let expected = [
+        Punctuation(LParen),
+        hangul("형식"),
+        Punctuation(Comma),
+        Punctuation(Ellipsis),
+        Punctuation(RParen),
+    ];
     assert_eq!(kinds("(형식, …)"), expected);
     assert_eq!(kinds("(형식, ...)"), expected);
 }
@@ -118,7 +125,7 @@ fn proto_kr_lexes() {
     let src = include_str!("../../Proto.kr");
     let tokens = kinds(src);
     assert!(tokens.contains(&latin("printf")));
-    assert!(tokens.contains(&Ellipsis));
+    assert!(tokens.contains(&Punctuation(Ellipsis)));
 }
 
 #[test]

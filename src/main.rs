@@ -13,13 +13,20 @@ use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
 const OUTPUT: &str = "output.elf";
 
 fn main() -> std::io::Result<()> {
-    let source = read_source();
-    // not used yet: the parser will read them
-    let _tokens = lexer::token::tokenizer(&source).unwrap_or_else(|err| {
+    let args = parse_args();
+    let source = read_source(&args);
+    let tokens = lexer::tokenize(&source).unwrap_or_else(|err| {
         let (line, col) = err.span.line_col(&source);
-        eprintln!("{line}:{col}: {err}");
-        process::exit(84);
+        eprintln!("{}:{line}:{col}: {err}", args.path);
+        process::exit(1);
     });
+    if args.tokens {
+        for token in &tokens {
+            let (line, col) = token.span.line_col(&source);
+            println!("{:<6}{}", format!("{line}:{col}"), token.kind);
+        }
+        return Ok(());
+    }
 
     let mut elf_file = ElfFile64::default();
     elf_file.declare_non_defined_sym(&"my_exit".to_string(), SymbolType::Function);
@@ -47,16 +54,36 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-/// Reads the source file given as the only argument (`compiler file.kr`), exits on error
-fn read_source() -> String {
+struct Args {
+    program: String,
+    path: String,
+    /// `--tokens`: print the tokens, one per line, then quit
+    tokens: bool,
+}
+
+/// `compiler [--tokens] file.kr`, exits on a wrong usage
+fn parse_args() -> Args {
     let mut args = env::args();
     let program = args.next().unwrap_or_else(|| "compiler".to_string());
-    let (Some(path), None) = (args.next(), args.next()) else {
-        eprintln!("usage: {program} <file.kr>");
+    let mut tokens = false;
+    let mut paths = Vec::new();
+    for arg in args {
+        match arg.as_str() {
+            "--tokens" => tokens = true,
+            _ => paths.push(arg),
+        }
+    }
+    let [path] = <[String; 1]>::try_from(paths).unwrap_or_else(|_| {
+        eprintln!("usage: {program} [--tokens] <file.kr>");
         process::exit(1);
-    };
-    fs::read_to_string(&path).unwrap_or_else(|err| {
-        eprintln!("{program}: {path}: {err}");
+    });
+    Args { program, path, tokens }
+}
+
+/// Reads the source file (UTF-8), exits on error
+fn read_source(args: &Args) -> String {
+    fs::read_to_string(&args.path).unwrap_or_else(|err| {
+        eprintln!("{}: {}: {err}", args.program, args.path);
         process::exit(84);
     })
 }

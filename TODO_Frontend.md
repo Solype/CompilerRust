@@ -63,7 +63,7 @@ qui reconnaît les mots-clés en découpant les mots.
       LParen RParen LBrace RBrace Comma
       Dot                    .
       Ellipsis               … ou ...
-    Opérateurs
+    Opérateurs               Operator(Operator), enum à part :
       Plus Minus Star Slash Percent      + - * / %
       Amp Pipe Caret Tilde               & | ^ ~
       Shl Shr                            << >>

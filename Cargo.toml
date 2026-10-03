@@ -9,5 +9,9 @@ name = "aacompiler"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "compiler"
+path = "src/main.rs"
+
 [dependencies]
 elf_derive = { path = "elf_derive" }

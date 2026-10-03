@@ -1,16 +1,20 @@
 mod elf;
 mod samples;
 
-use std::fs::File;
+use std::fs::{self, File};
+use std::{env, process};
 
-use elf::elfsym::{make_st_info, StBind, StType, StVis};
-use elf::file::{natural_alignment, ElfFile64, SymbolType};
+use elf::elfsym::{StBind, StType, StVis, make_st_info};
+use elf::file::{ElfFile64, SymbolType, natural_alignment};
 use elf::instructions::{Instruction, RelocKind, Relocation, Target};
 use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
 
 const OUTPUT: &str = "output.elf";
 
 fn main() -> std::io::Result<()> {
+    // not used yet: the tokenizer will read it
+    let _source = read_source();
+
     let mut elf_file = ElfFile64::default();
     elf_file.declare_non_defined_sym(&"my_exit".to_string(), SymbolType::Function);
 
@@ -19,7 +23,12 @@ fn main() -> std::io::Result<()> {
     add_object(&mut elf_file, data, "my_float", &0.1f64.to_le_bytes());
     add_object(&mut elf_file, data, "my_lock", &0u32.to_le_bytes());
     // pointers resolved by ld: a data symbol and a function defined below
-    add_pointers(&mut elf_file, data, "my_ptrs", &["my_data", "jumps_and_calls"]);
+    add_pointers(
+        &mut elf_file,
+        data,
+        "my_ptrs",
+        &["my_data", "jumps_and_calls"],
+    );
 
     let text = add_section(&mut elf_file, SectionName::Text, ShFlags::ExecInstr, 16);
     for (name, code) in samples::families() {
@@ -30,6 +39,20 @@ fn main() -> std::io::Result<()> {
     elf_file.write(&mut File::create(OUTPUT)?)?;
     println!("ELF written: {OUTPUT}");
     Ok(())
+}
+
+/// Reads the source file given as the only argument (`compiler file.kr`), exits on error
+fn read_source() -> String {
+    let mut args = env::args();
+    let program = args.next().unwrap_or_else(|| "compiler".to_string());
+    let (Some(path), None) = (args.next(), args.next()) else {
+        eprintln!("usage: {program} <file.kr>");
+        process::exit(1);
+    };
+    fs::read_to_string(&path).unwrap_or_else(|err| {
+        eprintln!("{program}: {path}: {err}");
+        process::exit(84);
+    })
 }
 
 /// Adds an allocated PROGBITS section, with one extra flag (Write, ExecInstr, ...)

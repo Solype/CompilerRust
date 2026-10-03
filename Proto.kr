@@ -1,0 +1,78 @@
+/*
+ * Proto.kr : premier vrai programme du langage.
+ * Couvre : fonctions (verbes), chaînes d'appels, variables, constantes,
+ * conditions, boucles, affichage (printf de la libc), retour.
+ */
+
+외부 정수를 주는 printf(문자 주소 형식, …)
+
+정수를 주는 더하다(정수 가, 정수 나) {
+    (가 + 나)를 줘요.
+}
+
+정수를 주는 제곱하다(정수 가) {
+    (가 * 가)를 줘요.
+}
+
+// 1, 0 ou -1 selon que 가 est plus grand, égal ou plus petit que 나
+정수를 주는 비교하다(정수 가, 정수 나) {
+    만약 가 > 나면 {
+        1을 줘요.
+    } 아니면 만약 가 == 나면 {
+        0을 줘요.
+    } 아니면 {
+        -1을 줘요.
+    }
+}
+
+// somme des carrés de 1 à 끝 (exclu)
+정수를 주는 합하다(정수 끝) {
+    결과는 0이에요.
+    수는 정수예요.
+    수를 1부터 끝까지 세면서 {
+        수를 제곱해서 결과를 더해서 결과에 넣어요.
+    }
+    결과를 줘요.
+}
+
+정수를 주는 main() {
+    결과는 정수예요.
+
+    3과 4를 더해서 결과에 넣어요.
+    결과에 (결과 * 5)를 넣어요.             // arithmétique simple, sans appel
+    "%ld\n"과 결과를 printf해요.             // (3 + 4) * 5 = 35
+    "%ld\n"과 ((결과 << 1) ^ 3)을 printf해요. // opérateurs C : (35 << 1) ^ 3 = 69
+
+    7과 3을 비교해서 결과에 넣어요.
+    "%ld\n"과 결과를 printf해요.             // 1
+
+    고정된 끝은 10이에요.
+    끝을 합해서 결과에 넣어요.
+    "%ld\n"과 결과를 printf해요.             // 1² + … + 9² = 285
+
+    // nombres pairs de 1 à 끝 (exclu)
+    개수는 0이에요.
+    수는 정수예요.
+    수를 1부터 끝까지 세면서 {
+        만약 수 % 2 == 0이면 {
+            개수와 1을 더해서 개수에 넣어요.
+        }
+    }
+    "%ld\n"과 개수를 printf해요.             // 2, 4, 6, 8 : 4
+
+    // première puissance de 2 qui dépasse 100
+    숫자는 1이에요.
+    숫자 < 100인 동안 {
+        숫자에 (숫자 * 2)를 넣어요.
+    }
+    "%ld\n"과 숫자를 printf해요.             // 128
+
+    // 1, 2, 4, 5 : on saute 3, on s'arrête à 6
+    수를 1부터 끝까지 세면서 {
+        만약 수 == 3이면 { 넘어가요. }
+        만약 수 == 6이면 { 그만해요. }
+        "%ld\n"과 수를 printf해요.
+    }
+
+    0을 줘요.
+}

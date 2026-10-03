@@ -1,7 +1,7 @@
 # Backend gaps
 
 State of the backend on October 2, 2026 (1248 tests passing), checked against the code rather than
-only against `TODO.md`.
+only against `TODO_Backend.md`.
 
 **In short:** nothing in the backend blocks the code generator any more. The three blocking gaps
 (object alignment, relocations in data, labels separate from symbols) are fixed; what is left is
@@ -62,12 +62,12 @@ the symbol table.
 | **`GOTPCREL`** | Needed to read a libc **variable** in PIE (`stdout`, `errno`). Function **calls** already work through PLT32. | Small |
 | **Short jumps (`rel8`)** | Jumps to a label are now resolved in place, but always in the 5-6 byte `rel32` form. Picking `rel8` (2 bytes) when the target is close needs a relaxation pass, since shrinking a jump moves the labels after it. | Medium |
 | **dst/src order of `StoreF`** | The register is in `dst` while it is the source: a trap for the code generator. | Small |
-| **"Distinct memory sizes"** | In `TODO.md`, scope unclear. | ? |
+| **"Distinct memory sizes"** | In `TODO_Backend.md`, scope unclear. | ? |
 
 ## 3. Tests and tooling
 
 - Test the `panic!` of `emit_imm_sx32` (immediate outside i32).
-- Missing test tooling listed in `TODO.md`: `ndisasm`, decoding.
+- Missing test tooling listed in `TODO_Backend.md`: `ndisasm`, decoding.
 - **Put `gen_encode_tests.py` in the repository**: it only exists in a temporary session folder,
   the one part of the project that can be lost.
 

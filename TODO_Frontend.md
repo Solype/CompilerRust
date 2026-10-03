@@ -38,21 +38,22 @@ qui reconnaît les mots-clés en découpant les mots.
 1.1 Fichiers
 --------------------------------------------------
 
-[ ] src/lexer/mod.rs     pub fn tokenize(src: &str) -> Result<Vec<Token>, LexError>
-[ ] src/lexer/token.rs   Span, Token, TokenKind
-[ ] src/lexer/error.rs   LexError, LexErrorKind
-[ ] main.rs : mod lexer; appeler tokenize sur la source lue
+[X] src/lexer/mod.rs     pub fn tokenize(src: &str) -> Result<Vec<Token>, LexError>
+[X] src/lexer/span.rs    Span
+[X] src/lexer/token.rs   Token, TokenKind
+[X] src/lexer/lexer_error.rs   LexError, LexErrorKind
+[X] main.rs : mod lexer; appeler tokenize sur la source lue
 
 --------------------------------------------------
 1.2 Types
 --------------------------------------------------
 
-[ ] Span { start: usize, end: usize }
+[X] Span { start: usize, end: usize }
     octets, end exclu : &src[span.start..span.end] redonne le texte du token
 
-[ ] Token { kind: TokenKind, span: Span }
+[X] Token { kind: TokenKind, span: Span }
 
-[ ] TokenKind :
+[X] TokenKind :
     Mots et littéraux
       HangulWord(String)     나를, 정수를, 해요
       LatinWord(String)      main, printf
@@ -70,9 +71,9 @@ qui reconnaît les mots-clés en découpant les mots.
     Fin
       Eof                    span = len..len, simplifie le parser
 
-[ ] LexError { kind: LexErrorKind, span: Span }
+[X] LexError { kind: LexErrorKind, span: Span }
 
-[ ] LexErrorKind :
+[X] LexErrorKind :
       UnexpectedChar(char)   # @ $ ; etc.
       UnterminatedComment    /* sans */ ; span = le /* d'ouverture
       UnterminatedString     " sans " avant la fin de ligne ; span = le " d'ouverture
@@ -125,13 +126,13 @@ Règles de priorité :
 1.4 Algorithme (version écrite à la main)
 --------------------------------------------------
 
-[ ] État : struct Lexer<'a> { src: &'a str, pos: usize }   (pos en octets)
-[ ] Outils :
+[X] État : struct Lexer<'a> { src: &'a str, pos: usize }   (pos en octets)
+[X] Outils :
       peek()    -> Option<char>   src[pos..].chars().next()
       peek_at(n)-> Option<char>   n-ième caractère après pos
       bump()    -> Option<char>   avance de c.len_utf8() octets
       eat_while(f)                avance tant que f(c)
-[ ] Boucle : sauter espaces et commentaires, noter start = pos, puis match
+[X] Boucle : sauter espaces et commentaires, noter start = pos, puis match
     sur le premier caractère :
 
       ' ' '\t' '\r' '\n'   espace : sauter
@@ -161,8 +162,8 @@ Règles de priorité :
       'ㄱ'..='ㆎ'          LooseJamo
       autre                UnexpectedChar
 
-[ ] À la fin : pousser Eof
-[ ] Erreurs : s'arrêter à la première (plus simple pour commencer)
+[X] À la fin : pousser Eof
+[X] Erreurs : s'arrêter à la première (plus simple pour commencer)
 
 Pièges :
     - jamais d'index de caractère : pos avance de c.len_utf8()
@@ -175,7 +176,7 @@ Pièges :
 1.5 Position ligne:colonne
 --------------------------------------------------
 
-[ ] Calculée seulement à l'affichage, depuis l'offset :
+[X] Calculée seulement à l'affichage, depuis l'offset :
       ligne   = nombre de '\n' dans src[..offset] + 1
       colonne = nombre de char depuis le dernier '\n' + 1
 [ ] Plus tard (messages avec ^) : largeur d'affichage, 2 colonnes par syllabe
@@ -185,8 +186,8 @@ Pièges :
 1.6 Option --tokens
 --------------------------------------------------
 
-[ ] ./compiler --tokens fichier.kr : un token par ligne, puis quitter
-[ ] Adapter read_source() dans main.rs : il refuse aujourd'hui tout argument
+[X] ./compiler --tokens fichier.kr : un token par ligne, puis quitter
+[X] Adapter read_source() dans main.rs : il refuse aujourd'hui tout argument
     en plus du fichier
     format libre, par exemple pour la ligne 7 de Proto.kr :
       7:1   HangulWord  외부
@@ -194,38 +195,38 @@ Pièges :
       7:8   HangulWord  주는
       7:11  LatinWord   printf
       7:17  LParen
-[ ] Erreur : fichier:ligne:colonne: message, code de sortie 1
+[X] Erreur : fichier:ligne:colonne: message, code de sortie 1
 
 --------------------------------------------------
-1.7 Tests (src/lexer/tests.rs)
+1.7 Tests (src/lexer/lexer_tests.rs)
 --------------------------------------------------
 
 Cas valides (entrée -> tokens, sans Eof) :
-[ ] 42를 줘요.             Int(42) HangulWord(를) HangulWord(줘요) Dot
-[ ] printf해요             LatinWord(printf) HangulWord(해요)
-[ ] 가-5                   HangulWord(가) Minus Int(5)
-[ ] -5를                   Minus Int(5) HangulWord(를)
-[ ] (가 + 나)를            LParen HangulWord(가) Plus HangulWord(나) RParen HangulWord(를)
-[ ] 가 <= 나               HangulWord(가) Le HangulWord(나)
-[ ] 1 << 2 >> 3            Int(1) Shl Int(2) Shr Int(3)
-[ ] 가 == 나 != 다         ... EqEq ... NotEq ...
-[ ] "%ld\n"과              Str("%ld" + saut de ligne) HangulWord(과)
-[ ] (형식, …) et (형식, ...)  ... Comma Ellipsis RParen (les deux)
-[ ] /* a */ 1 // b\n2      Int(1) Int(2)
-[ ] 정수를                 HangulWord, span 0..9 (3 syllabes x 3 octets)
-[ ] chaîne vide            [] (seulement Eof)
-[ ] Proto.kr entier        aucune erreur
+[X] 42를 줘요.             Int(42) HangulWord(를) HangulWord(줘요) Dot
+[X] printf해요             LatinWord(printf) HangulWord(해요)
+[X] 가-5                   HangulWord(가) Minus Int(5)
+[X] -5를                   Minus Int(5) HangulWord(를)
+[X] (가 + 나)를            LParen HangulWord(가) Plus HangulWord(나) RParen HangulWord(를)
+[X] 가 <= 나               HangulWord(가) Le HangulWord(나)
+[X] 1 << 2 >> 3            Int(1) Shl Int(2) Shr Int(3)
+[X] 가 == 나 != 다         ... EqEq ... NotEq ...
+[X] "%ld\n"과              Str("%ld" + saut de ligne) HangulWord(과)
+[X] (형식, …) et (형식, ...)  ... Comma Ellipsis RParen (les deux)
+[X] /* a */ 1 // b\n2      Int(1) Int(2)
+[X] 정수를                 HangulWord, span 0..9 (3 syllabes x 3 octets)
+[X] chaîne vide            [] (seulement Eof)
+[X] Proto.kr entier        aucune erreur
 
 Cas d'erreur (entrée -> erreur, span) :
-[ ] /* abc                 UnterminatedComment, 0..2
-[ ] "abc                   UnterminatedString, 0..1
-[ ] "a\nb" (vrai saut)     UnterminatedString
-[ ] "\q"                   InvalidEscape('q')
-[ ] 가 = 1                 LoneEquals
-[ ] !가                    LoneBang
-[ ] 99999999999999999999   IntegerOverflow
-[ ] #                      UnexpectedChar('#')
-[ ] ㄱ                     LooseJamo('ㄱ')
+[X] /* abc                 UnterminatedComment, 0..2
+[X] "abc                   UnterminatedString, 0..1
+[X] "a\nb" (vrai saut)     UnterminatedString
+[X] "\q"                   InvalidEscape('q')
+[X] 가 = 1                 LoneEquals
+[X] !가                    LoneBang
+[X] 99999999999999999999   IntegerOverflow
+[X] #                      UnexpectedChar('#')
+[X] ㄱ                     LooseJamo('ㄱ')
 
 --------------------------------------------------
 1.8 Si tu choisis logos plutôt que la version à la main

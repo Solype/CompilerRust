@@ -1,10 +1,10 @@
 use super::cursor::Lexer;
 use super::lexer_error::{LexError, LexErrorKind};
 use super::span::Span;
-use super::token::{Token, TokenKind};
+use super::lexer_token::{LexerToken, LexerTokenKind};
 
 /// Cuts `src` into tokens, the last one being `Eof`; stops at the first error
-pub fn tokenize(src: &str) -> Result<Vec<Token>, LexError> {
+pub fn tokenize(src: &str) -> Result<Vec<LexerToken>, LexError> {
     Lexer::new(src).run()
 }
 
@@ -18,17 +18,17 @@ fn is_latin(c: char) -> bool {
 }
 
 impl Lexer<'_> {
-    fn run(mut self) -> Result<Vec<Token>, LexError> {
+    fn run(mut self) -> Result<Vec<LexerToken>, LexError> {
         let mut tokens = Vec::new();
         loop {
             self.skip_trivia()?;
             let start = self.pos;
             let Some(c) = self.bump() else { break };
             let kind = self.token_kind(c, start)?;
-            tokens.push(Token::new(kind, Span::new(start, self.pos)));
+            tokens.push(LexerToken::new(kind, Span::new(start, self.pos)));
         }
         let end = self.src.len();
-        tokens.push(Token::new(TokenKind::Eof, Span::new(end, end)));
+        tokens.push(LexerToken::new(LexerTokenKind::Eof, Span::new(end, end)));
         Ok(tokens)
     }
 
@@ -56,8 +56,8 @@ impl Lexer<'_> {
     }
 
     /// `c` (already consumed) starts the token at `start`
-    fn token_kind(&mut self, c: char, start: usize) -> Result<TokenKind, LexError> {
-        use TokenKind::*;
+    fn token_kind(&mut self, c: char, start: usize) -> Result<LexerTokenKind, LexError> {
+        use LexerTokenKind::*;
 
         if let Some(punctuation) = self.punctuation(c) {
             return Ok(Punctuation(punctuation));
@@ -88,7 +88,7 @@ impl Lexer<'_> {
     }
 
     /// After the opening `"` at `start`: the decoded content, up to the closing `"`
-    fn string(&mut self, start: usize) -> Result<TokenKind, LexError> {
+    fn string(&mut self, start: usize) -> Result<LexerTokenKind, LexError> {
         let unterminated = LexError::new(
             LexErrorKind::UnterminatedString,
             Span::new(start, start + 1),
@@ -98,7 +98,7 @@ impl Lexer<'_> {
             let escape_start = self.pos;
             match self.bump() {
                 None | Some('\n') => return Err(unterminated),
-                Some('"') => return Ok(TokenKind::Str(value)),
+                Some('"') => return Ok(LexerTokenKind::Str(value)),
                 Some('\\') => {
                     let decoded = match self.bump() {
                         None | Some('\n') => return Err(unterminated),

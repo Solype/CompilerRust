@@ -1,6 +1,6 @@
 use super::cursor::Lexer;
 use super::lexer_error::{LexError, LexErrorKind};
-use super::token::{Operator, Punctuation};
+use super::lexer_token::{Operator, Punctuation};
 
 impl Lexer<'_> {
     /// The punctuation `c` (already consumed) starts, if any

@@ -1,6 +1,6 @@
 pub mod lexer_error;
+pub mod lexer_token;
 pub mod span;
-pub mod token;
 
 mod cursor;
 mod scanner;

@@ -7,7 +7,7 @@ mod lexer_tests;
 
 use lexer_error::{LexError, LexErrorKind};
 use span::Span;
-use token::{Token, TokenKind};
+use token::{Punctuation, Token, TokenKind};
 
 /// Cuts `src` into tokens, the last one being `Eof`; stops at the first error
 pub fn tokenize(src: &str) -> Result<Vec<Token>, LexError> {
@@ -104,6 +104,10 @@ impl Lexer<'_> {
     fn token_kind(&mut self, c: char, start: usize) -> Result<TokenKind, LexError> {
         use TokenKind::*;
 
+        if let Some(punctuation) = self.punctuation(c) {
+            return Ok(Punctuation(punctuation));
+        }
+
         let kind = match c {
             '가'..='힣' => {
                 self.eat_while(is_hangul);
@@ -119,18 +123,6 @@ impl Lexer<'_> {
                 Int(value.map_err(|_| self.error(LexErrorKind::IntegerOverflow, start))?)
             }
             '"' => self.string(start)?,
-            '(' => LParen,
-            ')' => RParen,
-            '{' => LBrace,
-            '}' => RBrace,
-            ',' => Comma,
-            '.' if self.peek() == Some('.') && self.peek_at(1) == Some('.') => {
-                self.bump();
-                self.bump();
-                Ellipsis
-            }
-            '.' => Dot,
-            '…' => Ellipsis,
             '<' if self.eat('<') => Shl,
             '<' if self.eat('=') => Le,
             '<' => Lt,
@@ -155,6 +147,28 @@ impl Lexer<'_> {
             _ => return Err(self.error(LexErrorKind::UnexpectedChar(c), start)),
         };
         Ok(kind)
+    }
+
+    /// The punctuation `c` (already consumed) starts, if any
+    fn punctuation(&mut self, c: char) -> Option<Punctuation> {
+        use Punctuation::*;
+
+        let punctuation = match c {
+            '(' => LParen,
+            ')' => RParen,
+            '{' => LBrace,
+            '}' => RBrace,
+            ',' => Comma,
+            '.' if self.peek() == Some('.') && self.peek_at(1) == Some('.') => {
+                self.bump();
+                self.bump();
+                Ellipsis
+            }
+            '.' => Dot,
+            '…' => Ellipsis,
+            _ => return None,
+        };
+        Some(punctuation)
     }
 
     /// After the opening `"` at `start`: the decoded content, up to the closing `"`

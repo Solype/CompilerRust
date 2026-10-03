@@ -14,15 +14,7 @@ pub enum TokenKind {
     /// Decoded content: `"%ld\n"` holds a real newline
     Str(String),
 
-    LParen,
-    RParen,
-    LBrace,
-    RBrace,
-    Comma,
-    /// `.` after a final `요` (checked by the parser)
-    Dot,
-    /// `…` or `...`
-    Ellipsis,
+    Punctuation(Punctuation),
 
     Plus,
     Minus,
@@ -45,6 +37,19 @@ pub enum TokenKind {
     Eof,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Punctuation {
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    Comma,
+    /// `.` after a final `요` (checked by the parser)
+    Dot,
+    /// `…` or `...`
+    Ellipsis,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Token {
     pub kind: TokenKind,
@@ -65,13 +70,7 @@ impl TokenKind {
             Self::LatinWord(_) => "LatinWord",
             Self::Int(_) => "Int",
             Self::Str(_) => "Str",
-            Self::LParen => "LParen",
-            Self::RParen => "RParen",
-            Self::LBrace => "LBrace",
-            Self::RBrace => "RBrace",
-            Self::Comma => "Comma",
-            Self::Dot => "Dot",
-            Self::Ellipsis => "Ellipsis",
+            Self::Punctuation(_) => "Punctuation",
             Self::Plus => "Plus",
             Self::Minus => "Minus",
             Self::Star => "Star",
@@ -94,7 +93,7 @@ impl TokenKind {
     }
 }
 
-/// `HangulWord  외부`, `Str  "%ld\n"`, `LParen`: the format of `--tokens`
+/// `HangulWord  외부`, `Punctuation LParen`, `Plus`: the format of `--tokens`
 impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = self.name();
@@ -102,6 +101,7 @@ impl fmt::Display for TokenKind {
             Self::HangulWord(word) | Self::LatinWord(word) => write!(f, "{name:<11} {word}"),
             Self::Int(value) => write!(f, "{name:<11} {value}"),
             Self::Str(value) => write!(f, "{name:<11} {value:?}"),
+            Self::Punctuation(punctuation) => write!(f, "{name:<11} {punctuation:?}"),
             _ => write!(f, "{name}"),
         }
     }

@@ -169,28 +169,7 @@ Backend:
     [ ] Keep the test generator (gen_encode_tests.py) in the repository:
         it only exists in a temporary session folder
 
-Front-end:
-[ ] Lexer:
-    [ ] Wire lexical_analisys into main.rs
-    [ ] Define the language tokens
-    [ ] Positions (line/column) for errors
-[ ] Parser:
-    [ ] Source language grammar
-    [ ] AST construction
-    [ ] Syntax error messages
-[ ] Semantic analysis:
-    [ ] Symbol table / scopes
-    [ ] Type checking
-[ ] Code generation:
-    [ ] AST -> Vec<Instruction>
-    [ ] Register allocation
-    [ ] Stack handling (local variables, prologue/epilogue)
-    [ ] x86_64 SysV calling convention
-    [ ] Global variables and constants in .data/.rodata
-[ ] CLI:
-    [ ] Input file
-    [ ] Output file
-    [ ] Options
+Front-end: see TODO_Frontend.md
 
 ==================================================
 TODO: LATER (not needed by the compiler)

@@ -1,11 +1,13 @@
+use super::lexer_error::LexError;
 use super::span::Span;
 
 pub struct Token {
-    span: Span,
+    pub span: Span,
 }
 
-pub fn tokenizer(input: &String) -> Result<Vec<Token>, Error> {
-    let mut tokens: Vec<Token>;
+pub fn tokenizer(input: &str) -> Result<Vec<Token>, LexError> {
+    let tokens: Vec<Token> = Vec::new();
 
-    return vec![];
+    let _ = input;
+    Ok(tokens)
 }

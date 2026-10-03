@@ -1,4 +1,5 @@
 mod elf;
+mod lexer;
 mod samples;
 
 use std::fs::{self, File};
@@ -12,8 +13,13 @@ use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
 const OUTPUT: &str = "output.elf";
 
 fn main() -> std::io::Result<()> {
-    // not used yet: the tokenizer will read it
-    let _source = read_source();
+    let source = read_source();
+    // not used yet: the parser will read them
+    let _tokens = lexer::token::tokenizer(&source).unwrap_or_else(|err| {
+        let (line, col) = err.span.line_col(&source);
+        eprintln!("{line}:{col}: {err}");
+        process::exit(84);
+    });
 
     let mut elf_file = ElfFile64::default();
     elf_file.declare_non_defined_sym(&"my_exit".to_string(), SymbolType::Function);

@@ -1,9 +1,11 @@
+use super::span::Span;
+
 pub struct Token {
-    start: usize,
-    end: usize,
+    span: Span,
 }
 
-pub fn tokenizer(input: &String) -> Vec<Token> {
+pub fn tokenizer(input: &String) -> Result<Vec<Token>, Error> {
     let mut tokens: Vec<Token>;
+
     return vec![];
 }

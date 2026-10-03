@@ -209,6 +209,11 @@ se déduit pas du texte.
 Particules reconnues : `을/를`, `이/가`, `은/는`, `와/과`, `에`, `(으)로`, `의`, `부터`, `까지`,
 `보다`, et les formes de la copule `이면/면`, `이에요/예요`, `인`.
 
+**Au plus une particule par mot, toujours à la fin.** Contrairement au coréen, les particules ne se
+cumulent pas : `결과에는` (에 + 는) ou `여기까지만` sont des erreurs. Les formes de la copule
+(`이면`, `이에요`, `인`) comptent comme une seule particule. Le découpage compare donc **tout le
+reste** du mot à la liste : `값이에요` → `값` + `이에요`, jamais `값` + `이` + `에요`.
+
 Bonus : une fois la particule séparée, le compilateur connaît le mot qui la précède et peut vérifier
 le choix selon le 받침 (`나을` → « 받침이 없으니 '를'을 쓰세요 »).
 

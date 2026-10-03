@@ -1,5 +1,6 @@
 use super::lexer_error::LexErrorKind::*;
 use super::span::Span;
+use super::token::Operator::*;
 use super::token::Punctuation::*;
 use super::token::TokenKind::{self, *};
 use super::tokenize;
@@ -41,8 +42,8 @@ fn script_change_splits_words() {
 
 #[test]
 fn minus_is_its_own_token() {
-    assert_eq!(kinds("가-5"), [hangul("가"), Minus, Int(5)]);
-    assert_eq!(kinds("-5를"), [Minus, Int(5), hangul("를")]);
+    assert_eq!(kinds("가-5"), [hangul("가"), Operator(Minus), Int(5)]);
+    assert_eq!(kinds("-5를"), [Operator(Minus), Int(5), hangul("를")]);
 }
 
 #[test]
@@ -52,7 +53,7 @@ fn particle_after_paren() {
         [
             Punctuation(LParen),
             hangul("가"),
-            Plus,
+            Operator(Plus),
             hangul("나"),
             Punctuation(RParen),
             hangul("를")
@@ -62,20 +63,45 @@ fn particle_after_paren() {
 
 #[test]
 fn two_char_operators() {
-    assert_eq!(kinds("가 <= 나"), [hangul("가"), Le, hangul("나")]);
-    assert_eq!(kinds("1 << 2 >> 3"), [Int(1), Shl, Int(2), Shr, Int(3)]);
+    assert_eq!(
+        kinds("가 <= 나"),
+        [hangul("가"), Operator(Le), hangul("나")]
+    );
+    assert_eq!(
+        kinds("1 << 2 >> 3"),
+        [Int(1), Operator(Shl), Int(2), Operator(Shr), Int(3)]
+    );
     assert_eq!(
         kinds("가 == 나 != 다"),
-        [hangul("가"), EqEq, hangul("나"), NotEq, hangul("다")]
+        [
+            hangul("가"),
+            Operator(EqEq),
+            hangul("나"),
+            Operator(NotEq),
+            hangul("다")
+        ]
     );
-    assert_eq!(kinds("< > >= %"), [Lt, Gt, Ge, Percent]);
+    assert_eq!(
+        kinds("< > >= %"),
+        [Operator(Lt), Operator(Gt), Operator(Ge), Operator(Percent)]
+    );
 }
 
 #[test]
 fn one_char_operators() {
     assert_eq!(
         kinds("+-*/%&|^~"),
-        [Plus, Minus, Star, Slash, Percent, Amp, Pipe, Caret, Tilde]
+        [
+            Operator(Plus),
+            Operator(Minus),
+            Operator(Star),
+            Operator(Slash),
+            Operator(Percent),
+            Operator(Amp),
+            Operator(Pipe),
+            Operator(Caret),
+            Operator(Tilde)
+        ]
     );
 }
 
@@ -104,7 +130,7 @@ fn ellipsis_both_spellings() {
 #[test]
 fn comments_are_skipped() {
     assert_eq!(kinds("/* a */ 1 // b\n2"), [Int(1), Int(2)]);
-    assert_eq!(kinds("1 / 2"), [Int(1), Slash, Int(2)]);
+    assert_eq!(kinds("1 / 2"), [Int(1), Operator(Slash), Int(2)]);
 }
 
 #[test]

@@ -7,7 +7,7 @@ mod lexer_tests;
 
 use lexer_error::{LexError, LexErrorKind};
 use span::Span;
-use token::{Punctuation, Token, TokenKind};
+use token::{Operator, Punctuation, Token, TokenKind};
 
 /// Cuts `src` into tokens, the last one being `Eof`; stops at the first error
 pub fn tokenize(src: &str) -> Result<Vec<Token>, LexError> {
@@ -107,6 +107,9 @@ impl Lexer<'_> {
         if let Some(punctuation) = self.punctuation(c) {
             return Ok(Punctuation(punctuation));
         }
+        if let Some(operator) = self.operator(c, start)? {
+            return Ok(Operator(operator));
+        }
 
         let kind = match c {
             '가'..='힣' => {
@@ -123,26 +126,6 @@ impl Lexer<'_> {
                 Int(value.map_err(|_| self.error(LexErrorKind::IntegerOverflow, start))?)
             }
             '"' => self.string(start)?,
-            '<' if self.eat('<') => Shl,
-            '<' if self.eat('=') => Le,
-            '<' => Lt,
-            '>' if self.eat('>') => Shr,
-            '>' if self.eat('=') => Ge,
-            '>' => Gt,
-            '=' if self.eat('=') => EqEq,
-            '=' => return Err(self.error(LexErrorKind::LoneEquals, start)),
-            '!' if self.eat('=') => NotEq,
-            '!' => return Err(self.error(LexErrorKind::LoneBang, start)),
-            '+' => Plus,
-            '-' => Minus,
-            '*' => Star,
-            // `//` and `/*` are already skipped as comments
-            '/' => Slash,
-            '%' => Percent,
-            '&' => Amp,
-            '|' => Pipe,
-            '^' => Caret,
-            '~' => Tilde,
             'ㄱ'..='ㆎ' => return Err(self.error(LexErrorKind::LooseJamo(c), start)),
             _ => return Err(self.error(LexErrorKind::UnexpectedChar(c), start)),
         };
@@ -169,6 +152,36 @@ impl Lexer<'_> {
             _ => return None,
         };
         Some(punctuation)
+    }
+
+    /// The operator `c` (already consumed) starts at `start`, if any; `=` and `!` alone are errors
+    fn operator(&mut self, c: char, start: usize) -> Result<Option<Operator>, LexError> {
+        use Operator::*;
+
+        let operator = match c {
+            '<' if self.eat('<') => Shl,
+            '<' if self.eat('=') => Le,
+            '<' => Lt,
+            '>' if self.eat('>') => Shr,
+            '>' if self.eat('=') => Ge,
+            '>' => Gt,
+            '=' if self.eat('=') => EqEq,
+            '=' => return Err(self.error(LexErrorKind::LoneEquals, start)),
+            '!' if self.eat('=') => NotEq,
+            '!' => return Err(self.error(LexErrorKind::LoneBang, start)),
+            '+' => Plus,
+            '-' => Minus,
+            '*' => Star,
+            // `//` and `/*` are already skipped as comments
+            '/' => Slash,
+            '%' => Percent,
+            '&' => Amp,
+            '|' => Pipe,
+            '^' => Caret,
+            '~' => Tilde,
+            _ => return Ok(None),
+        };
+        Ok(Some(operator))
     }
 
     /// After the opening `"` at `start`: the decoded content, up to the closing `"`

@@ -16,23 +16,7 @@ pub enum TokenKind {
 
     Punctuation(Punctuation),
 
-    Plus,
-    Minus,
-    Star,
-    Slash,
-    Percent,
-    Amp,
-    Pipe,
-    Caret,
-    Tilde,
-    Shl,
-    Shr,
-    Lt,
-    Gt,
-    Le,
-    Ge,
-    EqEq,
-    NotEq,
+    Operator(Operator),
     /// End of the source, span `len..len`
     Eof,
 }
@@ -48,6 +32,45 @@ pub enum Punctuation {
     Dot,
     /// `…` or `...`
     Ellipsis,
+}
+
+/// C operators, with C precedence (decided by the parser)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Operator {
+    /// `+`
+    Plus,
+    /// `-`, binary or unary: `-5` is `Minus` then `Int(5)`
+    Minus,
+    /// `*`
+    Star,
+    /// `/`
+    Slash,
+    /// `%`
+    Percent,
+    /// `&`
+    Amp,
+    /// `|`
+    Pipe,
+    /// `^`
+    Caret,
+    /// `~`
+    Tilde,
+    /// `<<`
+    Shl,
+    /// `>>`
+    Shr,
+    /// `<`
+    Lt,
+    /// `>`
+    Gt,
+    /// `<=`
+    Le,
+    /// `>=`
+    Ge,
+    /// `==`
+    EqEq,
+    /// `!=`
+    NotEq,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -71,29 +94,13 @@ impl TokenKind {
             Self::Int(_) => "Int",
             Self::Str(_) => "Str",
             Self::Punctuation(_) => "Punctuation",
-            Self::Plus => "Plus",
-            Self::Minus => "Minus",
-            Self::Star => "Star",
-            Self::Slash => "Slash",
-            Self::Percent => "Percent",
-            Self::Amp => "Amp",
-            Self::Pipe => "Pipe",
-            Self::Caret => "Caret",
-            Self::Tilde => "Tilde",
-            Self::Shl => "Shl",
-            Self::Shr => "Shr",
-            Self::Lt => "Lt",
-            Self::Gt => "Gt",
-            Self::Le => "Le",
-            Self::Ge => "Ge",
-            Self::EqEq => "EqEq",
-            Self::NotEq => "NotEq",
+            Self::Operator(_) => "Operator",
             Self::Eof => "Eof",
         }
     }
 }
 
-/// `HangulWord  외부`, `Punctuation LParen`, `Plus`: the format of `--tokens`
+/// `HangulWord  외부`, `Punctuation LParen`, `Eof`: the format of `--tokens`
 impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = self.name();
@@ -102,6 +109,7 @@ impl fmt::Display for TokenKind {
             Self::Int(value) => write!(f, "{name:<11} {value}"),
             Self::Str(value) => write!(f, "{name:<11} {value:?}"),
             Self::Punctuation(punctuation) => write!(f, "{name:<11} {punctuation:?}"),
+            Self::Operator(operator) => write!(f, "{name:<11} {operator:?}"),
             _ => write!(f, "{name}"),
         }
     }

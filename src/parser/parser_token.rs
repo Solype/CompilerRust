@@ -25,6 +25,8 @@ pub enum ParserTokenKind {
     Int(i64),
     Str(String),
     /// 참 / 거짓
+    // not built yet: the pre-parser does not recognize 참 and 거짓
+    #[allow(dead_code)]
     Bool(bool),
 
     Punctuation(Punctuation),
@@ -58,6 +60,8 @@ pub enum Keyword {
     /// 짧은 : 32-bit integer or float (`짧은 정수`)
     Short,
     /// 부호 없는 : unsigned (two lexer tokens)
+    // not built yet: nothing merges 부호 + 없는 into one keyword
+    #[allow(dead_code)]
     Unsigned,
     /// 빈 : `빈 주소`, the null pointer
     Void,

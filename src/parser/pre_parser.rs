@@ -35,7 +35,11 @@ struct PreParser<'a> {
 impl<'a> PreParser<'a> {
     fn new(tokens: &'a [LexerToken]) -> Self {
         let mut verbs = HashMap::new();
-        for infinitive in BUILTIN_VERBS.iter().copied().chain(declared_verbs(tokens)) {
+        for infinitive in BUILTIN_VERBS
+            .iter()
+            .copied()
+            .chain(Self::declared_verbs(tokens))
+        {
             for (form, ending) in verb_forms(infinitive).into_iter().flatten() {
                 verbs.insert(form, (infinitive.to_string(), ending));
             }
@@ -155,11 +159,11 @@ impl<'a> PreParser<'a> {
             }
             prev = Some(&token.kind);
         }
-        let names = declared_names(&tokens);
+        let names = Self::declared_names(&tokens);
         for (i, replacement) in names.splits.into_iter().rev() {
             tokens.splice(i..=i, replacement);
         }
-        let tokens = tokenize_names(tokens, &names.names);
+        let tokens = Self::tokenize_names(tokens, &names.names);
 
         return Ok(PreParsed { tokens, warnings });
     }
@@ -186,135 +190,135 @@ impl<'a> PreParser<'a> {
             )
         })
     }
-}
 
-/// First pass: every verb of the file, so that a call before the definition is a verb too.
-/// 다 marks the functions: any Hangul word ending in 다 is a verb in its dictionary form
-fn declared_verbs(tokens: &[LexerToken]) -> impl Iterator<Item = &str> {
-    tokens.iter().filter_map(|token| match &token.kind {
-        LexerTokenKind::HangulWord(word) if word.ends_with('다') => Some(word.as_str()),
-        _ => None,
-    })
-}
-
-/// Replaces every `Ident` left that is a declared name, alone or followed by a particle a name
-/// can carry: 나 → Name(나), 나를 → Name(나) + Particle(Object). When several names fit, the
-/// longest wins (가나를 → 가나 + 를, not 가 + 나를); any other `Ident` stays
-fn tokenize_names(tokens: Vec<ParserToken>, names: &[String]) -> Vec<ParserToken> {
-    let names: HashSet<&str> = names.iter().map(String::as_str).collect();
-    let mut out = Vec::with_capacity(tokens.len());
-    for token in tokens {
-        let ParserTokenKind::Ident(word) = &token.kind else {
-            out.push(token);
-            continue;
-        };
-        if names.contains(word.as_str()) {
-            out.push(ParserToken::new(
-                ParserTokenKind::Name(word.clone()),
-                token.span,
-            ));
-            continue;
-        }
-        // from the longest name down: 가나를 tries 가나 before 가
-        let split = word
-            .char_indices()
-            .rev()
-            .filter(|(cut, _)| *cut > 0)
-            .map(|(cut, _)| word.split_at(cut))
-            .find_map(|(name, rest)| {
-                let particle = is_name_particle(rest)?;
-                names.contains(name).then_some((name, particle))
-            });
-        match split {
-            Some((name, particle)) => out.extend(split_name(name, particle, token.span)),
-            None => out.push(token),
-        }
+    /// First pass: every verb of the file, so that a call before the definition is a verb too.
+    /// 다 marks the functions: any Hangul word ending in 다 is a verb in its dictionary form
+    fn declared_verbs(tokens: &[LexerToken]) -> impl Iterator<Item = &str> {
+        tokens.iter().filter_map(|token| match &token.kind {
+            LexerTokenKind::HangulWord(word) if word.ends_with('다') => Some(word.as_str()),
+            _ => None,
+        })
     }
-    out
+
+    /// Replaces every `Ident` left that is a declared name, alone or followed by a particle a name
+    /// can carry: 나 → Name(나), 나를 → Name(나) + Particle(Object). When several names fit, the
+    /// longest wins (가나를 → 가나 + 를, not 가 + 나를); any other `Ident` stays
+    fn tokenize_names(tokens: Vec<ParserToken>, names: &[String]) -> Vec<ParserToken> {
+        let names: HashSet<&str> = names.iter().map(String::as_str).collect();
+        let mut out = Vec::with_capacity(tokens.len());
+        for token in tokens {
+            let ParserTokenKind::Ident(word) = &token.kind else {
+                out.push(token);
+                continue;
+            };
+            if names.contains(word.as_str()) {
+                out.push(ParserToken::new(
+                    ParserTokenKind::Name(word.clone()),
+                    token.span,
+                ));
+                continue;
+            }
+            // from the longest name down: 가나를 tries 가나 before 가
+            let split = word
+                .char_indices()
+                .rev()
+                .filter(|(cut, _)| *cut > 0)
+                .map(|(cut, _)| word.split_at(cut))
+                .find_map(|(name, rest)| {
+                    let particle = is_name_particle(rest)?;
+                    names.contains(name).then_some((name, particle))
+                });
+            match split {
+                Some((name, particle)) => out.extend(Self::split_name(name, particle, token.span)),
+                None => out.push(token),
+            }
+        }
+        out
+    }
+
+    /// Every declared variable and parameter name, from the pre-parsed tokens (names still `Ident`)
+    fn declared_names(tokens: &[ParserToken]) -> DeclaredNames {
+        let mut names = Vec::new();
+        let mut splits = BTreeMap::new();
+        for (i, token) in tokens.iter().enumerate() {
+            let ParserTokenKind::Ident(word) = &token.kind else {
+                continue;
+            };
+            let prev = i.checked_sub(1).map(|p| &tokens[p].kind);
+            let next = tokens.get(i + 1).map(|t| &t.kind);
+
+            // parameter: `정수 가,` or `정수 나)`, the whole word is the name
+            let after_a_type = matches!(prev, Some(ParserTokenKind::Type(_)));
+            let before_comma_or_paren = matches!(
+                next,
+                Some(ParserTokenKind::Punctuation(
+                    Punctuation::Comma | Punctuation::RParen
+                ))
+            );
+            if after_a_type && before_comma_or_paren {
+                names.push(word.clone());
+                continue;
+            }
+
+            // variable: `결과는 0이에요`, 은/는 at the start of a statement;
+            // loop: `정수 칸을 0부터 10까지 세면서`, 을/를 after a type (`칸을` alone uses 칸)
+            let Some((name, particle)) = has_particule(word) else {
+                continue;
+            };
+            let declares = match particle {
+                Particle::Topic => Self::starts_a_statement(prev),
+                Particle::Object => after_a_type,
+                _ => false,
+            };
+            if declares && !name.is_empty() {
+                names.push(name.to_string());
+                splits.insert(i, Self::split_name(name, particle, token.span));
+            }
+        }
+        DeclaredNames { names, splits }
+    }
+
+    /// A declaring word cut after its name, each part with its own span
+    /// (byte offsets, like Span: 결과는 0..9 → 결과 0..6, 는 6..9)
+    fn split_name(name: &str, particle: Particle, span: Span) -> [ParserToken; 2] {
+        let cut = span.start + name.len();
+        [
+            ParserToken::new(
+                ParserTokenKind::Name(name.to_string()),
+                Span::new(span.start, cut),
+            ),
+            ParserToken::new(
+                ParserTokenKind::Particle(particle),
+                Span::new(cut, span.end),
+            ),
+        ]
+    }
+
+    /// Whether the word after `prev` starts a statement: first word, after `{`, `}`, `.`, 고정된,
+    /// or after a statement that ended in 요 (줘요, 넣어요, 이에요…)
+    fn starts_a_statement(prev: Option<&ParserTokenKind>) -> bool {
+        matches!(
+            prev,
+            None | Some(
+                ParserTokenKind::Punctuation(
+                    Punctuation::LBrace | Punctuation::RBrace | Punctuation::Dot
+                ) | ParserTokenKind::Keyword(
+                    Keyword::Const | Keyword::Return | Keyword::Stop | Keyword::Skip
+                ) | ParserTokenKind::Verb {
+                    ending: Ending::Yo,
+                    ..
+                } | ParserTokenKind::Particle(Particle::ItIs)
+            )
+        )
+    }
 }
 
 /// The names declared by the `Ident`s of the pre-parsed tokens
 #[derive(Debug)]
-pub(super) struct DeclaredNames {
+struct DeclaredNames {
     /// In the order of the file; a name declared twice appears twice
-    pub names: Vec<String>,
+    names: Vec<String>,
     /// Index of a declaring `Ident` → the tokens that replace it, only when it is split:
     /// 결과는 → [Name(결과), Particle(Topic)]; nothing for a parameter (가)
-    pub splits: BTreeMap<usize, [ParserToken; 2]>,
-}
-
-/// Every declared variable and parameter name, from the pre-parsed tokens (names still `Ident`)
-pub(super) fn declared_names(tokens: &[ParserToken]) -> DeclaredNames {
-    let mut names = Vec::new();
-    let mut splits = BTreeMap::new();
-    for (i, token) in tokens.iter().enumerate() {
-        let ParserTokenKind::Ident(word) = &token.kind else {
-            continue;
-        };
-        let prev = i.checked_sub(1).map(|p| &tokens[p].kind);
-        let next = tokens.get(i + 1).map(|t| &t.kind);
-
-        // parameter: `정수 가,` or `정수 나)`, the whole word is the name
-        let after_a_type = matches!(prev, Some(ParserTokenKind::Type(_)));
-        let before_comma_or_paren = matches!(
-            next,
-            Some(ParserTokenKind::Punctuation(
-                Punctuation::Comma | Punctuation::RParen
-            ))
-        );
-        if after_a_type && before_comma_or_paren {
-            names.push(word.clone());
-            continue;
-        }
-
-        // variable: `결과는 0이에요`, 은/는 at the start of a statement;
-        // loop: `정수 칸을 0부터 10까지 세면서`, 을/를 after a type (`칸을` alone uses 칸)
-        let Some((name, particle)) = has_particule(word) else {
-            continue;
-        };
-        let declares = match particle {
-            Particle::Topic => starts_a_statement(prev),
-            Particle::Object => after_a_type,
-            _ => false,
-        };
-        if declares && !name.is_empty() {
-            names.push(name.to_string());
-            splits.insert(i, split_name(name, particle, token.span));
-        }
-    }
-    DeclaredNames { names, splits }
-}
-
-/// A declaring word cut after its name, each part with its own span
-/// (byte offsets, like Span: 결과는 0..9 → 결과 0..6, 는 6..9)
-fn split_name(name: &str, particle: Particle, span: Span) -> [ParserToken; 2] {
-    let cut = span.start + name.len();
-    [
-        ParserToken::new(
-            ParserTokenKind::Name(name.to_string()),
-            Span::new(span.start, cut),
-        ),
-        ParserToken::new(
-            ParserTokenKind::Particle(particle),
-            Span::new(cut, span.end),
-        ),
-    ]
-}
-
-/// Whether the word after `prev` starts a statement: first word, after `{`, `}`, `.`, 고정된,
-/// or after a statement that ended in 요 (줘요, 넣어요, 이에요…)
-fn starts_a_statement(prev: Option<&ParserTokenKind>) -> bool {
-    matches!(
-        prev,
-        None | Some(
-            ParserTokenKind::Punctuation(
-                Punctuation::LBrace | Punctuation::RBrace | Punctuation::Dot
-            ) | ParserTokenKind::Keyword(
-                Keyword::Const | Keyword::Return | Keyword::Stop | Keyword::Skip
-            ) | ParserTokenKind::Verb {
-                ending: Ending::Yo,
-                ..
-            } | ParserTokenKind::Particle(Particle::ItIs)
-        )
-    )
+    splits: BTreeMap<usize, [ParserToken; 2]>,
 }

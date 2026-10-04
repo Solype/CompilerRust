@@ -6,7 +6,6 @@ use super::parser_token::ParserTokenKind::{self, *};
 use super::parser_token::{Ending, Keyword, Particle, Type};
 use super::pre_parse;
 use super::pre_parse_warning::PreParseWarningKind;
-use super::pre_parser::declared_names;
 use super::words::{
     KEYWORDS, NAME_PARTICULES, PARTICULES, has_particule, is_keyword, is_name_particle, is_particle,
 };

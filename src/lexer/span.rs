@@ -10,16 +10,6 @@ impl Span {
         Self { start, end }
     }
 
-    /// The text this span covers in `src`
-    pub fn text<'a>(&self, src: &'a str) -> &'a str {
-        &src[self.start..self.end]
-    }
-
-    /// The smallest span covering both (`가 + 나`: from the start of 가 to the end of 나)
-    pub fn merge(self, other: Span) -> Span {
-        Span::new(self.start.min(other.start), self.end.max(other.end))
-    }
-
     /// Line and column of the start, both from 1; the column counts characters, not bytes
     pub fn line_col(&self, src: &str) -> (usize, usize) {
         let before = &src[..self.start];
@@ -33,20 +23,6 @@ impl Span {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn text_of_hangul_word() {
-        let src = "정수를 주는";
-        // 3 syllables of 3 bytes each
-        assert_eq!(Span::new(0, 9).text(src), "정수를");
-        assert_eq!(Span::new(10, 16).text(src), "주는");
-    }
-
-    #[test]
-    fn merge_covers_both() {
-        assert_eq!(Span::new(0, 3).merge(Span::new(6, 9)), Span::new(0, 9));
-        assert_eq!(Span::new(6, 9).merge(Span::new(0, 3)), Span::new(0, 9));
-    }
 
     #[test]
     fn line_col_counts_characters() {

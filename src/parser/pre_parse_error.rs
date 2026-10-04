@@ -13,12 +13,6 @@ pub struct PreParseError {
     pub span: Span,
 }
 
-impl PreParseError {
-    pub fn new(kind: PreParseErrorKind, span: Span) -> Self {
-        Self { kind, span }
-    }
-}
-
 impl fmt::Display for PreParseErrorKind {
     fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {}

@@ -1,9 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::lexer::lexer_token::{LexerToken, LexerTokenKind, Punctuation};
 use crate::lexer::span::Span;
+use crate::parser::parser_token::Particle;
 
-use super::parser_token::{Ending, ParserToken, ParserTokenKind};
+use super::parser_token::{Ending, Keyword, ParserToken, ParserTokenKind};
 use super::pre_parse_error::PreParseError;
 use super::pre_parse_warning::{PreParseWarning, PreParseWarningKind};
 use super::words::{BUILTIN_VERBS, has_particule, is_keyword, is_particle, is_type, verb_forms};
@@ -148,10 +149,16 @@ impl<'a> PreParser<'a> {
             }
             tokens.extend(parsed);
             if token.kind == LexerTokenKind::Eof {
-                return Ok(PreParsed { tokens, warnings });
+                break;
             }
             prev = Some(&token.kind);
         }
+        let names = declared_names(&tokens);
+        for (i, replacement) in names.splits.into_iter().rev() {
+            tokens.splice(i..=i, replacement);
+        }
+
+        return Ok(PreParsed { tokens, warnings });
     }
 
     /// A verb in its dictionary form must be followed by `(`: `더하다(…)` is a definition,
@@ -185,4 +192,90 @@ fn declared_verbs(tokens: &[LexerToken]) -> impl Iterator<Item = &str> {
         LexerTokenKind::HangulWord(word) if word.ends_with('다') => Some(word.as_str()),
         _ => None,
     })
+}
+
+/// The names declared by the `Ident`s of the pre-parsed tokens
+#[derive(Debug)]
+pub(super) struct DeclaredNames {
+    /// In the order of the file; a name declared twice appears twice
+    pub names: Vec<String>,
+    /// Index of a declaring `Ident` → the tokens that replace it, only when it is split:
+    /// 결과는 → [Name(결과), Particle(Topic)]; nothing for a parameter (가)
+    pub splits: BTreeMap<usize, [ParserToken; 2]>,
+}
+
+/// Every declared variable and parameter name, from the pre-parsed tokens (names still `Ident`)
+pub(super) fn declared_names(tokens: &[ParserToken]) -> DeclaredNames {
+    let mut names = Vec::new();
+    let mut splits = BTreeMap::new();
+    for (i, token) in tokens.iter().enumerate() {
+        let ParserTokenKind::Ident(word) = &token.kind else {
+            continue;
+        };
+        let prev = i.checked_sub(1).map(|p| &tokens[p].kind);
+        let next = tokens.get(i + 1).map(|t| &t.kind);
+
+        // parameter: `정수 가,` or `정수 나)`, the whole word is the name
+        let after_a_type = matches!(prev, Some(ParserTokenKind::Type(_)));
+        let before_comma_or_paren = matches!(
+            next,
+            Some(ParserTokenKind::Punctuation(
+                Punctuation::Comma | Punctuation::RParen
+            ))
+        );
+        if after_a_type && before_comma_or_paren {
+            names.push(word.clone());
+            continue;
+        }
+
+        // variable: `결과는 0이에요`, 은/는 at the start of a statement;
+        // loop: `정수 칸을 0부터 10까지 세면서`, 을/를 after a type (`칸을` alone uses 칸)
+        let Some((name, particle)) = has_particule(word) else {
+            continue;
+        };
+        let declares = match particle {
+            Particle::Topic => starts_a_statement(prev),
+            Particle::Object => after_a_type,
+            _ => false,
+        };
+        if declares && !name.is_empty() {
+            names.push(name.to_string());
+            splits.insert(i, split_name(name, particle, token.span));
+        }
+    }
+    DeclaredNames { names, splits }
+}
+
+/// A declaring word cut after its name, each part with its own span
+/// (byte offsets, like Span: 결과는 0..9 → 결과 0..6, 는 6..9)
+fn split_name(name: &str, particle: Particle, span: Span) -> [ParserToken; 2] {
+    let cut = span.start + name.len();
+    [
+        ParserToken::new(
+            ParserTokenKind::Name(name.to_string()),
+            Span::new(span.start, cut),
+        ),
+        ParserToken::new(
+            ParserTokenKind::Particle(particle),
+            Span::new(cut, span.end),
+        ),
+    ]
+}
+
+/// Whether the word after `prev` starts a statement: first word, after `{`, `}`, `.`, 고정된,
+/// or after a statement that ended in 요 (줘요, 넣어요, 이에요…)
+fn starts_a_statement(prev: Option<&ParserTokenKind>) -> bool {
+    matches!(
+        prev,
+        None | Some(
+            ParserTokenKind::Punctuation(
+                Punctuation::LBrace | Punctuation::RBrace | Punctuation::Dot
+            ) | ParserTokenKind::Keyword(
+                Keyword::Const | Keyword::Return | Keyword::Stop | Keyword::Skip
+            ) | ParserTokenKind::Verb {
+                ending: Ending::Yo,
+                ..
+            } | ParserTokenKind::Particle(Particle::ItIs)
+        )
+    )
 }

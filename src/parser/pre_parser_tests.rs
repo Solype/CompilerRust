@@ -6,7 +6,10 @@ use super::parser_token::ParserTokenKind::{self, *};
 use super::parser_token::{Ending, Keyword, Particle, Type};
 use super::pre_parse;
 use super::pre_parse_warning::PreParseWarningKind;
-use super::words::{KEYWORDS, PARTICULES, has_particule, is_keyword, is_particle};
+use super::pre_parser::declared_names;
+use super::words::{
+    KEYWORDS, NAME_PARTICULES, PARTICULES, has_particule, is_keyword, is_name_particle, is_particle,
+};
 
 #[test]
 fn every_keyword_is_found() {
@@ -58,6 +61,21 @@ fn both_spellings_give_the_same_particle() {
 fn only_whole_particles() {
     for word in ["나를", "정수를", "이에", "에요", "줘요", "", "을를"] {
         assert_eq!(is_particle(word), None, "{word:?}");
+    }
+}
+
+#[test]
+fn every_name_particle_is_a_particle() {
+    for (text, particle) in NAME_PARTICULES {
+        assert_eq!(is_name_particle(text), Some(*particle), "{text}");
+        assert_eq!(is_particle(text), Some(*particle), "{text}");
+    }
+}
+
+#[test]
+fn only_types_carry_ro_and_ui() {
+    for word in ["으로", "로", "의", "나를", ""] {
+        assert_eq!(is_name_particle(word), None, "{word:?}");
     }
 }
 
@@ -142,6 +160,7 @@ fn particle_after_a_value() {
 fn keywords_are_not_split() {
     assert_eq!(pre("만약"), [Keyword(Keyword::If)]);
     assert_eq!(pre("아니면"), [Keyword(Keyword::Otherwise)]);
+    assert_eq!(pre("아닌"), [Keyword(Keyword::IsNot)]);
     assert_eq!(pre("주는"), [Keyword(Keyword::Giving)]);
     assert_eq!(pre("줘요"), [Keyword(Keyword::Return)]);
 }
@@ -282,4 +301,114 @@ fn verb_without_parentheses_is_a_warning() {
     );
     assert!(warnings("정수를 주는 더하다(정수 가) { }").is_empty());
     assert!(warnings("인사하다() { 인사해요 }").is_empty());
+}
+
+/// The names declared in `src`, sorted and without duplicates, like `expected`: the split
+/// declarations are already Hangul `Name`s in the output (결과는 → 결과 + 는), the parameters
+/// are still whole `Ident`s, found again by `declared_names`
+fn assert_names(src: &str, expected: &[&str]) {
+    let tokens = pre_parse(&tokenize(src).unwrap()).unwrap().tokens;
+    let mut names = declared_names(&tokens).names;
+    names.extend(tokens.into_iter().filter_map(|token| match token.kind {
+        Name(name) if !name.is_ascii() => Some(name),
+        _ => None,
+    }));
+    names.sort();
+    names.dedup();
+    let mut expected: Vec<String> = expected.iter().map(|name| name.to_string()).collect();
+    expected.sort();
+    assert_eq!(names, expected, "{src:?}");
+}
+
+#[test]
+fn variable_with_a_value_or_a_type() {
+    assert_names("결과는 0이에요.", &["결과"]);
+    assert_names("수는 정수예요.", &["수"]);
+    assert_names("결과는 가예요.", &["결과"]);
+}
+
+#[test]
+fn variable_with_a_longer_value() {
+    assert_names("이름은 문자 주소예요.", &["이름"]);
+    assert_names("점수는 정수 10개예요.", &["점수"]);
+    assert_names("합은 3과 4를 더한 값이에요.", &["합"]);
+}
+
+#[test]
+fn variable_at_the_start_of_any_statement() {
+    assert_names("main() { 결과는 0이에요. }", &["결과"]);
+    assert_names("만약 가 > 0이면 { } 결과는 0이에요.", &["결과"]);
+    assert_names("고정된 끝은 10이에요.", &["끝"]);
+    assert_names("0을 줘요 결과는 0이에요", &["결과"]);
+    assert_names("결과에 0을 넣어요 수는 1이에요", &["수"]);
+    // after 이에요 without a `.`
+    assert_names("가는 1이에요 나는 2예요", &["가", "나"]);
+}
+
+#[test]
+fn not_a_variable_declaration() {
+    // not at the start of a statement: 없는 is not 없 + 는
+    assert_names("부호 없는 정수", &[]);
+    assert_names("3과 결과는", &[]);
+    // a keyword, and a particle with no name before it
+    assert_names("주는", &[]);
+    assert_names("는 0이에요", &[]);
+}
+
+#[test]
+fn every_name_of_the_prototype() {
+    assert_names(
+        include_str!("../../Proto.kr"),
+        &["형식", "가", "나", "끝", "결과", "수", "개수", "숫자"],
+    );
+}
+
+#[test]
+fn declaration_is_split_in_the_output() {
+    let tokens = pre_parse(&tokenize("결과는 0이에요. 인사하다(정수 가) { }").unwrap())
+        .unwrap()
+        .tokens;
+    // 결과는 at bytes 0..9 becomes 결과 0..6 and 는 6..9
+    assert_eq!(tokens[0].kind, Name("결과".to_string()));
+    assert_eq!(tokens[0].span, Span::new(0, 6));
+    assert_eq!(tokens[1].kind, Particle(Particle::Topic));
+    assert_eq!(tokens[1].span, Span::new(6, 9));
+    // the tokens after it moved by one: 0, 이에요, `.`
+    assert_eq!(tokens[2].kind, Int(0));
+    // a parameter is the whole word: nothing to split
+    assert_eq!(tokens[8].kind, Ident("가".to_string()));
+}
+
+#[test]
+fn loop_variable_is_split_in_the_output() {
+    let tokens = pre("정수 칸을 0부터 10까지 세면서 { } 결과를 줘요");
+    assert_eq!(
+        tokens[..3],
+        [
+            Type(Type::Int),
+            Name("칸".to_string()),
+            Particle(Particle::Object)
+        ]
+    );
+    // no type before 결과를: not a declaration, left whole
+    assert_eq!(tokens[10], Ident("결과를".to_string()));
+}
+
+#[test]
+fn every_split_of_a_file() {
+    // split from the last index down, so that the first indices stay right
+    let tokens = pre("가는 1이에요 나는 2예요");
+    assert_eq!(
+        tokens,
+        [
+            Name("가".to_string()),
+            Particle(Particle::Topic),
+            Int(1),
+            Particle(Particle::ItIs),
+            Name("나".to_string()),
+            Particle(Particle::Topic),
+            Int(2),
+            Particle(Particle::ItIs),
+        ]
+    );
 }

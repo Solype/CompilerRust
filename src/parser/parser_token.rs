@@ -65,6 +65,8 @@ pub enum Keyword {
     If,
     /// 아니면 : else, or negation after a condition
     Otherwise,
+    /// 아닌 : `COND이/가 아닌 동안`, while not
+    IsNot,
     /// 동안 : `COND인 동안`, while
     While,
     /// 세면서 : `NOM을 A부터 B까지 세면서`, for

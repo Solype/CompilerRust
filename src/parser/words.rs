@@ -15,6 +15,7 @@ pub(super) const KEYWORDS: &[(&str, Keyword)] = &[
     ("빈", Void),
     ("만약", If),
     ("아니면", Otherwise),
+    ("아닌", IsNot),
     ("동안", While),
     ("세면서", Counting),
     ("줘요", Return),
@@ -86,7 +87,7 @@ pub(super) fn is_particle(word: &str) -> Option<Particle> {
 
 /// Splits the particle off the end of `word`: "합은" → ("합", Topic), "를" → ("", Object);
 /// None if it ends with no particle. When two fit (이면 / 면), the longest wins: "사이면" →
-/// ("사", IfItIs). Check keywords first: "주는" and "아니면" end like particles
+/// ("사", IfItIs). Check keywords first: "주는", "아니면" and "아닌" end like particles
 pub(super) fn has_particule(word: &str) -> Option<(&str, Particle)> {
     PARTICULES
         .iter()
@@ -94,9 +95,38 @@ pub(super) fn has_particule(word: &str) -> Option<(&str, Particle)> {
         .min_by_key(|(stem, _)| stem.len())
 }
 
+/// The particles a declared name can carry (나를, 결과에, 끝까지, 나면); not (으)로 nor 의,
+/// which only follow a type (`정수로 바꿔서`, `정수의 크기`)
+pub(super) const NAME_PARTICULES: &[(&str, Particle)] = &[
+    ("을", Object),
+    ("를", Object),
+    ("이", Subject),
+    ("가", Subject),
+    ("은", Topic),
+    ("는", Topic),
+    ("과", With),
+    ("와", With),
+    ("에", In),
+    ("부터", From),
+    ("까지", Until),
+    ("이면", IfItIs),
+    ("면", IfItIs),
+    ("이에요", ItIs),
+    ("예요", ItIs),
+    ("인", ThatIs),
+];
+
+/// The particle `rest` is exactly, if a name can carry it: "를" → Object, but "로" → None
+pub(super) fn is_name_particle(rest: &str) -> Option<Particle> {
+    NAME_PARTICULES
+        .iter()
+        .find(|(text, _)| *text == rest)
+        .map(|(_, particle)| *particle)
+}
+
 /// Built-in verbs used in several forms (넣어요, 넣어서); 주다 and 세다 only appear as the
 /// keywords 줘요 and 세면서
-pub(super) const BUILTIN_VERBS: &[&str] = &["넣다", "바꾸다"];
+pub(super) const BUILTIN_VERBS: &[&str] = &["넣다", "바꾸다", "하다"];
 
 /// Every form of `infinitive` the pre-parser recognizes: 더하다 → 더하다, 더해서, 더해요, 더한;
 /// None if it is not a verb (no final 다)

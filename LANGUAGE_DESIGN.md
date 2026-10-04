@@ -201,7 +201,9 @@ déclarés (même principe que le « lexer hack » du C pour `typedef`).
 - **Après un mot-clé** (`정수를`) : le mot-clé est connu, le reste est la particule.
 - **Après un nombre** (`42를`) ou **`)`** (`(가 + 나)를`) : le lexer s'arrête naturellement.
 - **Déclaration** (`합은 3과 4를 더한 값이에요`) : le nom n'existe pas encore ; on retire la
-  particule attendue à la fin du mot (`은/는` ici), une seule fois.
+  particule attendue à la fin du mot (`은/는` ici), une seule fois. Pour une boucle qui déclare sa
+  variable (`정수 칸을 0부터 10까지 세면서`), le type annonce la déclaration et c'est `을/를` qu'on
+  retire.
 - **Utilisation** (`나를`) : on cherche le plus long nom déclaré au début du mot, tel que le reste
   soit une particule valide. `나를` → `나` + `를`.
 - **Conflit** : déclarer un nom égal à un autre nom + une particule dans la même portée est une
@@ -282,7 +284,7 @@ pour toujours.
 | | sinon | `아니면` | « si ce n'est pas le cas » |
 | | sinon si | `아니면 만약 …이면` | composition de `아니면` et `만약`, comme `else if` |
 | | tant que | `COND인 동안` | « pendant que c'est » ; 동안 = durée, pendant |
-| | pour (boucle `for`) | `NOM을/를 A부터 B까지 세면서` | « en comptant NOM de A à B » ; 부터 = depuis, 까지 = jusqu'à, **B exclu** (`0부터 10까지` = 10 tours, de 0 à 9), comme `0..10` en Rust ; 세다 = compter, -면서 = en faisant |
+| | pour (boucle `for`) | `NOM을/를 A부터 B까지 세면서` ou `TYPE NOM을/를 A부터 B까지 세면서` | « en comptant NOM de A à B » ; 부터 = depuis, 까지 = jusqu'à, **B exclu** (`0부터 10까지` = 10 tours, de 0 à 9), comme `0..10` en Rust ; 세다 = compter, -면서 = en faisant ; sans type, NOM existe déjà et la boucle le modifie ; avec un type, la boucle déclare NOM, qui n'existe que dans la boucle (même règle que les paramètres : `TYPE NOM` déclare) |
 | | sortir de la boucle (`break`) | `그만해요` | « arrête » (그만하다) |
 | | continuer (`continue`) | `넘어가요` | « on passe à la suite » (넘어가다) |
 
@@ -302,6 +304,10 @@ pour toujours.
 가를 1부터 10까지 세면서 {
     만약 가 == 5면 { 넘어가요 }
     만약 가 == 8이면 { 그만해요 }
+    …
+}
+
+정수 칸을 0부터 10까지 세면서 {     // déclare 칸, comme for (int 칸 = 0; …)
     …
 }
 ```
@@ -387,7 +393,7 @@ le recevoir et qu'aucune autre étape n'attend de `에`.
 | ★ | rendre une valeur | `주다` | `줘요` : fin de chaîne qui rend le résultat (voir Contrôle de flux) |
 | | affecter | `넣다` | `NOM에 VALEUR을/를 넣어요` ; en fin de chaîne : `… 개수에 넣어요` |
 | | convertir | `바꾸다` | `TERME을/를 TYPE(으)로 바꿔서` (voir Opérateurs) |
-| | compter (boucle) | `세다` | `NOM을/를 A부터 B까지 세면서` (voir Contrôle de flux) |
+| | compter (boucle) | `세다` | `[TYPE] NOM을/를 A부터 B까지 세면서` (voir Contrôle de flux) |
 
 Ces verbes sont réservés : une fonction de l'utilisateur ne peut pas porter leur nom.
 

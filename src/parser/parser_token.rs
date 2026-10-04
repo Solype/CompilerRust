@@ -12,7 +12,10 @@ pub enum ParserTokenKind {
     /// A declared name: variable, parameter, function, `main`, `printf`
     Name(String),
     /// A conjugated verb, user-defined or built-in: 더해서, 줘요, `printf해요` (two lexer tokens)
-    Verb { infinitive: String, ending: Ending },
+    Verb {
+        infinitive: String,
+        ending: Ending,
+    },
     /// Detached from the word before it: 나를 → `Name(나)` then `Particle(Object)`
     Particle(Particle),
 
@@ -48,13 +51,13 @@ pub enum Keyword {
     /// 주는 : `TYPE을 주는 VERBE다(…)`, the function returns TYPE
     Giving,
     /// 고정된 : constant
-    Fixed,
+    Const,
     /// 짧은 : 32-bit integer or float (`짧은 정수`)
     Short,
     /// 부호 없는 : unsigned (two lexer tokens)
     Unsigned,
     /// 빈 : `빈 주소`, the null pointer
-    Empty,
+    Void,
     /// 만약 : opens a condition
     If,
     /// 아니면 : else, or negation after a condition

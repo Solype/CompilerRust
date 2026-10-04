@@ -11,7 +11,10 @@ pub enum ParserTokenKind {
     Type(Type),
     /// A declared name: variable, parameter, function, `main`, `printf`
     Name(String),
-    /// A conjugated verb, user-defined or built-in: 더해서, 줘요, `printf해요` (two lexer tokens)
+    /// A Hangul word that is no keyword or type: an identifier, maybe with its particle (나를,
+    /// 결과에, 결과); split into `Name` + `Particle` once the declared names are known
+    Ident(String),
+    /// A conjugated verb, user-defined or built-in: 더해서, 넣어요, `printf해요` (two lexer tokens)
     Verb {
         infinitive: String,
         ending: Ending,
@@ -66,6 +69,8 @@ pub enum Keyword {
     While,
     /// 세면서 : `NOM을 A부터 B까지 세면서`, for
     Counting,
+    /// 줘요 : return, ends a chain with its result (`42를 줘요`)
+    Return,
     /// 그만해요 : break
     Stop,
     /// 넘어가요 : continue
@@ -105,7 +110,7 @@ pub enum Ending {
     Da,
     /// -아/어서 : links a step of a chain (`더해서`)
     Seo,
-    /// -아/어요 : ends a chain (`더해요`, `줘요`)
+    /// -아/어요 : ends a chain (`더해요`, `넣어요`)
     Yo,
     /// -(으)ㄴ : qualifies a noun (`더한 값`)
     Adnominal,
@@ -133,8 +138,6 @@ pub enum Particle {
     From,
     /// 까지 : until
     Until,
-    /// 보다 : than
-    Than,
     /// 이면/면 : if it is, ends a condition
     IfItIs,
     /// 이에요/예요 : it is, ends a declaration

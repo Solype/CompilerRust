@@ -3,9 +3,9 @@ use crate::lexer::span::Span;
 use crate::lexer::tokenize;
 
 use super::parser_token::ParserTokenKind::{self, *};
-use super::parser_token::{Keyword, Particle, Type};
+use super::parser_token::{Ending, Keyword, Particle, Type};
 use super::pre_parse;
-use super::pre_parse_error::PreParseErrorKind;
+use super::pre_parse_warning::PreParseWarningKind;
 use super::words::{KEYWORDS, PARTICULES, has_particule, is_keyword, is_particle};
 
 #[test]
@@ -95,17 +95,11 @@ fn no_particle_at_the_end() {
 /// The parser token kinds of `src`, without the final `Eof`
 fn pre(src: &str) -> Vec<ParserTokenKind> {
     let tokens = tokenize(src).unwrap();
-    let mut out = pre_parse(&tokens).unwrap_or_else(|err| panic!("{src:?}: {err}"));
+    let mut out = pre_parse(&tokens)
+        .unwrap_or_else(|err| panic!("{src:?}: {err}"))
+        .tokens;
     assert_eq!(out.pop().map(|t| t.kind), Some(Eof));
     out.into_iter().map(|t| t.kind).collect()
-}
-
-fn pre_error(src: &str) -> PreParseErrorKind {
-    let tokens = tokenize(src).unwrap();
-    pre_parse(&tokens)
-        .err()
-        .unwrap_or_else(|| panic!("{src:?} should fail"))
-        .kind
 }
 
 #[test]
@@ -149,6 +143,7 @@ fn keywords_are_not_split() {
     assert_eq!(pre("만약"), [Keyword(Keyword::If)]);
     assert_eq!(pre("아니면"), [Keyword(Keyword::Otherwise)]);
     assert_eq!(pre("주는"), [Keyword(Keyword::Giving)]);
+    assert_eq!(pre("줘요"), [Keyword(Keyword::Return)]);
 }
 
 #[test]
@@ -174,21 +169,117 @@ fn keyword_or_type_then_particle() {
 
 #[test]
 fn split_word_spans() {
-    let tokens = pre_parse(&tokenize("정수를").unwrap()).unwrap();
+    let tokens = pre_parse(&tokenize("정수를").unwrap()).unwrap().tokens;
     assert_eq!(tokens[0].span, Span::new(0, 6));
     assert_eq!(tokens[1].span, Span::new(6, 9));
     assert_eq!(tokens[2].span, Span::new(9, 9));
 }
 
 #[test]
-fn unknown_words() {
+fn other_words_are_identifiers_left_whole() {
+    assert_eq!(pre("나를"), [Ident("나를".to_string())]);
+    // not 결 + 과: only the declared names can tell
+    assert_eq!(pre("결과"), [Ident("결과".to_string())]);
+    // a particle alone, but not after a value: the parameter 가
     assert_eq!(
-        pre_error("사과를"),
-        PreParseErrorKind::UnknownWord("사과를".to_string())
+        pre("(가 + 나)"),
+        [
+            ParserTokenKind::Punctuation(Punctuation::LParen),
+            Ident("가".to_string()),
+            ParserTokenKind::Operator(Operator::Plus),
+            Ident("나".to_string()),
+            ParserTokenKind::Punctuation(Punctuation::RParen),
+        ]
     );
-    // a particle alone, but not after a value
+}
+
+#[test]
+fn return_42() {
     assert_eq!(
-        pre_error("를"),
-        PreParseErrorKind::UnknownWord("를".to_string())
+        pre("42를 줘요."),
+        [
+            Int(42),
+            Particle(Particle::Object),
+            Keyword(Keyword::Return),
+            ParserTokenKind::Punctuation(Punctuation::Dot),
+        ]
     );
+}
+
+fn verb(infinitive: &str, ending: Ending) -> ParserTokenKind {
+    Verb {
+        infinitive: infinitive.to_string(),
+        ending,
+    }
+}
+
+#[test]
+fn declared_verb_in_every_form() {
+    let tokens = pre("더하다() { 더해서 더해요 더한 }");
+    assert_eq!(
+        tokens,
+        [
+            verb("더하다", Ending::Da),
+            ParserTokenKind::Punctuation(Punctuation::LParen),
+            ParserTokenKind::Punctuation(Punctuation::RParen),
+            ParserTokenKind::Punctuation(Punctuation::LBrace),
+            verb("더하다", Ending::Seo),
+            verb("더하다", Ending::Yo),
+            verb("더하다", Ending::Adnominal),
+            ParserTokenKind::Punctuation(Punctuation::RBrace),
+        ]
+    );
+}
+
+#[test]
+fn verb_used_before_its_definition() {
+    let tokens = pre("main() { 3을 제곱해서 줘요 } 제곱하다() { }");
+    assert_eq!(tokens[6], verb("제곱하다", Ending::Seo));
+}
+
+#[test]
+fn definition_with_or_without_return_type() {
+    let tokens = pre("정수를 주는 더하다(정수 가, 정수 나) { }");
+    assert_eq!(tokens[3], verb("더하다", Ending::Da));
+    // nothing before it: no return value
+    assert_eq!(pre("인사하다() { }")[0], verb("인사하다", Ending::Da));
+}
+
+#[test]
+fn builtin_verbs() {
+    assert_eq!(pre("넣어요"), [verb("넣다", Ending::Yo)]);
+    assert_eq!(pre("넣어서"), [verb("넣다", Ending::Seo)]);
+    assert_eq!(pre("바꿔서"), [verb("바꾸다", Ending::Seo)]);
+}
+
+#[test]
+fn never_declared_is_not_a_verb() {
+    assert_eq!(pre("더해서"), [Ident("더해서".to_string())]);
+}
+
+#[test]
+fn every_word_ending_in_da_is_a_verb() {
+    // wherever it is, with or without parentheses: 다 marks the functions
+    assert_eq!(pre("바다"), [verb("바다", Ending::Da)]);
+    assert_eq!(pre("main() { 바다 }")[4], verb("바다", Ending::Da));
+    // and its forms are verbs too
+    assert_eq!(pre("만들다 만든")[1], verb("만들다", Ending::Adnominal));
+}
+
+fn warnings(src: &str) -> Vec<PreParseWarningKind> {
+    let tokens = tokenize(src).unwrap();
+    let warnings = pre_parse(&tokens).unwrap().warnings;
+    warnings.into_iter().map(|w| w.kind).collect()
+}
+
+#[test]
+fn verb_without_parentheses_is_a_warning() {
+    assert_eq!(
+        warnings("바다를 바다"),
+        [PreParseWarningKind::VerbWithoutParentheses(
+            "바다".to_string()
+        )]
+    );
+    assert!(warnings("정수를 주는 더하다(정수 가) { }").is_empty());
+    assert!(warnings("인사하다() { 인사해요 }").is_empty());
 }

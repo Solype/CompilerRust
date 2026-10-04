@@ -4,10 +4,7 @@ use crate::lexer::span::Span;
 
 /// Everything that can go wrong while splitting and classifying the words
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PreParseErrorKind {
-    /// A Hangul word that is no keyword, type or particle, and not split into them
-    UnknownWord(String),
-}
+pub enum PreParseErrorKind {}
 
 /// A pre-parsing error and where it happened
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,10 +20,8 @@ impl PreParseError {
 }
 
 impl fmt::Display for PreParseErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::UnknownWord(word) => write!(f, "unknown word '{word}'"),
-        }
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {}
     }
 }
 

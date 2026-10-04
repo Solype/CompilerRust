@@ -59,6 +59,11 @@ Exemple de référence (première tranche) :
 
 - Une fonction est un **verbe**, déclaré à la forme du dictionnaire (`더하다`, `계산하다`, `먹다`).
   Seule exception au langage tout coréen : `main`, qui n'est jamais appelé dans le code.
+- **`다` est la marque des fonctions** : tout mot qui finit par `다` est un verbe, donc une
+  fonction. Un nom de variable ou de paramètre ne peut pas finir par `다` (`바다`, « la mer »). C'est
+  ce qui permet au compilateur de reconnaître un verbe sans contexte, même appelé avant sa
+  déclaration. Un mot en `다` qui n'est pas suivi de `(` donne un avertissement : c'est sans doute
+  un nom mal choisi.
 - Les appels **ne s'imbriquent pas** : on compose en chaîne, de gauche à droite.
   Le résultat de l'étape précédente devient le **premier argument** de l'étape suivante.
 - Arguments : reliés par `와/과`, le dernier porte `을/를`. Un argument est un terme simple ou une
@@ -207,7 +212,8 @@ Après une chaîne littérale (`"%ld\n"과`), `와` et `과` sont acceptés tous
 se déduit pas du texte.
 
 Particules reconnues : `을/를`, `이/가`, `은/는`, `와/과`, `에`, `(으)로`, `의`, `부터`, `까지`,
-`보다`, et les formes de la copule `이면/면`, `이에요/예요`, `인`.
+et les formes de la copule `이면/면`, `이에요/예요`, `인`. Pas de `보다` (« que ») : il finit par `다`,
+la marque des fonctions, et les comparaisons s'écrivent `<` et `>`.
 
 **Au plus une particule par mot, toujours à la fin.** Contrairement au coréen, les particules ne se
 cumulent pas : `결과에는` (에 + 는) ou `여기까지만` sont des erreurs. Les formes de la copule

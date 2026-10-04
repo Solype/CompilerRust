@@ -1,5 +1,6 @@
 pub mod parser_token;
 pub mod pre_parse_error;
+pub mod pre_parse_warning;
 
 mod pre_parser;
 mod words;

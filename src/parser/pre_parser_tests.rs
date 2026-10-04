@@ -303,16 +303,17 @@ fn verb_without_parentheses_is_a_warning() {
     assert!(warnings("인사하다() { 인사해요 }").is_empty());
 }
 
-/// The names declared in `src`, sorted and without duplicates, like `expected`: the split
-/// declarations are already Hangul `Name`s in the output (결과는 → 결과 + 는), the parameters
-/// are still whole `Ident`s, found again by `declared_names`
+/// The names declared in `src`, sorted and without duplicates, like `expected`: every
+/// declared name is a Hangul `Name` in the output, the Latin ones (main, printf) aside
 fn assert_names(src: &str, expected: &[&str]) {
     let tokens = pre_parse(&tokenize(src).unwrap()).unwrap().tokens;
-    let mut names = declared_names(&tokens).names;
-    names.extend(tokens.into_iter().filter_map(|token| match token.kind {
-        Name(name) if !name.is_ascii() => Some(name),
-        _ => None,
-    }));
+    let mut names: Vec<String> = tokens
+        .into_iter()
+        .filter_map(|token| match token.kind {
+            Name(name) if !name.is_ascii() => Some(name),
+            _ => None,
+        })
+        .collect();
     names.sort();
     names.dedup();
     let mut expected: Vec<String> = expected.iter().map(|name| name.to_string()).collect();
@@ -376,7 +377,7 @@ fn declaration_is_split_in_the_output() {
     // the tokens after it moved by one: 0, 이에요, `.`
     assert_eq!(tokens[2].kind, Int(0));
     // a parameter is the whole word: nothing to split
-    assert_eq!(tokens[8].kind, Ident("가".to_string()));
+    assert_eq!(tokens[8].kind, Name("가".to_string()));
 }
 
 #[test]
@@ -411,4 +412,68 @@ fn every_split_of_a_file() {
             Particle(Particle::ItIs),
         ]
     );
+}
+
+fn name(text: &str) -> ParserTokenKind {
+    Name(text.to_string())
+}
+
+#[test]
+fn used_names_are_split() {
+    let tokens = pre("인사하다(정수 가, 정수 나) { 가 나를 가에 }");
+    assert_eq!(
+        tokens[9..],
+        [
+            name("가"),
+            name("나"),
+            Particle(Particle::Object),
+            name("가"),
+            Particle(Particle::In),
+            ParserTokenKind::Punctuation(Punctuation::RBrace),
+        ]
+    );
+}
+
+#[test]
+fn used_before_its_declaration() {
+    assert_eq!(
+        pre("결과를 줘요. 결과는 0이에요.")[..2],
+        [name("결과"), Particle(Particle::Object)]
+    );
+}
+
+#[test]
+fn longest_declared_name_wins() {
+    // 가나 is 가 + 나, but 나 is no particle: both names exist
+    let tokens = pre("가는 1이에요. 가나는 2예요. 가나를 가를");
+    assert_eq!(tokens[10..12], [name("가나"), Particle(Particle::Object)]);
+    assert_eq!(tokens[12..], [name("가"), Particle(Particle::Object)]);
+}
+
+#[test]
+fn only_name_particles_split_a_name() {
+    // 로 and 의 only follow a type; 결과는 not at the start of a statement stays whole too
+    let tokens = pre("결과는 0이에요. 결과로 결과의");
+    assert_eq!(
+        tokens[5..],
+        [Ident("결과로".to_string()), Ident("결과의".to_string())]
+    );
+}
+
+#[test]
+fn undeclared_words_stay_identifiers() {
+    assert_eq!(
+        pre("결과는 0이에요. 모름을")[5],
+        Ident("모름을".to_string())
+    );
+}
+
+#[test]
+fn no_identifier_left_in_the_prototype() {
+    let tokens = pre(include_str!("../../Proto.kr"));
+    let idents: Vec<_> = tokens
+        .iter()
+        .filter(|kind| matches!(kind, Ident(_)))
+        .collect();
+    assert!(idents.is_empty(), "{idents:?}");
 }

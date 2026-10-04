@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::lexer::lexer_token::{LexerToken, LexerTokenKind, Punctuation};
 use crate::lexer::span::Span;
@@ -7,7 +7,9 @@ use crate::parser::parser_token::Particle;
 use super::parser_token::{Ending, Keyword, ParserToken, ParserTokenKind};
 use super::pre_parse_error::PreParseError;
 use super::pre_parse_warning::{PreParseWarning, PreParseWarningKind};
-use super::words::{BUILTIN_VERBS, has_particule, is_keyword, is_particle, is_type, verb_forms};
+use super::words::{
+    BUILTIN_VERBS, has_particule, is_keyword, is_name_particle, is_particle, is_type, verb_forms,
+};
 
 /// Splits and classifies the lexer tokens (나를 → 나 + 를); `tokens` must end with `Eof`,
 /// as `tokenize` returns them
@@ -157,6 +159,7 @@ impl<'a> PreParser<'a> {
         for (i, replacement) in names.splits.into_iter().rev() {
             tokens.splice(i..=i, replacement);
         }
+        let tokens = tokenize_names(tokens, &names.names);
 
         return Ok(PreParsed { tokens, warnings });
     }
@@ -192,6 +195,42 @@ fn declared_verbs(tokens: &[LexerToken]) -> impl Iterator<Item = &str> {
         LexerTokenKind::HangulWord(word) if word.ends_with('다') => Some(word.as_str()),
         _ => None,
     })
+}
+
+/// Replaces every `Ident` left that is a declared name, alone or followed by a particle a name
+/// can carry: 나 → Name(나), 나를 → Name(나) + Particle(Object). When several names fit, the
+/// longest wins (가나를 → 가나 + 를, not 가 + 나를); any other `Ident` stays
+fn tokenize_names(tokens: Vec<ParserToken>, names: &[String]) -> Vec<ParserToken> {
+    let names: HashSet<&str> = names.iter().map(String::as_str).collect();
+    let mut out = Vec::with_capacity(tokens.len());
+    for token in tokens {
+        let ParserTokenKind::Ident(word) = &token.kind else {
+            out.push(token);
+            continue;
+        };
+        if names.contains(word.as_str()) {
+            out.push(ParserToken::new(
+                ParserTokenKind::Name(word.clone()),
+                token.span,
+            ));
+            continue;
+        }
+        // from the longest name down: 가나를 tries 가나 before 가
+        let split = word
+            .char_indices()
+            .rev()
+            .filter(|(cut, _)| *cut > 0)
+            .map(|(cut, _)| word.split_at(cut))
+            .find_map(|(name, rest)| {
+                let particle = is_name_particle(rest)?;
+                names.contains(name).then_some((name, particle))
+            });
+        match split {
+            Some((name, particle)) => out.extend(split_name(name, particle, token.span)),
+            None => out.push(token),
+        }
+    }
+    out
 }
 
 /// The names declared by the `Ident`s of the pre-parsed tokens

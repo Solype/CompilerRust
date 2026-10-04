@@ -1,4 +1,6 @@
+use crate::hangeul::conjugaison::get_verb_form;
 use crate::parser::parser_token::{
+    Ending,
     Keyword::{self, *},
     Particle::{self, *},
     Type,
@@ -15,6 +17,7 @@ pub(super) const KEYWORDS: &[(&str, Keyword)] = &[
     ("아니면", Otherwise),
     ("동안", While),
     ("세면서", Counting),
+    ("줘요", Return),
     ("그만해요", Stop),
     ("넘어가요", Skip),
     ("그리고", And),
@@ -40,7 +43,6 @@ pub(super) const PARTICULES: &[(&str, Particle)] = &[
     ("의", Of),
     ("부터", From),
     ("까지", Until),
-    ("보다", Than),
     ("이면", IfItIs),
     ("면", IfItIs),
     ("이에요", ItIs),
@@ -90,4 +92,20 @@ pub(super) fn has_particule(word: &str) -> Option<(&str, Particle)> {
         .iter()
         .filter_map(|(text, particle)| word.strip_suffix(text).map(|stem| (stem, *particle)))
         .min_by_key(|(stem, _)| stem.len())
+}
+
+/// Built-in verbs used in several forms (넣어요, 넣어서); 주다 and 세다 only appear as the
+/// keywords 줘요 and 세면서
+pub(super) const BUILTIN_VERBS: &[&str] = &["넣다", "바꾸다"];
+
+/// Every form of `infinitive` the pre-parser recognizes: 더하다 → 더하다, 더해서, 더해요, 더한;
+/// None if it is not a verb (no final 다)
+pub(super) fn verb_forms(infinitive: &str) -> Option<[(String, Ending); 4]> {
+    let form = get_verb_form(infinitive.to_string())?;
+    Some([
+        (infinitive.to_string(), Ending::Da),
+        (form.seo(), Ending::Seo),
+        (form.yo(), Ending::Yo),
+        (form.adnominal(), Ending::Adnominal),
+    ])
 }

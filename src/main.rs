@@ -31,12 +31,16 @@ fn main() -> std::io::Result<()> {
     }
     // only on demand for now: words it does not know yet (verbs, names) are errors
     if args.pre_tokens {
-        let pre_tokens = parser::pre_parse(&tokens).unwrap_or_else(|err| {
+        let pre_parsed = parser::pre_parse(&tokens).unwrap_or_else(|err| {
             let (line, col) = err.span.line_col(&source);
             eprintln!("{}:{line}:{col}: {err}", args.path);
             process::exit(1);
         });
-        for token in &pre_tokens {
+        for warning in &pre_parsed.warnings {
+            let (line, col) = warning.span.line_col(&source);
+            eprintln!("{}:{line}:{col}: warning: {warning}", args.path);
+        }
+        for token in &pre_parsed.tokens {
             let (line, col) = token.span.line_col(&source);
             println!("{:<6}{:?}", format!("{line}:{col}"), token.kind);
         }

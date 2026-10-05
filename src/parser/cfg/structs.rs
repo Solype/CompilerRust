@@ -1,6 +1,7 @@
 use crate::lexer::lexer_token::{Operator, Punctuation};
 use crate::parser::parser_token::{Ending, Keyword, ParserTokenKind, Particle, Type};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum NTerm {
     /// Items then Eof
     StartSymbol,

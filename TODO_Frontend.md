@@ -321,14 +321,30 @@ tests/kr/42.kr :
         42를 줘요.
     }
 
-[ ] Parser à table (LR) : automate à états + pile
-    [ ] Grammaire sur les ParserToken (terminaux = catégories du pré-parser)
+[ ] Parser à table (LR(1)) : automate à états + pile, dans src/parser/cfg/
+    [X] Grammaire sur les ParserToken (terminaux = catégories du pré-parser) :
+        RULES dans rules.rs, macros rule! et term!
+    [X] token_matches_node : Name, Int, Str, Bool comparés sur le genre,
+        Verb sur la terminaison, le reste avec ==
+    [X] Annulables et FIRST (first.rs), FIRST d'une suite (of_sequence)
+    [ ] Items LR(1) : (règle, position du point, lookahead) ; un état = un
+        ensemble d'items sous forme canonique
+    [ ] Clôture : [A -> α . B β, a] ajoute [B -> . γ, b] pour b dans FIRST(β a)
+    [ ] goto(I, X) : avancer le point sur X, puis clôture
+    [ ] Collection des états : état 0 = clôture de
+        [StartSymbol -> . Items Eof, Eof], file de travail, transitions notées
     [ ] Tables ACTION (shift état / reduce règle / accept / erreur) et GOTO
-        (état x non-terminal -> état)
+        (état x non-terminal -> état) ; accept sur Eof dans
+        [StartSymbol -> Items . Eof]
+    [ ] Conflits : signalés avec l'état, ses items, le terminal et les deux
+        actions ; test « zéro conflit » sur RULES
+    [ ] (optionnel) LALR(1) : fusion des états de même cœur si la table est
+        trop grosse
     [ ] Boucle : pile d'états (et de valeurs AST) ; shift empile, reduce dépile
         |règle| éléments, construit le nœud, puis GOTO sur le non-terminal
     [ ] Erreur : état sans action pour le token -> message avec les tokens
         attendus (ceux qui ont une action dans cet état)
+    [ ] Tests : 42.kr puis Proto.kr acceptés, programmes faux refusés
     [ ] AST : Program { functions }, Function { nom, params, type_retour, corps },
         Stmt::Return(Expr), Expr::Int
     [X] Particules, cas simple : mot-clé connu en tête (정수를 -> 정수 + 를),

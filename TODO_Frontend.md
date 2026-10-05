@@ -259,7 +259,7 @@ Vérification : tests unitaires
     쓰다 -> 써요    세다 -> 세요
 
 ==================================================
-ÉTAPE 2.5 : PRÉ-PARSER (src/parser/pre_parser.rs)
+ÉTAPE 2.5 : PRÉ-PARSER (src/parser/preparser/)
 ==================================================
 
 But : Vec<LexerToken> -> Vec<ParserToken> où chaque mot hangul est découpé

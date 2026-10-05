@@ -2,9 +2,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::lexer::lexer_token::{LexerToken, LexerTokenKind, Operator, Punctuation};
 use crate::lexer::span::Span;
-use crate::parser::parser_token::Particle;
+use crate::parser::parser_token::{Ending, Keyword, ParserToken, ParserTokenKind, Particle, Type};
 
-use super::parser_token::{Ending, Keyword, ParserToken, ParserTokenKind, Type};
 use super::pre_parse_error::{PreParseError, PreParseErrorKind};
 use super::pre_parse_warning::{PreParseWarning, PreParseWarningKind};
 use super::words::{

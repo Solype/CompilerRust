@@ -6,7 +6,7 @@ use crate::parser::parser_token::{
     Type,
 };
 
-/// Every one-word keyword; `부호 없는` (Unsigned) is two lexer tokens, merged elsewhere
+/// Every one-word keyword; `부호 없는` (Unsigned) is two lexer tokens, merged by the pre-parser
 pub(super) const KEYWORDS: &[(&str, Keyword)] = &[
     ("외부", Extern),
     ("주는", Giving),
@@ -67,6 +67,17 @@ pub(super) fn is_type(word: &str) -> Option<Type> {
         .iter()
         .find(|(text, _)| *text == word)
         .map(|(_, ty)| *ty)
+}
+
+/// The two boolean literals
+pub(super) const BOOLS: &[(&str, bool)] = &[("참", true), ("거짓", false)];
+
+/// The boolean `word` is exactly, if any: "참" → true, but "참을" → None
+pub(super) fn is_bool(word: &str) -> Option<bool> {
+    BOOLS
+        .iter()
+        .find(|(text, _)| *text == word)
+        .map(|(_, value)| *value)
 }
 
 /// The keyword `word` is exactly, if any: "주는" → Giving, but "정수를" → None

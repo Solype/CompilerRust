@@ -10,7 +10,8 @@ ORGANISATION
 src/
   lexer/      tokens + positions
   hangeul/    décomposition des syllabes, 받침, conjugaison
-  parser/     tokens -> AST (avec découpage des particules)
+  parser/     pré-parser (découpage des particules, mots classés) puis
+              tokens -> AST
   ast.rs      types de l'AST
   codegen/    AST -> Vec<Instruction>
   elf/        (existant)
@@ -258,6 +259,60 @@ Vérification : tests unitaires
     쓰다 -> 써요    세다 -> 세요
 
 ==================================================
+ÉTAPE 2.5 : PRÉ-PARSER (src/parser/pre_parser.rs)
+==================================================
+
+But : Vec<LexerToken> -> Vec<ParserToken> où chaque mot hangul est découpé
+(나를 -> 나 + 를) et classé : Keyword, Type, Name, Verb + terminaison,
+Particle, Bool. Le parser ne voit plus que des catégories fixes.
+
+[X] Mots-clés, types, particules seules après une valeur (42를, 0이에요)
+[X] Mot-clé / type + particule (정수를, 값이에요, 10개예요)
+[X] Verbes : première passe, tout mot en 다 est un verbe ; table
+    « forme conjuguée -> (infinitif, terminaison) », appel avant la définition
+[X] Verbes intégrés : 넣다, 바꾸다, 하다 (printf해요)
+[X] Warning : verbe en 다 sans ( derrière (바다 est sans doute un nom)
+[X] Noms déclarés : paramètres (정수 가,), variables (결과는 en début
+    d'instruction), variable de boucle (정수 칸을)
+[X] Noms utilisés découpés : plus long nom déclaré en tête, reste = particule
+    qu'un nom peut porter (pas 로 ni 의)
+[X] Erreur UnknownIdentifier : un mot qui n'est rien de tout ça
+[X] Particule après un nom latin (printf를, main을)
+[X] & juste après un type = Type(Address), répétable (정수&&) ; déclare le
+    paramètre qui suit (정수& 가)
+[X] 부호 없는 -> Keyword(Unsigned), un seul token sur les deux mots
+[X] 참 / 거짓 -> Bool, seuls ou avec particule (참이면)
+[X] Option --pre-tokens
+[ ] Portées : aujourd'hui les noms sont ceux de tout le fichier, sans portée
+    (nom utilisé hors de sa portée accepté) ; à faire avec le parser
+
+--------------------------------------------------
+2.5.1 Vérification des particules selon le 받침 (étape suivante)
+--------------------------------------------------
+
+Seules les particules à deux formes : 을/를, 이/가, 은/는, 과/와, (으)로,
+이면/면, 이에요/예요 (에, 의, 부터, 까지, 인 ne changent pas). Le 받침 est
+celui de la dernière syllabe PRONONCÉE, et pas seulement sur les noms :
+
+[ ] Nom hangul (결과를, 가를) : dernière syllabe du nom
+    -> split_name (declared_names, tokenize_names)
+[ ] Type / mot-clé / booléen (정수를, 값이에요, 참이면) : dernière syllabe
+    -> hangul_word, étape 3
+[ ] Nombre (3을, 4를, 0이에요) : lecture sino-coréenne, exacte
+    -> hangul_word, étape 2 (prev = Int)
+      n % 10 == 0 : 받침 (영, 십, 백, 천, 만, 억 en ont tous un)
+      sinon dernier chiffre : 일 삼 육 칠 팔 -> 받침 ; 이 사 오 구 -> non
+      le signe ne compte pas (-1을 = 마이너스 일)
+[ ] ) (가 + 나)를, ((결과 << 1) ^ 3)을 : 받침 du dernier token avant ),
+    récursivement si c'est un autre ) -> hangul_word, étape 2 (prev = RParen)
+[ ] Nom latin (printf를, main을) : prononciation anglaise, pas fiable ;
+    heuristique sur le nom coréen de la dernière lettre (l 엘, m 엠, n 엔,
+    r 알 -> 받침) ; accepter les deux formes, au plus un warning
+[ ] Chaîne ("%ld\n"과) : pas de règle, accepter les deux formes
+[ ] (으)로 : 로 après un 받침 ㄹ (결말로), pas 으로 ; aujourd'hui (으)로 ne
+    suit qu'un type et aucun ne finit par ㄹ
+
+==================================================
 ÉTAPE 3 : PREMIÈRE TRANCHE, MAIN QUI REND 42
 ==================================================
 
@@ -266,11 +321,18 @@ tests/kr/42.kr :
         42를 줘요.
     }
 
-[ ] Parser (descente récursive) :
+[ ] Parser à table (LR) : automate à états + pile
+    [ ] Grammaire sur les ParserToken (terminaux = catégories du pré-parser)
+    [ ] Tables ACTION (shift état / reduce règle / accept / erreur) et GOTO
+        (état x non-terminal -> état)
+    [ ] Boucle : pile d'états (et de valeurs AST) ; shift empile, reduce dépile
+        |règle| éléments, construit le nœud, puis GOTO sur le non-terminal
+    [ ] Erreur : état sans action pour le token -> message avec les tokens
+        attendus (ceux qui ont une action dans cet état)
     [ ] AST : Program { functions }, Function { nom, params, type_retour, corps },
         Stmt::Return(Expr), Expr::Int
-    [ ] Particules, cas simple : mot-clé connu en tête (정수를 -> 정수 + 를),
-        ou particule seule (를 après 42)
+    [X] Particules, cas simple : mot-clé connu en tête (정수를 -> 정수 + 를),
+        ou particule seule (를 après 42) -> pré-parser
 [ ] Codegen : mov rax, 42 ; ret
 [ ] Écrire un .o avec main global (réutiliser add_section / add_function)
 [ ] Retirer les samples de main.rs (les garder pour les tests de l'encodeur)
@@ -284,7 +346,9 @@ Vérification : ./prog; echo $? -> 42
 ÉTAPE 4 : EXPRESSIONS ARITHMÉTIQUES
 ==================================================
 
-[ ] Parser : precedence climbing (Pratt), table de précédence du C
+[ ] Parser : précédence du C dans les tables, un non-terminal par niveau
+    (ou règles de précédence / associativité pour trancher les conflits
+    shift/reduce)
 [ ] - unaire, et "- suivi d'un nombre" = terme simple
 [ ] Codegen en pile, résultat dans rax :
     a op b -> calculer a ; push rax ; calculer b ; mov rcx, rax ; pop rax ; op rax, rcx
@@ -299,10 +363,12 @@ Vérification : un .kr par opérateur ; ((3 + 4) * 5)를 줘요 -> 35
 ÉTAPE 5 : FONCTIONS, PARAMÈTRES, CHAÎNES D'APPELS
 ==================================================
 
-[ ] Première passe sur les déclarations : table des verbes
+[X] Première passe sur les déclarations : table des verbes
     (forme conjuguée -> fonction + usage), pour appeler une fonction définie plus bas
-[ ] Découpage complet des particules : plus long nom déclaré en tête,
-    reste = particule valide ; pile de portées dans le parser
+    -> pré-parser
+[X] Découpage complet des particules : plus long nom déclaré en tête,
+    reste = particule valide -> pré-parser
+[ ] Pile de portées dans le parser
 [ ] Conflit de noms (사 et 사과 dans la même portée) = erreur
 [ ] Parsing d'une chaîne : arguments + particules, verbe conjugué ;
     résultat précédent = premier argument implicite
@@ -346,7 +412,7 @@ Vérification : 3과 4를 더해서 제곱해서 줘요 -> 49
 ==================================================
 
 [ ] 외부 : symbole non défini, lié par PLT32
-[ ] Appel NOM_LATIN해요 / 해서
+[ ] Appel NOM_LATIN해요 / 해서 (tokens déjà prêts : Name + Verb 하다)
 [ ] Chaînes littérales en .rodata avec un label ; lea rdi, [rip+label]
 [ ] Variadique : xor eax, eax avant le call (al = nb de registres XMM)
 [ ] Alignement : rsp % 16 == 0 avant chaque call ; compter les push en
@@ -362,5 +428,4 @@ APRÈS
 [ ] 실수 (SSE, déjà prêt dans le backend)
 [ ] Pointeurs (TYPE 주소, ou TYPE& : & après un mot de type = 주소) et tableaux (TYPE N개)
 [ ] Verbes irréguliers (table + annotation)
-[ ] Vérification des particules selon le 받침
 [ ] Allocation de registres à la place du codegen en pile

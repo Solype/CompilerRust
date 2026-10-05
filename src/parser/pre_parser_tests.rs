@@ -488,3 +488,69 @@ fn no_identifier_left_in_the_prototype() {
         .collect();
     assert!(idents.is_empty(), "{idents:?}");
 }
+
+#[test]
+fn particle_after_a_latin_name() {
+    assert_eq!(pre("main을"), [name("main"), Particle(Particle::Object)]);
+    assert_eq!(
+        pre("가는 printf예요")[2..],
+        [name("printf"), Particle(Particle::ItIs)]
+    );
+    // 해요 is a verb form first: a call, not a particle
+    assert_eq!(
+        pre("printf해요"),
+        [name("printf"), verb("하다", Ending::Yo)]
+    );
+}
+
+#[test]
+fn ampersand_after_a_type_is_an_address() {
+    assert_eq!(pre("정수&"), [Type(Type::Int), Type(Type::Address)]);
+    // repeatable: each `&` is a type, so the next one follows a type too
+    assert_eq!(
+        pre("정수&&"),
+        [Type(Type::Int), Type(Type::Address), Type(Type::Address)]
+    );
+    // anywhere else, the operator
+    assert_eq!(
+        pre("1 & 2"),
+        [Int(1), ParserTokenKind::Operator(Operator::Amp), Int(2)]
+    );
+    let tokens = pre_parse(&tokenize("정수&").unwrap()).unwrap().tokens;
+    assert_eq!(tokens[1].span, Span::new(6, 7));
+}
+
+#[test]
+fn parameter_after_an_ampersand() {
+    assert_names("인사하다(정수& 가, 문자 && 나) { }", &["가", "나"]);
+}
+
+#[test]
+fn unsigned_is_merged() {
+    assert_eq!(
+        pre("부호 없는 정수"),
+        [Keyword(Keyword::Unsigned), Type(Type::Int)]
+    );
+    // one token over both words: 부호 0..6, space, 없는 7..13
+    let tokens = pre_parse(&tokenize("부호 없는 정수").unwrap())
+        .unwrap()
+        .tokens;
+    assert_eq!(tokens[0].span, Span::new(0, 13));
+    // either word alone is nothing
+    assert_eq!(unknown("부호 정수"), "부호");
+    assert_eq!(unknown("가는 1이에요. 가 없는 정수"), "없는");
+}
+
+#[test]
+fn booleans() {
+    assert_eq!(pre("참"), [Bool(true)]);
+    assert_eq!(
+        pre("거짓을 줘요"),
+        [
+            Bool(false),
+            Particle(Particle::Object),
+            Keyword(Keyword::Return)
+        ]
+    );
+    assert_eq!(pre("참이면"), [Bool(true), Particle(Particle::IfItIs)]);
+}

@@ -5,7 +5,7 @@ use crate::lexer::span::Span;
 use crate::parser::parser_token::Particle;
 
 use super::parser_token::{Ending, Keyword, ParserToken, ParserTokenKind};
-use super::pre_parse_error::PreParseError;
+use super::pre_parse_error::{PreParseError, PreParseErrorKind};
 use super::pre_parse_warning::{PreParseWarning, PreParseWarningKind};
 use super::words::{
     BUILTIN_VERBS, has_particule, is_keyword, is_name_particle, is_particle, is_type, verb_forms,
@@ -164,8 +164,18 @@ impl<'a> PreParser<'a> {
             tokens.splice(i..=i, replacement);
         }
         let tokens = Self::tokenize_names(tokens, &names.names);
+        // every word is classified by now: an `Ident` left is a name never declared
+        if let Some(err) = tokens.iter().find_map(|token| match &token.kind {
+            ParserTokenKind::Ident(word) => Some(PreParseError::new(
+                PreParseErrorKind::UnknownIdentifier(word.clone()),
+                token.span,
+            )),
+            _ => None,
+        }) {
+            return Err(err);
+        }
 
-        return Ok(PreParsed { tokens, warnings });
+        Ok(PreParsed { tokens, warnings })
     }
 
     /// A verb in its dictionary form must be followed by `(`: `더하다(…)` is a definition,

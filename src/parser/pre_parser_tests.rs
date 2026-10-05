@@ -5,6 +5,7 @@ use crate::lexer::tokenize;
 use super::parser_token::ParserTokenKind::{self, *};
 use super::parser_token::{Ending, Keyword, Particle, Type};
 use super::pre_parse;
+use super::pre_parse_error::{PreParseError, PreParseErrorKind};
 use super::pre_parse_warning::PreParseWarningKind;
 use super::words::{
     KEYWORDS, NAME_PARTICULES, PARTICULES, has_particule, is_keyword, is_name_particle, is_particle,
@@ -119,6 +120,20 @@ fn pre(src: &str) -> Vec<ParserTokenKind> {
     out.into_iter().map(|t| t.kind).collect()
 }
 
+/// The error of `src`, which must fail
+fn pre_err(src: &str) -> PreParseError {
+    match pre_parse(&tokenize(src).unwrap()) {
+        Ok(_) => panic!("{src:?}: no error"),
+        Err(err) => err,
+    }
+}
+
+/// The first word of `src` that is no keyword, type, verb or declared name
+fn unknown(src: &str) -> String {
+    let PreParseErrorKind::UnknownIdentifier(word) = pre_err(src).kind;
+    word
+}
+
 #[test]
 fn function_header() {
     assert_eq!(
@@ -194,21 +209,12 @@ fn split_word_spans() {
 }
 
 #[test]
-fn other_words_are_identifiers_left_whole() {
-    assert_eq!(pre("나를"), [Ident("나를".to_string())]);
+fn undeclared_words_are_errors_left_whole() {
+    assert_eq!(unknown("나를"), "나를");
     // not 결 + 과: only the declared names can tell
-    assert_eq!(pre("결과"), [Ident("결과".to_string())]);
+    assert_eq!(unknown("결과"), "결과");
     // a particle alone, but not after a value: the parameter 가
-    assert_eq!(
-        pre("(가 + 나)"),
-        [
-            ParserTokenKind::Punctuation(Punctuation::LParen),
-            Ident("가".to_string()),
-            ParserTokenKind::Operator(Operator::Plus),
-            Ident("나".to_string()),
-            ParserTokenKind::Punctuation(Punctuation::RParen),
-        ]
-    );
+    assert_eq!(unknown("(가 + 나)"), "가");
 }
 
 #[test]
@@ -272,7 +278,7 @@ fn builtin_verbs() {
 
 #[test]
 fn never_declared_is_not_a_verb() {
-    assert_eq!(pre("더해서"), [Ident("더해서".to_string())]);
+    assert_eq!(unknown("더해서"), "더해서");
 }
 
 #[test]
@@ -293,7 +299,7 @@ fn warnings(src: &str) -> Vec<PreParseWarningKind> {
 #[test]
 fn verb_without_parentheses_is_a_warning() {
     assert_eq!(
-        warnings("바다를 바다"),
+        warnings("바다() { } 바다"),
         [PreParseWarningKind::VerbWithoutParentheses(
             "바다".to_string()
         )]
@@ -324,35 +330,38 @@ fn assert_names(src: &str, expected: &[&str]) {
 fn variable_with_a_value_or_a_type() {
     assert_names("결과는 0이에요.", &["결과"]);
     assert_names("수는 정수예요.", &["수"]);
-    assert_names("결과는 가예요.", &["결과"]);
+    assert_names("가는 1이에요. 결과는 가예요.", &["가", "결과"]);
 }
 
 #[test]
 fn variable_with_a_longer_value() {
     assert_names("이름은 문자 주소예요.", &["이름"]);
     assert_names("점수는 정수 10개예요.", &["점수"]);
-    assert_names("합은 3과 4를 더한 값이에요.", &["합"]);
+    assert_names("합은 3과 4를 더한 값이에요. 더하다() { }", &["합"]);
 }
 
 #[test]
 fn variable_at_the_start_of_any_statement() {
     assert_names("main() { 결과는 0이에요. }", &["결과"]);
-    assert_names("만약 가 > 0이면 { } 결과는 0이에요.", &["결과"]);
+    assert_names("만약 1 > 0이면 { } 결과는 0이에요.", &["결과"]);
     assert_names("고정된 끝은 10이에요.", &["끝"]);
     assert_names("0을 줘요 결과는 0이에요", &["결과"]);
-    assert_names("결과에 0을 넣어요 수는 1이에요", &["수"]);
+    assert_names(
+        "결과는 0이에요. 결과에 0을 넣어요 수는 1이에요",
+        &["결과", "수"],
+    );
     // after 이에요 without a `.`
     assert_names("가는 1이에요 나는 2예요", &["가", "나"]);
 }
 
 #[test]
 fn not_a_variable_declaration() {
-    // not at the start of a statement: 없는 is not 없 + 는
-    assert_names("부호 없는 정수", &[]);
-    assert_names("3과 결과는", &[]);
+    // not at the start of a statement: 없는 is not 없 + 는, so it is never declared
+    assert_eq!(unknown("가는 1이에요. 가 없는 정수"), "없는");
+    assert_eq!(unknown("3과 결과는"), "결과는");
     // a keyword, and a particle with no name before it
     assert_names("주는", &[]);
-    assert_names("는 0이에요", &[]);
+    assert_eq!(unknown("는 0이에요"), "는");
 }
 
 #[test]
@@ -381,7 +390,7 @@ fn declaration_is_split_in_the_output() {
 
 #[test]
 fn loop_variable_is_split_in_the_output() {
-    let tokens = pre("정수 칸을 0부터 10까지 세면서 { } 결과를 줘요");
+    let tokens = pre("정수 칸을 0부터 10까지 세면서 { }");
     assert_eq!(
         tokens[..3],
         [
@@ -391,7 +400,10 @@ fn loop_variable_is_split_in_the_output() {
         ]
     );
     // no type before 결과를: not a declaration, left whole
-    assert_eq!(tokens[10], Ident("결과를".to_string()));
+    assert_eq!(
+        unknown("정수 칸을 0부터 10까지 세면서 { } 결과를 줘요"),
+        "결과를"
+    );
 }
 
 #[test]
@@ -452,19 +464,19 @@ fn longest_declared_name_wins() {
 #[test]
 fn only_name_particles_split_a_name() {
     // 로 and 의 only follow a type; 결과는 not at the start of a statement stays whole too
-    let tokens = pre("결과는 0이에요. 결과로 결과의");
-    assert_eq!(
-        tokens[5..],
-        [Ident("결과로".to_string()), Ident("결과의".to_string())]
-    );
+    assert_eq!(unknown("결과는 0이에요. 결과로"), "결과로");
+    assert_eq!(unknown("결과는 0이에요. 결과의"), "결과의");
 }
 
 #[test]
-fn undeclared_words_stay_identifiers() {
+fn undeclared_word_is_an_error() {
+    let err = pre_err("결과는 0이에요. 모름을");
     assert_eq!(
-        pre("결과는 0이에요. 모름을")[5],
-        Ident("모름을".to_string())
+        err.kind,
+        PreParseErrorKind::UnknownIdentifier("모름을".to_string())
     );
+    // the whole word: 모름을 at bytes 22..31
+    assert_eq!(err.span, Span::new(22, 31));
 }
 
 #[test]

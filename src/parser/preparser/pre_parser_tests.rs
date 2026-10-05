@@ -1,9 +1,9 @@
 use crate::lexer::lexer_token::{Operator, Punctuation};
 use crate::lexer::span::Span;
 use crate::lexer::tokenize;
+use crate::parser::parser_token::ParserTokenKind::{self, *};
+use crate::parser::parser_token::{Ending, Keyword, Particle, Type};
 
-use super::parser_token::ParserTokenKind::{self, *};
-use super::parser_token::{Ending, Keyword, Particle, Type};
 use super::pre_parse;
 use super::pre_parse_error::{PreParseError, PreParseErrorKind};
 use super::pre_parse_warning::PreParseWarningKind;
@@ -367,7 +367,7 @@ fn not_a_variable_declaration() {
 #[test]
 fn every_name_of_the_prototype() {
     assert_names(
-        include_str!("../../Proto.kr"),
+        include_str!("../../../Proto.kr"),
         &["형식", "가", "나", "끝", "결과", "수", "개수", "숫자"],
     );
 }
@@ -481,7 +481,7 @@ fn undeclared_word_is_an_error() {
 
 #[test]
 fn no_identifier_left_in_the_prototype() {
-    let tokens = pre(include_str!("../../Proto.kr"));
+    let tokens = pre(include_str!("../../../Proto.kr"));
     let idents: Vec<_> = tokens
         .iter()
         .filter(|kind| matches!(kind, Ident(_)))

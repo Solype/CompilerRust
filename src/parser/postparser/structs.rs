@@ -119,6 +119,9 @@ pub enum Expr {
 pub enum Argument {
     /// `가를`, `3과`, `결과에`, `1부터`, `끝까지`
     Value { value: Expr, particle: Particle },
+    /// The result of the step before, always the first argument: in `수를 제곱해서 결과를 더해서`,
+    /// `제곱하다(수)` for 더하다
+    Previous(Expr),
     /// `정수로`: a target type (`바꾸다`)
     ToType(Type),
 }

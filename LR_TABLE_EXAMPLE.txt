@@ -1,0 +1,212 @@
+EXEMPLE DE TABLE LR, SUR UN VRAI PROGRAMME DU LANGAGE
+=====================================================
+
+Programme :
+
+    정수를 주는 main() {
+        42를 줘요.
+    }
+
+Ce que le parser reçoit du pré-parser (13 tokens) :
+
+    정수  를  주는  Name  (  )  {  Int  를  줘요  .  }  Eof
+
+
+--------------------------------------------------
+1. LA GRAMMAIRE, RÉDUITE À CE QUI SERT ICI
+--------------------------------------------------
+
+Les vrais noms de RULES, mais la partie « chaîne d'appels » (Chain, EndStep,
+Arguments) est raccourcie en une seule règle (11) pour que la table reste
+lisible.
+
+     0 : StartSymbol  → Items Eof
+     1 : Items        → Items Item
+     2 : Items        → ε
+     3 : Item         → Function
+     4 : Function     → FunctionHead ( Parameters ) Block
+     5 : FunctionHead → ReturnType Name
+     6 : ReturnType   → 정수 를 주는
+     7 : Parameters   → ε
+     8 : Block        → { Statements }
+     9 : Statements   → Statements Statement
+    10 : Statements   → ε
+    11 : Statement    → Argument 줘요 OptionalDot
+    12 : Argument     → Int 를
+    13 : OptionalDot  → .
+    14 : OptionalDot  → ε
+
+
+--------------------------------------------------
+2. LA TABLE ACTION (état x token)
+--------------------------------------------------
+
+    sN  = lire le token et empiler l'état N
+    rN  = réduire avec la règle N
+    acc = programme accepté
+    vide = erreur
+
+    état | 정수 | 를  | 주는 | Name |  (  |  )  |  {  |  }  | Int | 줘요 |  .  | Eof
+    -----+------+-----+------+------+-----+-----+-----+-----+-----+------+-----+-----
+      0  |  r2  |     |      |      |     |     |     |     |     |      |     |  r2
+      1  |  s3  |     |      |      |     |     |     |     |     |      |     | acc
+      3  |      | s8  |      |      |     |     |     |     |     |      |     |
+      4  |  r1  |     |      |      |     |     |     |     |     |      |     |  r1
+      5  |  r3  |     |      |      |     |     |     |     |     |      |     |  r3
+      6  |      |     |      |      | s9  |     |     |     |     |      |     |
+      7  |      |     |      | s10  |     |     |     |     |     |      |     |
+      8  |      |     | s11  |      |     |     |     |     |     |      |     |
+      9  |      |     |      |      |     | r7  |     |     |     |      |     |
+     10  |      |     |      |      | r5  |     |     |     |     |      |     |
+     11  |      |     |      |  r6  |     |     |     |     |     |      |     |
+     12  |      |     |      |      |     | s13 |     |     |     |      |     |
+     13  |      |     |      |      |     |     | s14 |     |     |      |     |
+     14  |      |     |      |      |     |     |     | r10 | r10 |      |     |
+     15  |  r4  |     |      |      |     |     |     |     |     |      |     |  r4
+     16  |      |     |      |      |     |     |     | s17 | s18 |      |     |
+     17  |  r8  |     |      |      |     |     |     |     |     |      |     |  r8
+     18  |      | s21 |      |      |     |     |     |     |     |      |     |
+     19  |      |     |      |      |     |     |     | r9  | r9  |      |     |
+     20  |      |     |      |      |     |     |     |     |     | s22  |     |
+     21  |      |     |      |      |     |     |     |     |     |  r12 |     |
+     22  |      |     |      |      |     |     |     | r14 | r14 |      | s23 |
+     23  |      |     |      |      |     |     |     | r13 | r13 |      |     |
+     24  |      |     |      |      |     |     |     | r11 | r11 |      |     |
+
+L'état 2 (StartSymbol → Items Eof ·) n'apparaît pas : on accepte dès l'état 1
+sur Eof, sans jamais y passer.
+
+
+--------------------------------------------------
+3. LA TABLE GOTO (état x non-terminal, après une réduction)
+--------------------------------------------------
+
+    état | non-terminal  → état
+    -----+-------------------------------------------------------------
+      0  | Items → 1
+      1  | Item → 4, Function → 5, FunctionHead → 6, ReturnType → 7
+      9  | Parameters → 12
+     13  | Block → 15
+     14  | Statements → 16
+     16  | Statement → 19, Argument → 20
+     22  | OptionalDot → 24
+
+
+--------------------------------------------------
+4. LES ÉTATS (règle avec le marque-page ·)
+--------------------------------------------------
+
+Chaque ligne de la table est un de ces états.
+
+     0 : StartSymbol → · Items Eof | Items → · Items Item | Items → ·
+     1 : StartSymbol → Items · Eof | Items → Items · Item | Item → · Function
+         | Function → · FunctionHead ( Parameters ) Block
+         | FunctionHead → · ReturnType Name | ReturnType → · 정수 를 주는
+     2 : StartSymbol → Items Eof ·
+     3 : ReturnType → 정수 · 를 주는
+     4 : Items → Items Item ·
+     5 : Item → Function ·
+     6 : Function → FunctionHead · ( Parameters ) Block
+     7 : FunctionHead → ReturnType · Name
+     8 : ReturnType → 정수 를 · 주는
+     9 : Function → FunctionHead ( · Parameters ) Block | Parameters → ·
+    10 : FunctionHead → ReturnType Name ·
+    11 : ReturnType → 정수 를 주는 ·
+    12 : Function → FunctionHead ( Parameters · ) Block
+    13 : Function → FunctionHead ( Parameters ) · Block | Block → · { Statements }
+    14 : Block → { · Statements } | Statements → · Statements Statement
+         | Statements → ·
+    15 : Function → FunctionHead ( Parameters ) Block ·
+    16 : Block → { Statements · } | Statements → Statements · Statement
+         | Statement → · Argument 줘요 OptionalDot | Argument → · Int 를
+    17 : Block → { Statements } ·
+    18 : Argument → Int · 를
+    19 : Statements → Statements Statement ·
+    20 : Statement → Argument · 줘요 OptionalDot
+    21 : Argument → Int 를 ·
+    22 : Statement → Argument 줘요 · OptionalDot | OptionalDot → · .
+         | OptionalDot → ·
+    23 : OptionalDot → . ·
+    24 : Statement → Argument 줘요 OptionalDot ·
+
+Comment on remplit la table à partir des états :
+    - shift  : · devant un terminal ; l'état où mène ce terminal
+    - GOTO   : · devant un non-terminal ; l'état où mène ce non-terminal
+    - reduce : · en fin de règle ; dans la colonne de chaque token qui peut
+               suivre (le lookahead)
+    - accept : StartSymbol → Items · Eof, sur Eof
+
+
+--------------------------------------------------
+5. LE PARSING PAS À PAS
+--------------------------------------------------
+
+À chaque ligne : on lit la case ACTION[sommet de la pile, token courant] et
+on applique ce qu'elle dit.
+
+     #  | pile                     | token | case               | action
+    ----+--------------------------+-------+--------------------+--------------------------------------------
+     1  | 0                        | 정수  | [0, 정수]  = r2    | Items → ε : dépile 0, GOTO[0, Items] = 1
+     2  | 0 1                      | 정수  | [1, 정수]  = s3    | lit 정수, empile 3
+     3  | 0 1 3                    | 를    | [3, 를]    = s8    | lit 를, empile 8
+     4  | 0 1 3 8                  | 주는  | [8, 주는]  = s11   | lit 주는, empile 11
+     5  | 0 1 3 8 11               | Name  | [11, Name] = r6    | ReturnType → 정수 를 주는 : dépile 3
+        |                          |       |                    |   → sommet 1, GOTO[1, ReturnType] = 7
+     6  | 0 1 7                    | Name  | [7, Name]  = s10   | lit main, empile 10
+     7  | 0 1 7 10                 | (     | [10, (]    = r5    | FunctionHead → ReturnType Name : dépile 2
+        |                          |       |                    |   → sommet 1, GOTO[1, FunctionHead] = 6
+     8  | 0 1 6                    | (     | [6, (]     = s9    | lit (, empile 9
+     9  | 0 1 6 9                  | )     | [9, )]     = r7    | Parameters → ε : dépile 0,
+        |                          |       |                    |   GOTO[9, Parameters] = 12
+    10  | 0 1 6 9 12               | )     | [12, )]    = s13   | lit ), empile 13
+    11  | 0 1 6 9 12 13            | {     | [13, {]    = s14   | lit {, empile 14
+    12  | 0 1 6 9 12 13 14         | Int   | [14, Int]  = r10   | Statements → ε : dépile 0,
+        |                          |       |                    |   GOTO[14, Statements] = 16
+    13  | … 14 16                  | Int   | [16, Int]  = s18   | lit 42, empile 18
+    14  | … 14 16 18               | 를    | [18, 를]   = s21   | lit 를, empile 21
+    15  | … 14 16 18 21            | 줘요  | [21, 줘요] = r12   | Argument → Int 를 : dépile 2
+        |                          |       |                    |   → sommet 16, GOTO[16, Argument] = 20
+    16  | … 14 16 20               | 줘요  | [20, 줘요] = s22   | lit 줘요, empile 22
+    17  | … 14 16 20 22            | .     | [22, .]    = s23   | lit ., empile 23
+    18  | … 14 16 20 22 23         | }     | [23, }]    = r13   | OptionalDot → . : dépile 1
+        |                          |       |                    |   → sommet 22, GOTO[22, OptionalDot] = 24
+    19  | … 14 16 20 22 24         | }     | [24, }]    = r11   | Statement → Argument 줘요 OptionalDot :
+        |                          |       |                    |   dépile 3 → sommet 16,
+        |                          |       |                    |   GOTO[16, Statement] = 19
+    20  | … 14 16 19               | }     | [19, }]    = r9    | Statements → Statements Statement : dépile 2
+        |                          |       |                    |   → sommet 14, GOTO[14, Statements] = 16
+    21  | … 14 16                  | }     | [16, }]    = s17   | lit }, empile 17
+    22  | 0 1 6 9 12 13 14 16 17   | Eof   | [17, Eof]  = r8    | Block → { Statements } : dépile 3
+        |                          |       |                    |   → sommet 13, GOTO[13, Block] = 15
+    23  | 0 1 6 9 12 13 15         | Eof   | [15, Eof]  = r4    | Function → FunctionHead ( Parameters ) Block :
+        |                          |       |                    |   dépile 5 → sommet 1,
+        |                          |       |                    |   GOTO[1, Function] = 5
+    24  | 0 1 5                    | Eof   | [5, Eof]   = r3    | Item → Function : dépile 1,
+        |                          |       |                    |   GOTO[1, Item] = 4
+    25  | 0 1 4                    | Eof   | [4, Eof]   = r1    | Items → Items Item : dépile 2,
+        |                          |       |                    |   GOTO[0, Items] = 1
+    26  | 0 1                      | Eof   | [1, Eof]   = acc   | accepté
+
+
+--------------------------------------------------
+6. CE QU'IL FAUT REMARQUER
+--------------------------------------------------
+
+- Une réduction se fait toujours en deux temps : dépiler autant d'états que
+  la règle a de symboles à droite, puis lire GOTO[nouveau sommet, partie
+  gauche]. Pour une règle vide (lignes 1, 9 et 12), on ne dépile rien.
+
+- C'est à chaque réduction qu'on construira l'AST : ligne 15 l'argument 42,
+  ligne 19 l'instruction de retour, ligne 23 la fonction main.
+
+- Le même token n'a pas le même sens selon l'état : 를 vaut s8 dans l'état 3
+  (le 를 de 정수를) et s21 dans l'état 18 (le 를 de 42를). C'est l'état qui
+  sait où on en est.
+
+- Les erreurs sont gratuites : avec 정수를 main() (주는 oublié), on arrive dans
+  l'état 8 avec le token Name ; la case est vide, donc erreur, et la ligne 8
+  dit que le seul token attendu est 주는.
+
+- La vraie table a la même forme, avec toutes les règles de RULES : une
+  colonne par terminal (environ 60), une par NTerm (46), et quelques centaines
+  de lignes.

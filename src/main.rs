@@ -11,6 +11,8 @@ use elf::elfsym::{StBind, StType, StVis, make_st_info};
 use elf::file::{ElfFile64, SymbolType, natural_alignment};
 use elf::instructions::{Instruction, RelocKind, Relocation, Target};
 use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
+use parser::cfg::parsing_table::ParsingTable;
+use parser::cfg::rules::RULES;
 
 const OUTPUT: &str = "output.elf";
 
@@ -44,6 +46,11 @@ fn main() -> std::io::Result<()> {
             let (line, col) = token.span.line_col(&source);
             println!("{:<6}{:?}", format!("{line}:{col}"), token.kind);
         }
+        return Ok(());
+    }
+    // only on demand for now: the parser does not use the table yet
+    if args.table {
+        ParsingTable::new(RULES).print_summary();
         return Ok(());
     }
 
@@ -80,24 +87,28 @@ struct Args {
     tokens: bool,
     /// `--pre-tokens`: print the tokens after the pre-parser, one per line, then quit
     pre_tokens: bool,
+    /// `--table`: build the LR(1) table of the grammar, print its size, then quit
+    table: bool,
 }
 
-/// `compiler [--tokens | --pre-tokens] file.kr`, exits on a wrong usage
+/// `compiler [--tokens | --pre-tokens | --table] file.kr`, exits on a wrong usage
 fn parse_args() -> Args {
     let mut args = env::args();
     let program = args.next().unwrap_or_else(|| "compiler".to_string());
     let mut tokens = false;
     let mut pre_tokens = false;
+    let mut table = false;
     let mut paths = Vec::new();
     for arg in args {
         match arg.as_str() {
             "--tokens" => tokens = true,
             "--pre-tokens" => pre_tokens = true,
+            "--table" => table = true,
             _ => paths.push(arg),
         }
     }
     let [path] = <[String; 1]>::try_from(paths).unwrap_or_else(|_| {
-        eprintln!("usage: {program} [--tokens | --pre-tokens] <file.kr>");
+        eprintln!("usage: {program} [--tokens | --pre-tokens | --table] <file.kr>");
         process::exit(1);
     });
     Args {
@@ -105,6 +116,7 @@ fn parse_args() -> Args {
         path,
         tokens,
         pre_tokens,
+        table,
     }
 }
 

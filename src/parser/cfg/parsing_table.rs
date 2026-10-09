@@ -125,7 +125,7 @@ enum ParsingEntry<'a> {
 }
 
 /// The LR(1) table: for each state and each symbol, what the parser does
-pub(super) struct ParsingTable {
+pub struct ParsingTable {
     /// Only the filled cells: an empty cell is a syntax error
     table: HashMap<ParsingEntry<'static>, ParsingState>,
     /// Every distinct terminal of the rules; its index is its id
@@ -134,6 +134,8 @@ pub(super) struct ParsingTable {
     term_id: HashMap<TerminalKey<'static>, usize>,
     /// Index of the `StartSymbol` rule, where the first state starts
     start_rule: usize,
+    /// Number of states: they are numbered from 0 to `state_count - 1`
+    state_count: usize,
 }
 
 impl ParsingTable {
@@ -194,10 +196,11 @@ impl ParsingTable {
             terms,
             term_id,
             start_rule,
+            state_count: states.len(),
         };
         // ┌── DEBUG (Claude) ───────────────────────────────
         if debug::transitions() {
-            parsing_table.print_summary(states.len());
+            parsing_table.print_summary();
         }
         // └── fin DEBUG ─────────────────────────────────────
         return parsing_table;
@@ -256,12 +259,13 @@ impl ParsingTable {
         };
     }
 
-    // ┌── DEBUG (Claude) ───────────────────────────────
-    fn print_summary(&self, state_count: usize) {
+    /// `442 états, 5808 cases : 1560 S, 3537 R, 710 Goto, 1 Accept`
+    pub fn print_summary(&self) {
         let count =
             |keep: fn(&ParsingState) -> bool| self.table.values().filter(|a| keep(a)).count();
         println!(
-            "\n{state_count} états, {} cases : {} S, {} R, {} Goto, {} Accept",
+            "{} états, {} cases : {} S, {} R, {} Goto, {} Accept",
+            self.state_count,
             self.table.len(),
             count(|a| matches!(a, ParsingState::S(_))),
             count(|a| matches!(a, ParsingState::R(_))),
@@ -269,7 +273,6 @@ impl ParsingTable {
             count(|a| matches!(a, ParsingState::Accept)),
         );
     }
-    // └── fin DEBUG ─────────────────────────────────────
 
     /// Writes `action` in the cell `entry`; a cell already holding another action is a conflict:
     /// it is printed, the first action is kept, and 1 is returned

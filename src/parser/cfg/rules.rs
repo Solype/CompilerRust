@@ -62,6 +62,13 @@ pub const RULES: &[ParserProduction] = &[
         term!(Punctuation::RParen),
         NTerm(Block),
     ),
+    rule!(Function =>
+        NTerm(ReturnType),
+        NTerm(SentenceParameters),
+        term!(Verb::Da),
+        NTerm(Block),
+    ),
+    rule!(Function => NTerm(SentenceParameters), term!(Verb::Da), NTerm(Block)),
     rule!(ExternFunction =>
         term!(Keyword::Extern),
         NTerm(FunctionHead),
@@ -84,6 +91,12 @@ pub const RULES: &[ParserProduction] = &[
     rule!(ParameterList => NTerm(Parameter)),
     rule!(ParameterList => NTerm(ParameterList), term!(Punctuation::Comma), NTerm(Parameter)),
     rule!(Parameter => NTerm(TypeSpec), term!(Name)),
+    // Not empty: an empty list would have to be reduced before a type, where the return type
+    // can start too
+    rule!(SentenceParameters => NTerm(Parameter), term!(Particle::Object)),
+    rule!(SentenceParameters => NTerm(SentenceLinks), NTerm(Parameter), term!(Particle::Object)),
+    rule!(SentenceLinks => NTerm(Parameter), term!(Particle::With)),
+    rule!(SentenceLinks => NTerm(SentenceLinks), NTerm(Parameter), term!(Particle::With)),
     // Types
     rule!(TypeSpec => NTerm(BaseType)),
     rule!(TypeSpec => term!(Keyword::Short), NTerm(BaseType)),

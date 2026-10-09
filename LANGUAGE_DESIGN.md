@@ -79,6 +79,25 @@ Exemple de référence (première tranche) :
 인사해요                       // appel sans argument
 ```
 
+### Déclaration en phrase
+
+Une fonction peut aussi se déclarer comme une phrase : les paramètres viennent **avant** le verbe,
+reliés par les mêmes particules qu'à l'appel (`와/과` entre eux, `을/를` sur le dernier). Les deux
+formes sont équivalentes.
+
+```
+정수를 주는 비교하다(정수 가, 정수 나) { … }     // forme C
+정수를 주는 정수 가와 정수 나를 비교하다 { … }   // forme en phrase
+
+7과 3을 비교해요                                 // l'appel, identique pour les deux
+```
+
+- La déclaration ressemble ainsi à l'appel : `정수 가와 정수 나를 비교하다` / `7과 3을 비교해요`.
+- La particule suit la dernière syllabe du nom, pas du type : `가와`, `나를` (voyelle), `끝과`,
+  `끝을` (consonne).
+- Un seul paramètre : il porte `을/를` (`정수 가를 제곱하다`).
+- Sans paramètre, la forme C reste la seule : `인사하다() { … }`.
+
 ### Formes générées
 
 À la déclaration, le compilateur génère trois formes du verbe et les range dans une table
@@ -89,6 +108,33 @@ Exemple de référence (première tranche) :
 | `-아/어서` | enchaîner une étape | 해서 | 먹어서 |
 | `-아/어요` | finir la chaîne | 해요 | 먹어요 |
 | `-(으)ㄴ` | qualifier un nom (`더한 값`) | 한 | 먹은 |
+
+### Surcharge (à faire)
+
+Les fonctions sont des verbes, et le choix de verbes naturels est limité : `더하다` doit pouvoir
+additionner des `정수` comme des `실수`. Un même verbe peut donc être déclaré **plusieurs fois**,
+avec des paramètres différents.
+
+```
+정수를 주는 더하다(정수 가, 정수 나) { (가 + 나)를 줘요 }
+실수를 주는 더하다(실수 가, 실수 나) { (가 + 나)를 줘요 }
+
+3과 4를 더해서 줘요          // la version 정수
+1.5와 2.5를 더해서 줘요      // la version 실수
+```
+
+- Les déclarations d'un même verbe doivent différer par le **nombre** ou les **types** de leurs
+  paramètres. Le type de retour seul ne suffit pas : à l'appel, rien ne dit lequel est attendu.
+- La version appelée est choisie après le parser, pendant la vérification des types, d'après les
+  arguments de l'appel. Dans une chaîne, le résultat de l'étape précédente compte comme premier
+  argument : `3과 4를 더해서 2.5를 곱해서` choisit le `곱하다` dont le premier paramètre est un
+  `정수`.
+- Aucune version ne correspond, ou plusieurs correspondent aussi bien : erreur.
+- La table des formes donne le **verbe** (`더해서` → `더하다`), pas une fonction précise : toutes
+  ses versions partagent les mêmes formes conjuguées.
+- Chaque version a son propre symbole dans le fichier objet (le nom du verbe complété par les
+  types des paramètres), pour que l'éditeur de liens les distingue.
+- Les fonctions `외부` ne peuvent pas être surchargées : le C n'a qu'un symbole par nom.
 
 ### Exemples
 

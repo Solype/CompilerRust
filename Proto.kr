@@ -15,7 +15,8 @@
 }
 
 // 1, 0 ou -1 selon que 가 est plus grand, égal ou plus petit que 나
-정수를 주는 비교하다(정수 가, 정수 나) {
+// déclaration en phrase : les paramètres avant le verbe, comme à l'appel
+정수를 주는 정수 가와 정수 나를 비교하다 {
     만약 가 > 나면 {
         1을 줘요.
     } 아니면 만약 가 == 나면 {

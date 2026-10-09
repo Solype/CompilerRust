@@ -10,7 +10,8 @@ pub enum NTerm {
     Items,
     /// A function or an extern declaration
     Item,
-    /// `정수를 주는 더하다(정수 가, 정수 나) { … }`
+    /// `정수를 주는 더하다(정수 가, 정수 나) { … }`, or as a sentence:
+    /// `정수를 주는 정수 가와 정수 나를 더하다 { … }`
     Function,
     /// `외부 정수를 주는 printf(문자 주소 형식, …)`
     ExternFunction,
@@ -25,6 +26,10 @@ pub enum NTerm {
     ParameterList,
     /// `정수 가`
     Parameter,
+    /// The parameters of a sentence declaration: `정수 가와 정수 나를`, `정수 가를`
+    SentenceParameters,
+    /// The parameters before the last one, each with `와/과`: `정수 가와`
+    SentenceLinks,
     /// `정수`, `짧은 정수`, `부호 없는 정수`, `문자 주소`, `정수&&`, `정수 10개`
     TypeSpec,
     /// `정수`, `실수`, `논리`, `문자`, `바이트`

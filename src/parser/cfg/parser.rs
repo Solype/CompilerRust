@@ -1,3 +1,5 @@
+use crate::parser::cfg::parsing_table::ParsingState::{self, Accept};
+
 use super::super::parser_token::ParserToken;
 
 use super::parsing_table::ParsingTable;
@@ -23,14 +25,32 @@ impl Parser {
         let mut stack: Vec<usize> = vec![0];
         let mut pos = 0;
 
-        // Loop, with `state` = top of `stack` and `token` = tokens[pos]:
-        // 1. Look up the cell Action(state, token)
-        // 2. S(n): push n, then go to the next token
-        // 3. R(r): pop as many states as `self.rules[r].right` has nodes, then push
-        //    Goto(new top, `self.rules[r].left`); the token is not read, it is looked at again
-        // 4. Accept: return Ok
-        // 5. No cell: return Err(token)
-
-        todo!()
+        loop {
+            let Some(current_state) = stack.last() else {
+                panic!();
+            };
+            let token = &tokens[pos];
+            let cell = self.table.get(*current_state, token);
+            match cell {
+                Some(ParsingState::S(n)) => {
+                    stack.push(n);
+                    pos += 1;
+                }
+                Some(ParsingState::R(r)) => {
+                    stack.truncate(stack.len() - self.rules[r].right.len());
+                    let Some(new_top) = stack.last() else {
+                        return Err(token);
+                    };
+                    let Some(new) = self.table.get_goto(*new_top, self.rules[r].left) else {
+                        return Err(token);
+                    };
+                    stack.push(new);
+                }
+                Some(Accept) => break,
+                None => return Err(token),
+                _ => unreachable!(),
+            }
+        }
+        Ok(())
     }
 }

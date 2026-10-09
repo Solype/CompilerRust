@@ -1,4 +1,4 @@
-use super::super::parser_token::ParserTokenKind;
+use super::super::parser_token::{ParserToken, ParserTokenKind};
 
 use super::first::First;
 use super::structs::NTerm::StartSymbol;
@@ -102,8 +102,8 @@ impl Item {
 }
 
 /// The content of a cell of the table: what the parser does
-#[derive(PartialEq, Debug)]
-enum ParsingState {
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum ParsingState {
     /// Shift: read the token and push the state n
     S(usize),
     /// Reduce: the rule n is done, replace its right side on the stack by its left side
@@ -136,6 +136,23 @@ pub struct ParsingTable {
 }
 
 impl ParsingTable {
+    /// The cell Action(state, token); `None` is a syntax error. Only the kind of the token
+    /// counts: `Name("main")` finds the column `Name`
+    pub fn get(&self, state: usize, tok: &ParserToken) -> Option<ParsingState> {
+        return self
+            .table
+            .get(&ParsingEntry::Action(state, TerminalKey(&tok.kind)))
+            .copied();
+    }
+
+    /// The cell Goto(state, non_terminal): the state to push after a reduce to `non_terminal`
+    pub fn get_goto(&self, state: usize, non_terminal: NTerm) -> Option<usize> {
+        return match self.table.get(&ParsingEntry::Goto(state, non_terminal)) {
+            Some(ParsingState::Goto(n)) => Some(*n),
+            _ => None,
+        };
+    }
+
     pub fn new(rules: &'static [ParserProduction]) -> Self {
         // 1. What the algorithm needs from the grammar
         let (terms, term_id) = ParsingTable::get_terms(rules);

@@ -11,7 +11,7 @@ use elf::elfsym::{StBind, StType, StVis, make_st_info};
 use elf::file::{ElfFile64, SymbolType, natural_alignment};
 use elf::instructions::{Instruction, RelocKind, Relocation, Target};
 use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
-use parser::cfg::parsing_table::ParsingTable;
+use parser::cfg::parser::Parser;
 use parser::cfg::rules::RULES;
 
 const OUTPUT: &str = "output.elf";
@@ -33,9 +33,14 @@ fn main() -> std::io::Result<()> {
         let (line, col) = warning.span.line_col(&source);
         eprintln!("{}:{line}:{col}: warning: {warning}", args.path);
     }
-    // Not used yet: the parser that reads these tokens with the table is the next step
-    let _tokens = pre_parsed.tokens;
-    let _table = ParsingTable::new(RULES);
+    let tree = Parser::new(RULES)
+        .parse(&pre_parsed.tokens)
+        .unwrap_or_else(|token| {
+            let (line, col) = token.span.line_col(&source);
+            eprintln!("{}:{line}:{col}: syntax error: unexpected {:?}", args.path, token.kind);
+            process::exit(1);
+        });
+    println!("{}", tree.show(RULES));
 
     let mut elf_file = ElfFile64::default();
     elf_file.declare_non_defined_sym(&"my_exit".to_string(), SymbolType::Function);

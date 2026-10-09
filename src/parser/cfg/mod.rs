@@ -6,3 +6,5 @@ pub mod structs;
 
 #[cfg(test)]
 mod first_tests;
+#[cfg(test)]
+mod parser_tests;

@@ -1,5 +1,7 @@
-use crate::lexer::lexer_token::{Operator, Punctuation};
-use crate::parser::parser_token::{Ending, Keyword, ParserTokenKind, Particle, Type};
+use std::hash::{Hash, Hasher};
+use std::mem::discriminant;
+
+use crate::parser::parser_token::ParserTokenKind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum NTerm {
@@ -98,4 +100,49 @@ pub enum ParserNode {
 pub struct ParserProduction {
     pub left: NTerm,
     pub right: &'static [ParserNode],
+}
+
+/// Only the kind of token counts for `Name`, `Int`, `Str`, `Bool` and the verb's infinitive: their
+/// value in the rules is a placeholder
+pub(super) fn same_terminal(a: &ParserTokenKind, b: &ParserTokenKind) -> bool {
+    return match (a, b) {
+        (ParserTokenKind::Name(_), ParserTokenKind::Name(_))
+        | (ParserTokenKind::Int(_), ParserTokenKind::Int(_))
+        | (ParserTokenKind::Str(_), ParserTokenKind::Str(_))
+        | (ParserTokenKind::Bool(_), ParserTokenKind::Bool(_)) => true,
+
+        (
+            ParserTokenKind::Verb { ending, .. },
+            ParserTokenKind::Verb {
+                ending: other_ending,
+                ..
+            },
+        ) => ending == other_ending,
+
+        // Keyword, Type, Particle, Punctuation, Operator, Eof: the value is the token
+        (a, b) => a == b,
+    };
+}
+
+/// Same rule as `TerminalKey`: a terminal is compared on its kind
+impl PartialEq for ParserNode {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ParserNode::Term(a), ParserNode::Term(b)) => same_terminal(a, b),
+            (ParserNode::NTerm(a), ParserNode::NTerm(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for ParserNode {}
+
+impl Hash for ParserNode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        discriminant(self).hash(state);
+        match self {
+            ParserNode::Term(kind) => discriminant(kind).hash(state),
+            ParserNode::NTerm(non_terminal) => non_terminal.hash(state),
+        }
+    }
 }

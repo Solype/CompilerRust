@@ -1,6 +1,5 @@
 use super::super::parser_token::ParserTokenKind;
 
-use super::debug;
 use super::first::First;
 use super::structs::NTerm::StartSymbol;
 use super::structs::{NTerm, ParserNode, ParserProduction, same_terminal};
@@ -39,7 +38,7 @@ impl Eq for TerminalKey<'_> {}
 
 impl fmt::Debug for TerminalKey<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", debug::term(self.0))
+        write!(f, "{:?}", self.0)
     }
 }
 
@@ -134,8 +133,6 @@ pub struct ParsingTable {
     term_id: HashMap<TerminalKey<'static>, usize>,
     /// Index of the `StartSymbol` rule, where the first state starts
     start_rule: usize,
-    /// Number of states: they are numbered from 0 to `state_count - 1`
-    state_count: usize,
 }
 
 impl ParsingTable {
@@ -151,7 +148,6 @@ impl ParsingTable {
         let state_0 = ParsingTable::closure(
             rules,
             &first,
-            &terms,
             &term_id,
             BTreeSet::from([Item::new(start_rule, eof)]),
         );
@@ -175,15 +171,10 @@ impl ParsingTable {
 
             // Shifts and gotos: one transition per symbol found just after a point
             for symbol in ParsingTable::symbols_after_point(rules, &state) {
-                let next = ParsingTable::goto(rules, &first, &terms, &term_id, &state, symbol);
+                let next = ParsingTable::goto(rules, &first, &term_id, &state, symbol);
                 let n = ParsingTable::state_number(&mut states, &mut state_id, next);
                 let (entry, action) = ParsingTable::transition(i, symbol, n);
                 conflicts += ParsingTable::fill(&mut table, entry, action);
-                // ┌── DEBUG (Claude) ───────────────────────────────
-                if debug::transitions() {
-                    println!("\n>>> état {i} --{}--> état {n}", debug::node(symbol));
-                }
-                // └── fin DEBUG ─────────────────────────────────────
             }
             i += 1;
         }
@@ -191,19 +182,12 @@ impl ParsingTable {
             eprintln!("{} états, {conflicts} conflits", states.len());
         }
 
-        let parsing_table = Self {
+        return Self {
             table,
             terms,
             term_id,
             start_rule,
-            state_count: states.len(),
         };
-        // ┌── DEBUG (Claude) ───────────────────────────────
-        if debug::transitions() {
-            parsing_table.print_summary();
-        }
-        // └── fin DEBUG ─────────────────────────────────────
-        return parsing_table;
     }
 
     /// The symbols just after a point in `state`, each one once
@@ -259,21 +243,6 @@ impl ParsingTable {
         };
     }
 
-    /// `442 états, 5808 cases : 1560 S, 3537 R, 710 Goto, 1 Accept`
-    pub fn print_summary(&self) {
-        let count =
-            |keep: fn(&ParsingState) -> bool| self.table.values().filter(|a| keep(a)).count();
-        println!(
-            "{} états, {} cases : {} S, {} R, {} Goto, {} Accept",
-            self.state_count,
-            self.table.len(),
-            count(|a| matches!(a, ParsingState::S(_))),
-            count(|a| matches!(a, ParsingState::R(_))),
-            count(|a| matches!(a, ParsingState::Goto(_))),
-            count(|a| matches!(a, ParsingState::Accept)),
-        );
-    }
-
     /// Writes `action` in the cell `entry`; a cell already holding another action is a conflict:
     /// it is printed, the first action is kept, and 1 is returned
     fn fill(
@@ -298,72 +267,26 @@ impl ParsingTable {
     fn closure(
         rules: &'static [ParserProduction],
         first: &First,
-        terms: &[&'static ParserTokenKind],
         term_id: &HashMap<TerminalKey<'static>, usize>,
         mut items: BTreeSet<Item>,
     ) -> BTreeSet<Item> {
         let mut can_stop = false;
-        // ┌── DEBUG (Claude) ───────────────────────────────
-        let show = |item: &Item| debug::item(&rules[item.rule], item.point, terms[item.lookahead]);
-        let mut pass = 0;
-        // └── fin DEBUG ─────────────────────────────────────
 
         while !can_stop {
             can_stop = true;
             let mut found = Vec::new();
-
-            // ┌── DEBUG (Claude) ───────────────────────────────
-            if debug::closure() {
-                pass += 1;
-                println!(
-                    "\n========== Tour {pass} : {} items dans l'état ==========",
-                    items.len()
-                );
-            }
-            // └── fin DEBUG ─────────────────────────────────────
-
             for elem in items.iter() {
                 match elem.next_node(rules) {
                     // Point at the end, or before a terminal: nothing to unroll
-                    None | Some(ParserNode::Term(_)) => {
-                        // ┌── DEBUG (Claude) ───────────────────────────────
-                        if debug::closure() {
-                            println!(
-                                "\n  {}\n      rien à dérouler : pas de non-terminal après le point",
-                                show(elem)
-                            );
-                        }
-                        // └── fin DEBUG ─────────────────────────────────────
-                    }
+                    None | Some(ParserNode::Term(_)) => {}
                     Some(ParserNode::NTerm(non_terminal)) => {
-                        // ┌── DEBUG (Claude) ───────────────────────────────
-                        if debug::closure() {
-                            println!(
-                                "\n▶ {}\n      le point est devant {non_terminal:?} : on le déroule",
-                                show(elem)
-                            );
-                        }
-                        // └── fin DEBUG ─────────────────────────────────────
-
-                        let new_items =
-                            ParsingTable::get_new_items(rules, first, term_id, elem, *non_terminal);
-
-                        // ┌── DEBUG (Claude) ───────────────────────────────
-                        if debug::closure() {
-                            println!("      → items obtenus :");
-                            for item in &new_items {
-                                let status = if items.contains(item) || found.contains(item) {
-                                    "déjà là"
-                                } else {
-                                    "NOUVEAU"
-                                };
-                                println!("          {status:8} {}", show(item));
-                            }
-                            debug::pause();
-                        }
-                        // └── fin DEBUG ─────────────────────────────────────
-
-                        found.extend(new_items);
+                        found.extend(ParsingTable::get_new_items(
+                            rules,
+                            first,
+                            term_id,
+                            elem,
+                            *non_terminal,
+                        ));
                     }
                 }
             }
@@ -373,20 +296,7 @@ impl ParsingTable {
                     can_stop = false;
                 }
             }
-            // ┌── DEBUG (Claude) ───────────────────────────────
-            if debug::closure() && can_stop {
-                println!("\nAucun item nouveau pendant ce tour : la clôture est finie.");
-            }
-            // └── fin DEBUG ─────────────────────────────────────
         }
-        // ┌── DEBUG (Claude) ───────────────────────────────
-        if debug::closure() {
-            println!("\n========== Clôture : {} items ==========", items.len());
-            for item in &items {
-                println!("  {}", show(item));
-            }
-        }
-        // └── fin DEBUG ─────────────────────────────────────
         return items;
     }
 
@@ -394,7 +304,6 @@ impl ParsingTable {
     fn goto(
         rules: &'static [ParserProduction],
         first: &First,
-        terms: &[&'static ParserTokenKind],
         term_id: &HashMap<TerminalKey<'static>, usize>,
         state: &BTreeSet<Item>,
         symbol: &ParserNode,
@@ -413,7 +322,7 @@ impl ParsingTable {
         }
 
         // 3. The closure of `moved`
-        return ParsingTable::closure(rules, first, terms, term_id, moved);
+        return ParsingTable::closure(rules, first, term_id, moved);
     }
 
     /// `elem` has its point just before `non_terminal`: the items `non_terminal → · …` to add, one
@@ -433,21 +342,6 @@ impl ParsingTable {
         // 2. The lookaheads: FIRST of step 1 as ids, plus `elem.lookahead` if step 1 can vanish
         let (toks, nullable) = first.of_sequence(rest);
         let mut lookaheads: Vec<usize> = vec![];
-        // ┌── DEBUG (Claude) ───────────────────────────────
-        if debug::closure() {
-            println!(
-                "      1. ce qui vient après : rest = {}",
-                debug::nodes(rest)
-            );
-            println!("      2. FIRST(rest) = {}", debug::terms(&toks));
-            if nullable {
-                println!("         rest peut être vide : on ajoute aussi le lookahead de l'item");
-            } else {
-                println!("         rest ne peut pas être vide : seulement FIRST(rest)");
-            }
-            println!("      3. les règles de {non_terminal:?}, une fois par lookahead");
-        }
-        // └── fin DEBUG ─────────────────────────────────────
 
         for f in toks {
             lookaheads.push(term_id[&TerminalKey(f)]);

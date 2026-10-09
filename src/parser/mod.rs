@@ -1,5 +1,5 @@
 pub mod parser_token;
-// Not used yet: the conversion from the parse tree is the next step
+// Only the conversion and its display are called from main
 #[allow(dead_code)]
 pub mod postparser;
 pub mod preparser;

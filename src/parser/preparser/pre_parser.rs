@@ -75,6 +75,7 @@ impl<'a> PreParser<'a> {
         let kind = match &token.kind {
             LexerTokenKind::HangulWord(word) => return self.hangul_word(word, token.span, prev),
             LexerTokenKind::LatinWord(name) => ParserTokenKind::Name(name.clone()),
+            LexerTokenKind::Float(value) => ParserTokenKind::Float(*value),
             LexerTokenKind::Int(value) => ParserTokenKind::Int(*value),
             LexerTokenKind::Str(value) => ParserTokenKind::Str(value.clone()),
             LexerTokenKind::Punctuation(punctuation) => ParserTokenKind::Punctuation(*punctuation),
@@ -119,6 +120,7 @@ impl<'a> PreParser<'a> {
             prev,
             Some(
                 LexerTokenKind::Int(_)
+                    | LexerTokenKind::Float(_)
                     | LexerTokenKind::Str(_)
                     | LexerTokenKind::Punctuation(Punctuation::RParen)
                     | LexerTokenKind::LatinWord(_)

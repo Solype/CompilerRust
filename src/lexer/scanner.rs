@@ -1,7 +1,7 @@
 use super::cursor::Lexer;
 use super::lexer_error::{LexError, LexErrorKind};
-use super::span::Span;
 use super::lexer_token::{LexerToken, LexerTokenKind};
+use super::span::Span;
 
 /// Cuts `src` into tokens, the last one being `Eof`; stops at the first error
 pub fn tokenize(src: &str) -> Result<Vec<LexerToken>, LexError> {
@@ -77,6 +77,14 @@ impl Lexer<'_> {
             }
             '0'..='9' => {
                 self.eat_while(|c| c.is_ascii_digit());
+                // A `.` is a decimal point only before a digit: `5.` ends a statement, `1..2` is a
+                // range
+                if self.peek() == Some('.') && self.peek_at(1).is_some_and(|c| c.is_ascii_digit()) {
+                    self.bump();
+                    self.eat_while(|c| c.is_ascii_digit());
+                    let value = self.src[start..self.pos].parse::<f64>();
+                    return Ok(Float(value.expect("digits, a dot and digits")));
+                }
                 let value = self.src[start..self.pos].parse::<i64>();
                 Int(value.map_err(|_| self.error(LexErrorKind::IntegerOverflow, start))?)
             }

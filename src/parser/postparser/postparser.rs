@@ -469,6 +469,7 @@ fn expression(node: &TreeNode) -> Expr {
         (_, [inner]) => expression(inner),
         (NTerm::Operand, [_, number]) => match token(number) {
             ParserTokenKind::Int(number) => Expr::Int(-number),
+            ParserTokenKind::Float(number) => Expr::Float(-number),
             kind => panic!("a number was expected, found {kind:?}"),
         },
         (_, [op, operand]) => Expr::Unary {
@@ -484,11 +485,12 @@ fn expression(node: &TreeNode) -> Expr {
     };
 }
 
-/// Primary → Int | Str | Bool | Name | 빈 주소 | TypeSpec 의 크기 | ( Expression )
+/// Primary → Int | Float | Str | Bool | Name | 빈 주소 | TypeSpec 의 크기 | ( Expression )
 fn primary(children: &[TreeNode]) -> Expr {
     return match children {
         [leaf] => match token(leaf) {
             ParserTokenKind::Int(number) => Expr::Int(*number),
+            ParserTokenKind::Float(number) => Expr::Float(*number),
             ParserTokenKind::Str(text) => Expr::Str(text.clone()),
             ParserTokenKind::Bool(value) => Expr::Bool(*value),
             ParserTokenKind::Name(name) => Expr::Name(name.clone()),

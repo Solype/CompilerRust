@@ -102,12 +102,13 @@ pub struct ParserProduction {
     pub right: &'static [ParserNode],
 }
 
-/// Only the kind of token counts for `Name`, `Int`, `Str`, `Bool` and the verb's infinitive: their
+/// Only the kind of token counts for `Name`, `Int`, `Float`, `Str`, `Bool` and the verb's infinitive: their
 /// value in the rules is a placeholder
 pub(super) fn same_terminal(a: &ParserTokenKind, b: &ParserTokenKind) -> bool {
     return match (a, b) {
         (ParserTokenKind::Name(_), ParserTokenKind::Name(_))
         | (ParserTokenKind::Int(_), ParserTokenKind::Int(_))
+        | (ParserTokenKind::Float(_), ParserTokenKind::Float(_))
         | (ParserTokenKind::Str(_), ParserTokenKind::Str(_))
         | (ParserTokenKind::Bool(_), ParserTokenKind::Bool(_)) => true,
 

@@ -91,6 +91,7 @@ pub enum Statement {
 
 pub enum Expr {
     Int(i64),
+    Float(f64),
     Str(String),
     Bool(bool),
     Name(String),

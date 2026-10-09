@@ -36,6 +36,15 @@ fn return_with_dot() {
 }
 
 #[test]
+fn float_needs_a_digit_after_the_dot() {
+    assert_eq!(kinds("0.5를"), [Float(0.5), hangul("를")]);
+    assert_eq!(kinds("-3.25"), [Operator(Minus), Float(3.25)]);
+    // `5.` ends a statement, `1..2` is two dots between ints
+    assert_eq!(kinds("5."), [Int(5), Punctuation(Dot)]);
+    assert_eq!(kinds("1..2"), [Int(1), Punctuation(Dot), Punctuation(Dot), Int(2)]);
+}
+
+#[test]
 fn script_change_splits_words() {
     assert_eq!(kinds("printf해요"), [latin("printf"), hangul("해요")]);
 }

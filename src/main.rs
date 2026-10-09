@@ -24,35 +24,18 @@ fn main() -> std::io::Result<()> {
         eprintln!("{}:{line}:{col}: {err}", args.path);
         process::exit(1);
     });
-    if args.tokens {
-        for token in &tokens {
-            let (line, col) = token.span.line_col(&source);
-            println!("{:<6}{}", format!("{line}:{col}"), token.kind);
-        }
-        return Ok(());
+    let pre_parsed = parser::pre_parse(&tokens).unwrap_or_else(|err| {
+        let (line, col) = err.span.line_col(&source);
+        eprintln!("{}:{line}:{col}: {err}", args.path);
+        process::exit(1);
+    });
+    for warning in &pre_parsed.warnings {
+        let (line, col) = warning.span.line_col(&source);
+        eprintln!("{}:{line}:{col}: warning: {warning}", args.path);
     }
-    // only on demand for now: words it does not know yet (verbs, names) are errors
-    if args.pre_tokens {
-        let pre_parsed = parser::pre_parse(&tokens).unwrap_or_else(|err| {
-            let (line, col) = err.span.line_col(&source);
-            eprintln!("{}:{line}:{col}: {err}", args.path);
-            process::exit(1);
-        });
-        for warning in &pre_parsed.warnings {
-            let (line, col) = warning.span.line_col(&source);
-            eprintln!("{}:{line}:{col}: warning: {warning}", args.path);
-        }
-        for token in &pre_parsed.tokens {
-            let (line, col) = token.span.line_col(&source);
-            println!("{:<6}{:?}", format!("{line}:{col}"), token.kind);
-        }
-        return Ok(());
-    }
-    // only on demand for now: the parser does not use the table yet
-    if args.table {
-        ParsingTable::new(RULES).print_summary();
-        return Ok(());
-    }
+    // Not used yet: the parser that reads these tokens with the table is the next step
+    let _tokens = pre_parsed.tokens;
+    let _table = ParsingTable::new(RULES);
 
     let mut elf_file = ElfFile64::default();
     elf_file.declare_non_defined_sym(&"my_exit".to_string(), SymbolType::Function);
@@ -83,41 +66,18 @@ fn main() -> std::io::Result<()> {
 struct Args {
     program: String,
     path: String,
-    /// `--tokens`: print the tokens, one per line, then quit
-    tokens: bool,
-    /// `--pre-tokens`: print the tokens after the pre-parser, one per line, then quit
-    pre_tokens: bool,
-    /// `--table`: build the LR(1) table of the grammar, print its size, then quit
-    table: bool,
 }
 
-/// `compiler [--tokens | --pre-tokens | --table] file.kr`, exits on a wrong usage
+/// `compiler file.kr`, exits on a wrong usage
 fn parse_args() -> Args {
     let mut args = env::args();
     let program = args.next().unwrap_or_else(|| "compiler".to_string());
-    let mut tokens = false;
-    let mut pre_tokens = false;
-    let mut table = false;
-    let mut paths = Vec::new();
-    for arg in args {
-        match arg.as_str() {
-            "--tokens" => tokens = true,
-            "--pre-tokens" => pre_tokens = true,
-            "--table" => table = true,
-            _ => paths.push(arg),
-        }
-    }
+    let paths: Vec<String> = args.collect();
     let [path] = <[String; 1]>::try_from(paths).unwrap_or_else(|_| {
-        eprintln!("usage: {program} [--tokens | --pre-tokens | --table] <file.kr>");
+        eprintln!("usage: {program} <file.kr>");
         process::exit(1);
     });
-    Args {
-        program,
-        path,
-        tokens,
-        pre_tokens,
-        table,
-    }
+    Args { program, path }
 }
 
 /// Reads the source file (UTF-8), exits on error

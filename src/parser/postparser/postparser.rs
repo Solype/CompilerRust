@@ -78,6 +78,26 @@ fn function(node: &TreeNode) -> Function {
         (NTerm::Function, [head, _, params, _, body]) => (head, params, Some(block(body))),
         // ExternFunction → 외부 FunctionHead ( Parameters )
         (NTerm::ExternFunction, [_, head, _, params, _]) => (head, params, None),
+        // Function → ReturnType SentenceParameters VERB-다 Block
+        (NTerm::Function, [return_type, params, name, body]) => {
+            return Function {
+                name: verb(name),
+                return_type: Some(type_spec(&branch(return_type).1[0])),
+                params: sentence_parameters(params),
+                variadic: false,
+                body: Some(block(body)),
+            };
+        }
+        // Function → SentenceParameters VERB-다 Block
+        (NTerm::Function, [params, name, body]) => {
+            return Function {
+                name: verb(name),
+                return_type: None,
+                params: sentence_parameters(params),
+                variadic: false,
+                body: Some(block(body)),
+            };
+        }
         _ => unreachable!(),
     };
     let (name, return_type) = function_head(head);
@@ -123,18 +143,35 @@ fn parameters(node: &TreeNode) -> (Vec<Param>, bool) {
 }
 
 fn parameter_list(node: &TreeNode) -> Vec<Param> {
-    let (mut params, parameter) = match branch(node).1 {
-        [parameter] => (Vec::new(), parameter),
-        [before, _, parameter] => (parameter_list(before), parameter),
+    let (mut params, last) = match branch(node).1 {
+        [last] => (Vec::new(), last),
+        [before, _, last] => (parameter_list(before), last),
         _ => unreachable!(),
     };
-    let [ty, param_name] = branch(parameter).1 else {
+    params.push(parameter(last));
+    return params;
+}
+
+/// Parameter → TypeSpec Name
+fn parameter(node: &TreeNode) -> Param {
+    let [ty, param_name] = branch(node).1 else {
         unreachable!()
     };
-    params.push(Param {
+    return Param {
         ty: type_spec(ty),
         name: name(param_name),
-    });
+    };
+}
+
+/// SentenceParameters → Parameter 를 | SentenceLinks Parameter 를
+/// SentenceLinks → Parameter 와 | SentenceLinks Parameter 와
+fn sentence_parameters(node: &TreeNode) -> Vec<Param> {
+    let (mut params, last) = match branch(node).1 {
+        [last, _] => (Vec::new(), last),
+        [before, last, _] => (sentence_parameters(before), last),
+        _ => unreachable!(),
+    };
+    params.push(parameter(last));
     return params;
 }
 

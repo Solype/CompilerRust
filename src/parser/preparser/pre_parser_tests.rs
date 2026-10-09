@@ -306,6 +306,7 @@ fn verb_without_parentheses_is_a_warning() {
     );
     assert!(warnings("정수를 주는 더하다(정수 가) { }").is_empty());
     assert!(warnings("인사하다() { 인사해요 }").is_empty());
+    assert!(warnings("정수를 주는 정수 가를 제곱하다 { }").is_empty());
 }
 
 /// The names declared in `src`, sorted and without duplicates, like `expected`: every
@@ -362,6 +363,11 @@ fn not_a_variable_declaration() {
     // a keyword, and a particle with no name before it
     assert_names("주는", &[]);
     assert_eq!(unknown("는 0이에요"), "는");
+}
+
+#[test]
+fn sentence_declaration_names() {
+    assert_names("정수 하나와 실수 둘과 정수 셋을 더하다 {\n}\n", &["하나", "둘", "셋"]);
 }
 
 #[test]

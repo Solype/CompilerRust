@@ -232,8 +232,8 @@ impl<'a> PreParser<'a> {
         }
     }
 
-    /// A verb in its dictionary form must be followed by `(`: `더하다(…)` is a definition,
-    /// `바다` alone is probably a name ending in 다
+    /// A verb in its dictionary form must be followed by `(` or `{`: `더하다(…)` and
+    /// `정수 가를 제곱하다 {` are definitions, `바다` alone is probably a name ending in 다
     fn check_parentheses(&self, parsed: &[ParserToken]) -> Option<PreParseWarning> {
         let [token] = parsed else { return None };
         let ParserTokenKind::Verb {
@@ -243,11 +243,11 @@ impl<'a> PreParser<'a> {
         else {
             return None;
         };
-        let followed_by_paren = matches!(
+        let defined = matches!(
             self.peek().kind,
-            LexerTokenKind::Punctuation(Punctuation::LParen)
+            LexerTokenKind::Punctuation(Punctuation::LParen | Punctuation::LBrace)
         );
-        (!followed_by_paren).then(|| {
+        (!defined).then(|| {
             PreParseWarning::new(
                 PreParseWarningKind::VerbWithoutParentheses(infinitive.clone()),
                 token.span,
@@ -325,13 +325,14 @@ impl<'a> PreParser<'a> {
             }
 
             // variable: `결과는 0이에요`, 은/는 at the start of a statement;
-            // loop: `정수 칸을 0부터 10까지 세면서`, 을/를 after a type (`칸을` alone uses 칸)
+            // loop: `정수 칸을 0부터 10까지 세면서`, 을/를 after a type (`칸을` alone uses 칸);
+            // sentence declaration: `정수 가와 정수 나를 더하다`, 와/과 or 을/를 after a type
             let Some((name, particle)) = has_particule(word) else {
                 continue;
             };
             let declares = match particle {
                 Particle::Topic => Self::starts_a_statement(prev),
-                Particle::Object => after_a_type,
+                Particle::Object | Particle::With => after_a_type,
                 _ => false,
             };
             if declares && !name.is_empty() {

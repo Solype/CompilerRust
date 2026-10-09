@@ -13,6 +13,7 @@ use elf::instructions::{Instruction, RelocKind, Relocation, Target};
 use elf::shdr::{ElfShdr, SectionName, ShFlags, ShType};
 use parser::cfg::parser::Parser;
 use parser::cfg::rules::RULES;
+use parser::postparser::postparser::convert_to_ast_tree;
 
 const OUTPUT: &str = "output.elf";
 
@@ -40,7 +41,10 @@ fn main() -> std::io::Result<()> {
             eprintln!("{}:{line}:{col}: syntax error: unexpected {:?}", args.path, token.kind);
             process::exit(1);
         });
-    println!("{}", tree.show(RULES));
+    if args.tree {
+        println!("{}", tree.show(RULES));
+    }
+    print!("{}", convert_to_ast_tree(&tree));
 
     let mut elf_file = ElfFile64::default();
     elf_file.declare_non_defined_sym(&"my_exit".to_string(), SymbolType::Function);
@@ -71,18 +75,31 @@ fn main() -> std::io::Result<()> {
 struct Args {
     program: String,
     path: String,
+    /// `--tree`: also print the parse tree, before the AST
+    tree: bool,
 }
 
-/// `compiler file.kr`, exits on a wrong usage
+/// `compiler [--tree] file.kr`, exits on a wrong usage
 fn parse_args() -> Args {
     let mut args = env::args();
     let program = args.next().unwrap_or_else(|| "compiler".to_string());
-    let paths: Vec<String> = args.collect();
+    let mut tree = false;
+    let mut paths = Vec::new();
+    for arg in args {
+        match arg.as_str() {
+            "--tree" => tree = true,
+            _ => paths.push(arg),
+        }
+    }
     let [path] = <[String; 1]>::try_from(paths).unwrap_or_else(|_| {
-        eprintln!("usage: {program} <file.kr>");
+        eprintln!("usage: {program} [--tree] <file.kr>");
         process::exit(1);
     });
-    Args { program, path }
+    Args {
+        program,
+        path,
+        tree,
+    }
 }
 
 /// Reads the source file (UTF-8), exits on error

@@ -4,7 +4,7 @@ use super::span::Span;
 
 /// What a token is; the lexer knows no keyword: 정수를, 만약, 줘요 are all `HangulWord`,
 /// the pre-parser turns them into `ParserToken`s
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum LexerTokenKind {
     /// Hangul syllables only, particle included: `나를`, `정수를`, `해요`
     HangulWord(String),
@@ -12,6 +12,7 @@ pub enum LexerTokenKind {
     LatinWord(String),
     /// Unsigned: `-` is its own token
     Int(i64),
+    Float(f64),
     /// Decoded content: `"%ld\n"` holds a real newline
     Str(String),
 
@@ -74,7 +75,7 @@ pub enum Operator {
     NotEq,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LexerToken {
     pub kind: LexerTokenKind,
     pub span: Span,
@@ -93,6 +94,7 @@ impl LexerTokenKind {
             Self::HangulWord(_) => "HangulWord",
             Self::LatinWord(_) => "LatinWord",
             Self::Int(_) => "Int",
+            Self::Float(_) => "Float",
             Self::Str(_) => "Str",
             Self::Punctuation(_) => "Punctuation",
             Self::Operator(_) => "Operator",

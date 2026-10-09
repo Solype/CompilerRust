@@ -3,7 +3,7 @@ use crate::lexer::span::Span;
 
 /// What the pre-parser makes of the lexer tokens: every Hangul word is split (나를 → 나 + 를)
 /// and classified, so the parser only sees fixed categories
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ParserTokenKind {
     /// A word of the language: 만약, 주는, 외부…
     Keyword(Keyword),
@@ -23,6 +23,7 @@ pub enum ParserTokenKind {
     Particle(Particle),
 
     Int(i64),
+    Float(f64),
     Str(String),
     /// 참 / 거짓
     Bool(bool),
@@ -34,7 +35,7 @@ pub enum ParserTokenKind {
     Eof,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ParserToken {
     pub kind: ParserTokenKind,
     /// For a word split in two, each part has its own span inside the word

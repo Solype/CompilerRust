@@ -82,3 +82,11 @@ fn extra_brace() {
     };
     assert_eq!(token.span.line_col("정수를 주는 main() {\n    42를 줘요.\n}\n}\n"), (4, 1));
 }
+
+#[test]
+fn float_literals() {
+    let source = "실수를 주는 main() {\n    가는 0.5예요.\n    -1.25를 줘요.\n}\n";
+    let tokens = tokens(source);
+    assert!(parser().parse(&tokens).is_ok());
+    assert!(tokens.iter().any(|token| matches!(token.kind, ParserTokenKind::Float(0.5))));
+}

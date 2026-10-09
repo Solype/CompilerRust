@@ -153,6 +153,7 @@ impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         return match self {
             Expr::Int(number) => write!(f, "{number}"),
+            Expr::Float(number) => write!(f, "{number:?}"),
             Expr::Str(text) => write!(f, "{text:?}"),
             Expr::Bool(value) => write!(f, "{value}"),
             Expr::Name(name) => write!(f, "{name}"),

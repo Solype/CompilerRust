@@ -34,6 +34,9 @@ macro_rules! term {
     (Str) => {
         Term(ParserTokenKind::Str(String::new()))
     };
+    (Float) => {
+        Term(ParserTokenKind::Float(0.0))
+    };
     (Bool) => {
         Term(ParserTokenKind::Bool(false))
     };
@@ -151,6 +154,7 @@ pub const RULES: &[ParserProduction] = &[
     rule!(ArgumentParticle => term!(Particle::Until)),
     rule!(Operand => NTerm(Primary)),
     rule!(Operand => term!(Operator::Minus), term!(Int)),
+    rule!(Operand => term!(Operator::Minus), term!(Float)),
     // Control flow
     rule!(IfStatement => term!(Keyword::If), NTerm(Condition), NTerm(Block)),
     rule!(IfStatement =>
@@ -280,6 +284,7 @@ pub const RULES: &[ParserProduction] = &[
     rule!(UnaryExpression => term!(Operator::Tilde), NTerm(UnaryExpression)),
     rule!(UnaryExpression => NTerm(Primary)),
     rule!(Primary => term!(Int)),
+    rule!(Primary => term!(Float)),
     rule!(Primary => term!(Str)),
     rule!(Primary => term!(Bool)),
     rule!(Primary => term!(Name)),

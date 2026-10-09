@@ -1,7 +1,7 @@
 /*
  * Proto.kr : premier vrai programme du langage.
  * Couvre : fonctions (verbes), chaînes d'appels, variables, constantes,
- * conditions, boucles, affichage (printf de la libc), retour.
+ * conditions, boucles, nombres à virgule, affichage (printf de la libc), retour.
  */
 
 외부 정수를 주는 printf(문자 주소 형식, …)
@@ -23,6 +23,11 @@
     } 아니면 {
         -1을 줘요.
     }
+}
+
+// moyenne de deux nombres à virgule
+실수를 주는 평균하다(실수 가, 실수 나) {
+    ((가 + 나) / 2.0)을 줘요.
 }
 
 // somme des carrés de 1 à 끝 (exclu)
@@ -73,6 +78,11 @@
         만약 수 == 6이면 { 그만해요. }
         "%ld\n"과 수를 printf해요.
     }
+
+    // nombres à virgule
+    평균은 실수예요.
+    1.5와 -2.25를 평균해서 평균에 넣어요.
+    "%f\n"과 평균을 printf해요.             // (1.5 - 2.25) / 2 = -0.375
 
     0을 줘요.
 }

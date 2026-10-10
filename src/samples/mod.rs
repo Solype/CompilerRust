@@ -1,10 +1,12 @@
-//! Test programs encoded into `output.elf`, until the front-end exists.
+//! Test programs encoded into `output.elf` by `compiler --demo`.
 //! One function per instruction family, in a file of the same name;
 //! each family becomes a global function of the same name in the binary.
 
+mod demo;
 pub(crate) mod helpers;
 mod start;
 
+pub use demo::write_demo;
 pub use start::start;
 
 use crate::elf::instructions::Instruction;

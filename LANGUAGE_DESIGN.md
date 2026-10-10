@@ -7,9 +7,11 @@ puis un appel à `printf`).
 Décisions déjà prises :
 
 - Les identifiants n'acceptent pas les chiffres (hangul, latin et `_`).
-- Registre : 해요체 partout (`예요`, `줘요`, `넣어요`…).
+- Registre : 해요체 dans le corps des fonctions (`예요`, `반환해요`, `넣어요`…). La déclaration en
+  phrase se lit comme une ligne de spécification et finit par le nom `반환` (voir
+  [Déclaration en phrase](#déclaration-en-phrase)).
 - Fin d'instruction : la terminaison en `요` termine l'instruction, pas de `;`. Un `.` est accepté
-  juste après le `요` (`42를 줘요.`). Les retours à la ligne comptent comme des espaces.
+  juste après le `요` (`42를 반환해요.`). Les retours à la ligne comptent comme des espaces.
 - Commentaires : `// …` jusqu'à la fin de la ligne, et `/* … */`.
 - Fonctions de la libc : nom latin + `하다`, comme les mots étrangers en coréen (컴파일하다,
   클릭하다) : `printf해요`, `printf해서`. Le lexer sépare le latin du hangul tout seul.
@@ -18,34 +20,34 @@ Décisions déjà prises :
 - Particules : toujours collées (`나를`, `정수를`, `42를`, `(가 + 나)를`). Voir
   [Particules collées](#particules-collées) pour le découpage.
 - Fonctions = verbes, appels en chaîne sans imbrication : voir [Fonctions et conjugaison](#fonctions-et-conjugaison).
-- Retour : une expression avec un opérateur va entre parenthèses (`(가 + 나)를 줘요`), sinon on ne
+- Retour : une expression avec un opérateur va entre parenthèses (`(가 + 나)를 반환해요`), sinon on ne
   sait pas si `를` porte sur `나` ou sur `가 + 나`. Un terme simple (nombre, nom) n'en a pas
-  besoin : `42를 줘요`, `가를 줘요`. Après `)`, la particule est collée.
+  besoin : `42를 반환해요`, `가를 반환해요`. Après `)`, la particule est collée.
 - Arithmétique simple toujours possible : partout où une valeur est attendue (affectation,
   argument, retour, déclaration, condition), une expression avec opérateurs est acceptée, sans
   passer par une fonction. Entre parenthèses si une particule suit : `개수에 (개수 + 1)을 넣어요`
   (`a = a + 1`), `결과에 (가 * 나)를 넣어요` (`a = b * c`).
-- Nombre négatif : `-5` est un terme simple (`-5를 줘요`). Le `-` reste un token à part dans le
+- Nombre négatif : `-5` est un terme simple (`-5를 반환해요`). Le `-` reste un token à part dans le
   lexer (sinon `가-5` donnerait `가` puis `-5`) ; c'est le parser qui colle `-` devant un
-  nombre. `-가` reste une expression : `(-가)를 줘요`.
+  nombre. `-가` reste une expression : `(-가)를 반환해요`.
 
 Exemple de référence (première tranche) :
 
 ```
-정수를 주는 main() {
-    42를 줘요
+정수를 반환하는 main() {
+    42를 반환해요
 }
 
-정수를 주는 더하다(정수 가, 정수 나) {
-    (가 + 나)를 줘요
+정수를 반환하는 더하다(정수 가, 정수 나) {
+    (가 + 나)를 반환해요
 }
 
-정수를 주는 곱하다(정수 가, 정수 나) {
-    (가 * 나)를 줘요
+정수를 반환하는 곱하다(정수 가, 정수 나) {
+    (가 * 나)를 반환해요
 }
 
-정수를 주는 계산하다() {
-    3과 4를 더해서 5를 곱해서 줘요       // (3 + 4) * 5
+정수를 반환하는 계산하다() {
+    3과 4를 더해서 5를 곱해서 반환해요       // (3 + 4) * 5
 }
 
 인사하다() {
@@ -68,46 +70,61 @@ Exemple de référence (première tranche) :
   Le résultat de l'étape précédente devient le **premier argument** de l'étape suivante.
 - Arguments : reliés par `와/과`, le dernier porte `을/를`. Un argument est un terme simple ou une
   expression arithmétique entre parenthèses, jamais un appel.
-- Une chaîne se termine par un verbe à la forme `-아/어요` : `줘요` rend le résultat courant ;
+- Une chaîne se termine par un verbe à la forme `-아/어요` : `반환해요` rend le résultat courant ;
   tout autre verbe est un appel dont le résultat est ignoré.
 - Résultats intermédiaires multiples : les nommer dans une variable (syntaxe à définir).
 
 ```
 3과 4를 더해요                 // appel, résultat ignoré
-3과 4를 더해서 줘요            // rend 3 + 4
-3과 4를 더해서 5를 곱해서 줘요  // rend (3 + 4) * 5
+3과 4를 더해서 반환해요            // rend 3 + 4
+3과 4를 더해서 5를 곱해서 반환해요  // rend (3 + 4) * 5
 인사해요                       // appel sans argument
 ```
 
 ### Déclaration en phrase
 
-Une fonction peut aussi se déclarer comme une phrase : les paramètres viennent **avant** le verbe,
-reliés par les mêmes particules qu'à l'appel (`와/과` entre eux, `을/를` sur le dernier). Les deux
-formes sont équivalentes.
+Une fonction peut aussi se déclarer comme une phrase : « reçoit l'entier 가 et l'entier 나, les
+compare et rend un entier ». Les paramètres viennent **avant** le verbe, reliés par les mêmes
+particules qu'à l'appel (`와/과` entre eux, `을/를` sur le dernier), puis `받아` (« en recevant »),
+le verbe à la forme `-고`, et le type rendu suivi du nom `반환`. Les deux formes sont équivalentes.
 
 ```
-정수를 주는 비교하다(정수 가, 정수 나) { … }     // forme C
-정수를 주는 정수 가와 정수 나를 비교하다 { … }   // forme en phrase
+정수를 반환하는 비교하다(정수 가, 정수 나) { … }       // forme C
+정수 가와 정수 나를 받아 비교하고 정수를 반환 { … }   // forme en phrase
+두 정수 가와 나를 받아 비교하고 정수를 반환 { … }     // forme contractée
 
-7과 3을 비교해요                                 // l'appel, identique pour les deux
+7과 3을 비교해요                                   // l'appel, identique pour les trois
 ```
 
-- La déclaration ressemble ainsi à l'appel : `정수 가와 정수 나를 비교하다` / `7과 3을 비교해요`.
+- La déclaration ressemble ainsi à l'appel : `정수 가와 정수 나를 받아 비교하고` / `7과 3을 비교해요`.
 - La particule suit la dernière syllabe du nom, pas du type : `가와`, `나를` (voyelle), `끝과`,
   `끝을` (consonne).
-- Un seul paramètre : il porte `을/를` (`정수 가를 제곱하다`).
-- Sans paramètre, la forme C reste la seule : `인사하다() { … }`.
+- Un seul paramètre : il porte `을/를` (`정수 가를 받아 제곱하고 정수를 반환`).
+- **Forme contractée** : un nombre coréen natif devant le type annonce plusieurs paramètres de ce
+  type ; les noms qui suivent n'ont pas de type : `두 정수 가와 나를`, `세 소수 가와 나와 라를`. Les
+  groupes se mélangent : `두 정수 가와 나와 소수 라를`. Nombres reconnus : `두` (2) à `열` (10) ;
+  `한` (1) est aussi la forme `-(으)ㄴ` de `하다`, et un paramètre seul n'a pas besoin de compteur. Un
+  nombre n'en est un que devant un type : `세` et `열` restent libres comme noms. Annoncer plus ou
+  moins de noms qu'il n'en suit est une erreur, comme un nom sans type hors d'un groupe compté.
+- Le verbe est à la forme `-고` (`비교하고`, `먹고`) : le radical suivi de `고`, sans ambiguïté, d'où
+  le compilateur retrouve l'infinitif (`비교하다`) et génère les autres formes.
+- `반환` seul, sans `하다`, est le style des spécifications (개조식) ; dans le corps, le retour garde
+  le 해요체 : `반환해요`.
+- Sans type de retour ou sans paramètre, la forme C reste la seule pour l'instant :
+  `인사하다() { … }`. La forme en phrase sans retour (`정수 가를 받아 보여준다`) est à faire.
 
 ### Formes générées
 
-À la déclaration, le compilateur génère trois formes du verbe et les range dans une table
+À la déclaration, le compilateur génère les formes du verbe et les range dans une table
 « forme → (fonction, usage) ». Pas d'analyse à l'envers : le parser cherche le mot dans la table.
+Seule la forme `-고` d'une déclaration en phrase se ramène à l'infinitif, en remplaçant `고` par `다`.
 
 | Forme | Usage | 하다 | 먹다 |
 | --- | --- | --- | --- |
 | `-아/어서` | enchaîner une étape | 해서 | 먹어서 |
 | `-아/어요` | finir la chaîne | 해요 | 먹어요 |
 | `-(으)ㄴ` | qualifier un nom (`더한 값`) | 한 | 먹은 |
+| `-고` | verbe d'une déclaration en phrase | 하고 | 먹고 |
 
 ### Surcharge (à faire)
 
@@ -116,11 +133,11 @@ additionner des `정수` comme des `소수`. Un même verbe peut donc être déc
 avec des paramètres différents.
 
 ```
-정수를 주는 더하다(정수 가, 정수 나) { (가 + 나)를 줘요 }
-소수를 주는 더하다(소수 가, 소수 나) { (가 + 나)를 줘요 }
+정수를 반환하는 더하다(정수 가, 정수 나) { (가 + 나)를 반환해요 }
+소수를 반환하는 더하다(소수 가, 소수 나) { (가 + 나)를 반환해요 }
 
-3과 4를 더해서 줘요          // la version 정수
-1.5와 2.5를 더해서 줘요      // la version 소수
+3과 4를 더해서 반환해요          // la version 정수
+1.5와 2.5를 더해서 반환해요      // la version 소수
 ```
 
 - Les déclarations d'un même verbe doivent différer par le **nombre** ou les **types** de leurs
@@ -141,16 +158,16 @@ avec des paramètres différents.
 Fonctions utilisées dans les exemples :
 
 ```
-정수를 주는 더하다(정수 가, 정수 나) {
-    (가 + 나)를 줘요
+정수를 반환하는 더하다(정수 가, 정수 나) {
+    (가 + 나)를 반환해요
 }
 
-정수를 주는 빼다(정수 가, 정수 나) {
-    (가 - 나)를 줘요
+정수를 반환하는 빼다(정수 가, 정수 나) {
+    (가 - 나)를 반환해요
 }
 
-정수를 주는 제곱하다(정수 가) {      // 제곱 = carré
-    (가 * 가)를 줘요
+정수를 반환하는 제곱하다(정수 가) {      // 제곱 = carré
+    (가 * 가)를 반환해요
 }
 
 인사하다() {
@@ -168,22 +185,22 @@ Fonctions utilisées dans les exemples :
 **Enchaîner (`-아/어서`)** : chaque étape reçoit le résultat précédent comme premier argument.
 
 ```
-10과 4를 빼서 줘요                       // 10 - 4 = 6
-10과 4를 빼서 3을 더해서 줘요            // (10 - 4) + 3 = 9
-10과 4를 빼서 3을 더해서 제곱해서 줘요   // ((10 - 4) + 3)² = 81
-3과 4를 더해서 제곱해서 2를 빼서 줘요     // (3 + 4)² - 2 = 47
+10과 4를 빼서 반환해요                       // 10 - 4 = 6
+10과 4를 빼서 3을 더해서 반환해요            // (10 - 4) + 3 = 9
+10과 4를 빼서 3을 더해서 제곱해서 반환해요   // ((10 - 4) + 3)² = 81
+3과 4를 더해서 제곱해서 2를 빼서 반환해요     // (3 + 4)² - 2 = 47
 ```
 
 `제곱해서` n'a pas d'argument écrit : son seul paramètre est le résultat précédent.
 Particules : 10 (십) et 3 (삼) finissent par une consonne → `과`, `을` ; 4 (사) et 2 (이) par une
 voyelle → `와`, `를`.
 
-**Finir (`-아/어요`)** : `줘요` rend le résultat ; un autre verbe appelle et ignore le résultat.
+**Finir (`-아/어요`)** : `반환해요` rend le résultat ; un autre verbe appelle et ignore le résultat.
 
 ```
 인사해요                  // appel sans argument
 3과 4를 더해요            // calcule 7 et l'ignore
-3과 4를 더해서 줘요       // rend 7
+3과 4를 더해서 반환해요       // rend 7
 인사해서 3과 4를 더해요   // erreur : 인사하다 ne rend rien, rien à passer à 더하다
 ```
 
@@ -193,7 +210,7 @@ variable `NOM 은/는 VALEUR이에요/예요` (`값` = valeur, finale ㅂ → `�
 ```
 합은 3과 4를 더한 값이에요           // 합 = 3 + 4
 차는 10과 4를 뺀 값이에요            // 차 = 10 - 4
-합과 차를 더해서 줘요               // 7 + 6 = 13
+합과 차를 더해서 반환해요               // 7 + 6 = 13
 ```
 
 ### Verbes réguliers (première étape)
@@ -275,10 +292,10 @@ le choix selon le 받침 (`나을` → « 받침이 없으니 '를'을 쓰세요
 
 | | Concept | Mot | Notes |
 | --- | --- | --- | --- |
-| ★ | fonction | `TYPE을/를 주는 VERBE다(TYPE nom, …) { … }` | « VERBE, qui donne un TYPE » ; sans retour : `VERBE다(…) { … }` |
+| ★ | fonction | `TYPE을/를 반환하는 VERBE다(TYPE nom, …) { … }` | « VERBE, qui donne un TYPE » ; sans retour : `VERBE다(…) { … }` |
 | | variable | `NOM은/는 VALEUR이에요/예요` ou `NOM은/는 TYPE이에요/예요` | avec une valeur : type déduit (`0` → `정수`, `0.5` → `소수`) ; avec un type : valeur par défaut (zéro du type) ; `이에요` après une consonne, `예요` après une voyelle ; modifiable par défaut |
 | | constante | `고정된 NOM은/는 VALEUR이에요/예요` | voir Modificateurs |
-| ★ | fonction externe (libc) | `외부 TYPE을/를 주는 nom(TYPE nom, …)` | nom latin, sans corps ; `…` pour les variadiques : `외부 정수를 주는 printf(문자 주소 형식, …)` |
+| ★ | fonction externe (libc) | `외부 TYPE을/를 반환하는 nom(TYPE nom, …)` | nom latin, sans corps ; `…` pour les variadiques : `외부 정수를 반환하는 printf(문자 주소 형식, …)` |
 | | structure | 구조 | |
 | | exporter / public | | |
 
@@ -324,7 +341,7 @@ pour toujours.
 
 | | Concept | Mot | Notes |
 | --- | --- | --- | --- |
-| ★ | retourner | `(EXPR)을/를 줘요`, ou `TERME을/를 줘요` | 주다 = donner ; 돌아오다 est intransitif (« revenir ») |
+| ★ | retourner | `(EXPR)을/를 반환해요`, ou `TERME을/를 반환해요` | 반환하다 = rendre, le terme standard en informatique ; la même racine sert aux déclarations (`반환하는`, `반환`) ; 돌아오다 est intransitif (« revenir ») |
 | | si (avant la condition) | `만약` | « si, supposons que » ; ouvre la condition, ce qui aide le parser |
 | | si (après la condition) | `이면` / `면` | « si c'est » ; `이면` après une consonne, `면` après une voyelle (les deux acceptés au début) |
 | | sinon | `아니면` | « si ce n'est pas le cas » |
@@ -336,11 +353,11 @@ pour toujours.
 
 ```
 만약 가 > 나면 {
-    가를 줘요
+    가를 반환해요
 } 아니면 만약 가 == 나면 {
-    0을 줘요
+    0을 반환해요
 } 아니면 {
-    나를 줘요
+    나를 반환해요
 }
 
 가 < 10인 동안 {
@@ -400,7 +417,7 @@ Après un mot de type (`정수`, `문자`…), `&` n'est pas le ET bit à bit ma
 ```
 만약 가 > 0 그리고 나 > 0이면 { … }
 만약 (가 > 0)이 아니면 { … }          // si ce n'est pas (가 > 0)
-가를 소수로 바꿔서 2.5를 더해서 줘요     // (소수) 가 + 2.5
+가를 소수로 바꿔서 2.5를 더해서 반환해요     // (소수) 가 + 2.5
 ```
 
 `아니면` sert déjà de « sinon », mais il n'y a pas de conflit : « sinon » vient juste après `}`, la
@@ -436,7 +453,7 @@ le recevoir et qu'aucune autre étape n'attend de `에`.
 | --- | --- | --- | --- |
 | ★ | point d'entrée (`main`) | `main` | seule exception au langage tout coréen : la libc l'appelle sous ce nom |
 | ★ | afficher | — | pas de fonction intégrée : `printf` de la libc, déclaré avec `외부` |
-| ★ | rendre une valeur | `주다` | `줘요` : fin de chaîne qui rend le résultat (voir Contrôle de flux) |
+| ★ | rendre une valeur | `반환하다` | `반환해요` : fin de chaîne qui rend le résultat (voir Contrôle de flux) ; `반환하는` et `반환` dans les déclarations |
 | | affecter | `넣다` | `NOM에 VALEUR을/를 넣어요` ; en fin de chaîne : `… 개수에 넣어요` |
 | | convertir | `바꾸다` | `TERME을/를 TYPE(으)로 바꿔서` (voir Opérateurs) |
 | | compter (boucle) | `세다` | `[TYPE] NOM을/를 A부터 B까지 세면서` (voir Contrôle de flux) |
@@ -444,7 +461,7 @@ le recevoir et qu'aucune autre étape n'attend de `에`.
 Ces verbes sont réservés : une fonction de l'utilisateur ne peut pas porter leur nom.
 
 ```
-외부 정수를 주는 printf(문자 주소 형식, …)
+외부 정수를 반환하는 printf(문자 주소 형식, …)
 
 "%ld\n"과 42를 printf해요                  // 42
 3과 4를 더해서 결과에 넣어요

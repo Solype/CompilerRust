@@ -53,8 +53,8 @@ impl Hash for TerminalKey<'_> {
 // Actual Algo
 ////////////////////////////////
 
-/// A bookmark in a rule: `ReturnType → 정수 · 를 주는   [Name]`
-/// "I have read `정수`, I expect `를 주는`, and once the rule is done the next token is `Name`"
+/// A bookmark in a rule: `ReturnType → 정수 · 를 반환하는   [Name]`
+/// "I have read `정수`, I expect `를 반환하는`, and once the rule is done the next token is `Name`"
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug, Default)]
 struct Item {
     /// Index of the rule in `rules`

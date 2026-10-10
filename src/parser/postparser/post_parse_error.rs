@@ -15,10 +15,14 @@ pub enum PostParseErrorKind {
     DeclaredOutOfCount(String),
     /// `세면서` without its variable, its `부터` or its `까지`, or with another argument
     CountArguments,
-    /// `줘요` with no value, two values, or a value without `을/를`
+    /// `반환해요` with no value, two values, or a value without `을/를`
     GiveArguments,
     /// `넣어요` without its value or its variable with `에`, or with another argument
     PutArguments,
+    /// `정수 가와 나를`: a name alone after a parameter without counter
+    ParameterWithoutType(String),
+    /// `두 정수 가와 나와 다를`: the counter announces `expected` names, the group has `found`
+    CounterMismatch { expected: usize, found: usize },
 }
 
 /// A post-parsing error and where it happened
@@ -49,10 +53,19 @@ impl fmt::Display for PostParseErrorKind {
                 f,
                 "세면서 takes a variable with 을/를, a start with 부터 and an end with 까지"
             ),
-            Self::GiveArguments => write!(f, "줘요 takes one value, with 을/를"),
+            Self::GiveArguments => write!(f, "반환해요 takes one value, with 을/를"),
             Self::PutArguments => {
                 write!(f, "넣어요 takes a value with 을/를 and a variable with 에")
             }
+            Self::ParameterWithoutType(name) => write!(
+                f,
+                "the parameter '{name}' has no type: write it before the name, or count the \
+                 parameters of one type (두 정수 가와 {name})"
+            ),
+            Self::CounterMismatch { expected, found } => write!(
+                f,
+                "the counter announces {expected} parameters of this type, but {found} follow"
+            ),
         }
     }
 }

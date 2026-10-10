@@ -7,8 +7,8 @@ use crate::parser::parser_token::{Ending, Keyword, ParserToken, ParserTokenKind,
 use super::pre_parse_error::{PreParseError, PreParseErrorKind};
 use super::pre_parse_warning::{PreParseWarning, PreParseWarningKind};
 use super::words::{
-    BUILTIN_VERBS, has_particule, is_bool, is_keyword, is_name_particle, is_particle, is_type,
-    verb_forms,
+    BUILTIN_VERBS, has_particule, is_bool, is_counter, is_keyword, is_name_particle, is_particle,
+    is_type, verb_forms,
 };
 
 /// Splits and classifies the lexer tokens (나를 → 나 + 를); `tokens` must end with `Eof`,
@@ -37,11 +37,11 @@ impl<'a> PreParser<'a> {
         let mut verbs = HashMap::new();
         for infinitive in BUILTIN_VERBS
             .iter()
-            .copied()
+            .map(|verb| verb.to_string())
             .chain(Self::declared_verbs(tokens))
         {
-            for (form, ending) in verb_forms(infinitive).into_iter().flatten() {
-                verbs.insert(form, (infinitive.to_string(), ending));
+            for (form, ending) in verb_forms(&infinitive).into_iter().flatten() {
+                verbs.insert(form, (infinitive.clone(), ending));
             }
         }
         Self {
@@ -86,8 +86,8 @@ impl<'a> PreParser<'a> {
     }
 
     /// Classifies a Hangul word, in this order:
-    /// 1. the whole word is a keyword, a type, a boolean or a verb form: 주는, 정수, 참, 더해서
-    ///    (주는 is not 주 + 는)
+    /// 1. the whole word is a keyword, a type, a boolean, a counter before a type or a verb form:
+    ///    반환하는, 정수, 참, 두 (정수), 더해서 (반환하는 is not 반환하 + 는)
     /// 2. after a number, a string, `)` or a Latin name, the whole word is a particle: 42를,
     ///    0이에요, printf를
     /// 3. a keyword, a type or a boolean followed by a particle: 정수를, 값이에요, 10개예요, 참이면
@@ -108,6 +108,11 @@ impl<'a> PreParser<'a> {
         }
         if let Some(value) = is_bool(word) {
             return whole(ParserTokenKind::Bool(value));
+        }
+        if let Some(count) = is_counter(word)
+            && self.type_follows()
+        {
+            return whole(ParserTokenKind::Counter(count));
         }
         if let Some((infinitive, ending)) = self.verbs.get(word) {
             return whole(ParserTokenKind::Verb {
@@ -150,6 +155,15 @@ impl<'a> PreParser<'a> {
 
         // not split here: 결과 is a name, not 결 + 과, and only the declared names can tell
         whole(ParserTokenKind::Ident(word.to_string()))
+    }
+
+    /// Whether the next lexer token starts a type: 정수, or 짧은 / 부호 (없는) before it. A counter
+    /// is only one before a type: 세 and 열 stay free as names
+    fn type_follows(&self) -> bool {
+        let LexerTokenKind::HangulWord(next) = &self.peek().kind else {
+            return false;
+        };
+        is_type(next).is_some() || next == "짧은" || next == "부호"
     }
 
     fn run(mut self) -> Result<PreParsed, PreParseError> {
@@ -232,8 +246,8 @@ impl<'a> PreParser<'a> {
         }
     }
 
-    /// A verb in its dictionary form must be followed by `(` or `{`: `더하다(…)` and
-    /// `정수 가를 제곱하다 {` are definitions, `바다` alone is probably a name ending in 다
+    /// A verb in its dictionary form must be followed by `(`: `더하다(…)` is a definition, `바다`
+    /// alone is probably a name ending in 다
     fn check_parentheses(&self, parsed: &[ParserToken]) -> Option<PreParseWarning> {
         let [token] = parsed else { return None };
         let ParserTokenKind::Verb {
@@ -245,7 +259,7 @@ impl<'a> PreParser<'a> {
         };
         let defined = matches!(
             self.peek().kind,
-            LexerTokenKind::Punctuation(Punctuation::LParen | Punctuation::LBrace)
+            LexerTokenKind::Punctuation(Punctuation::LParen)
         );
         (!defined).then(|| {
             PreParseWarning::new(
@@ -255,11 +269,19 @@ impl<'a> PreParser<'a> {
         })
     }
 
-    /// First pass: every verb of the file, so that a call before the definition is a verb too.
-    /// 다 marks the functions: any Hangul word ending in 다 is a verb in its dictionary form
-    fn declared_verbs(tokens: &[LexerToken]) -> impl Iterator<Item = &str> {
-        tokens.iter().filter_map(|token| match &token.kind {
-            LexerTokenKind::HangulWord(word) if word.ends_with('다') => Some(word.as_str()),
+    /// First pass: the infinitive of every verb of the file, so that a call before the
+    /// definition is a verb too. 다 marks the functions: any Hangul word ending in 다 is a verb in
+    /// its dictionary form. A sentence declaration gives its verb in -고 right after 받아:
+    /// `받아 비교하고` → 비교하다
+    fn declared_verbs(tokens: &[LexerToken]) -> impl Iterator<Item = String> {
+        let words = tokens.iter().map(|token| match &token.kind {
+            LexerTokenKind::HangulWord(word) => Some(word.as_str()),
+            _ => None,
+        });
+        let previous = std::iter::once(None).chain(words.clone());
+        previous.zip(words).filter_map(|pair| match pair {
+            (_, Some(word)) if word.ends_with('다') => Some(word.to_string()),
+            (Some("받아"), Some(word)) => word.strip_suffix('고').map(|stem| format!("{stem}다")),
             _ => None,
         })
     }
@@ -304,6 +326,8 @@ impl<'a> PreParser<'a> {
     fn declared_names(tokens: &[ParserToken]) -> DeclaredNames {
         let mut names = Vec::new();
         let mut splits = BTreeMap::new();
+        // `두 정수 가와 나를`: after a parameter with 와, the next name may come without its type
+        let mut untyped_next = false;
         for (i, token) in tokens.iter().enumerate() {
             let ParserTokenKind::Ident(word) = &token.kind else {
                 continue;
@@ -326,18 +350,21 @@ impl<'a> PreParser<'a> {
 
             // variable: `결과는 0이에요`, 은/는 at the start of a statement;
             // loop: `정수 칸을 0부터 10까지 세면서`, 을/를 after a type (`칸을` alone uses 칸);
-            // sentence declaration: `정수 가와 정수 나를 더하다`, 와/과 or 을/를 after a type
+            // sentence declaration: `정수 가와 정수 나를 받아`, 와/과 or 을/를 after a type, or
+            // after a parameter with 와 (`두 정수 가와 나를`: the post-parser checks the count)
+            let untyped = std::mem::take(&mut untyped_next);
             let Some((name, particle)) = has_particule(word) else {
                 continue;
             };
             let declares = match particle {
                 Particle::Topic => Self::starts_a_statement(prev),
-                Particle::Object | Particle::With => after_a_type,
+                Particle::Object | Particle::With => after_a_type || untyped,
                 _ => false,
             };
             if declares && !name.is_empty() {
                 names.push(name.to_string());
                 splits.insert(i, Self::split_name(name, particle, token.span));
+                untyped_next = particle == Particle::With;
             }
         }
         DeclaredNames { names, splits }
@@ -360,7 +387,7 @@ impl<'a> PreParser<'a> {
     }
 
     /// Whether the word after `prev` starts a statement: first word, after `{`, `}`, `.`, 고정된,
-    /// or after a statement that ended in 요 (줘요, 넣어요, 이에요…)
+    /// or after a statement that ended in 요 (반환해요, 넣어요, 이에요…)
     fn starts_a_statement(prev: Option<&ParserTokenKind>) -> bool {
         matches!(
             prev,

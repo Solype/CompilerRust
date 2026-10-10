@@ -26,6 +26,11 @@ impl VerbForm {
         format!("{}서", self.conjugate)
     }
 
+    /// -고, the verb of a sentence declaration: 더하고, 먹고, 만들고
+    pub fn go(&self) -> String {
+        format!("{}고", self.stem())
+    }
+
     /// -(으)ㄴ, qualifies a noun: 더한 값, 먹은, 만든
     pub fn adnominal(&self) -> String {
         let mut chars: Vec<char> = self.stem().chars().collect();

@@ -5,7 +5,7 @@ use crate::lexer::span::Span;
 /// and classified, so the parser only sees fixed categories
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParserTokenKind {
-    /// A word of the language: 만약, 주는, 외부…
+    /// A word of the language: 만약, 반환하는, 외부…
     Keyword(Keyword),
     /// 정수, 소수…; `주소` and `&` after a type are both `Type(Address)`
     Type(Type),
@@ -21,6 +21,8 @@ pub enum ParserTokenKind {
     },
     /// Detached from the word before it: 나를 → `Name(나)` then `Particle(Object)`
     Particle(Particle),
+    /// A native number before a type, in a sentence declaration: `두 정수 가와 나를` (2), 세 (3)…
+    Counter(usize),
 
     Int(i64),
     Float(f64),
@@ -52,8 +54,12 @@ impl ParserToken {
 pub enum Keyword {
     /// 외부 : extern function (libc)
     Extern,
-    /// 주는 : `TYPE을 주는 VERBE다(…)`, the function returns TYPE
+    /// 반환하는 : `TYPE을 반환하는 VERBE다(…)`, the function returns TYPE
     Giving,
+    /// 받아 : `TYPE NOM을 받아 VERBE고 …`, the parameters of a sentence declaration
+    Receiving,
+    /// 반환 : `… VERBE고 TYPE을 반환 { … }`, the end of a sentence declaration, which returns TYPE
+    Gives,
     /// 고정된 : constant
     Const,
     /// 짧은 : 32-bit integer or float (`짧은 정수`)
@@ -72,7 +78,7 @@ pub enum Keyword {
     While,
     /// 세면서 : `NOM을 A부터 B까지 세면서`, for
     Counting,
-    /// 줘요 : return, ends a chain with its result (`42를 줘요`)
+    /// 반환해요 : return, ends a chain with its result (`42를 반환해요`)
     Return,
     /// 그만해요 : break
     Stop,
@@ -117,6 +123,9 @@ pub enum Ending {
     Yo,
     /// -(으)ㄴ : qualifies a noun (`더한 값`)
     Adnominal,
+    /// -고 : the verb of a sentence declaration, before its return type (`… 받아 더하고 정수를
+    /// 반환`)
+    Go,
 }
 
 /// One variant per meaning; both spellings (을/를…) give the same variant,

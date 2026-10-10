@@ -8,12 +8,12 @@ pub struct Program {
     pub functions: Vec<Function>,
 }
 
-/// `정수를 주는 더하다(정수 가, 정수 나) { … }`, or `외부 …(…)` without a body
+/// `정수를 반환하는 더하다(정수 가, 정수 나) { … }`, or `외부 …(…)` without a body
 pub struct Function {
     pub name: String,
     /// The name only: `더하다`, `printf`
     pub span: Span,
-    /// `None` without `TYPE을 주는`: the function returns nothing
+    /// `None` without `TYPE을 반환하는`: the function returns nothing
     pub return_type: Option<Type>,
     pub params: Vec<Param>,
     /// `, …` after the last parameter: any number of arguments (`printf`)
@@ -71,7 +71,7 @@ pub enum StatementKind {
     },
     /// A chain ending with `넣어요`: `3과 4를 더해서 결과에 넣어요.`
     Assign { target: String, value: Expr },
-    /// A chain ending with `줘요`: `(가 + 나)를 줘요.`
+    /// A chain ending with `반환해요`: `(가 + 나)를 반환해요.`
     Return(Expr),
     /// A chain ending with any other verb, its result unused: `"%ld\n"과 결과를 printf해요.`
     Call(Expr),

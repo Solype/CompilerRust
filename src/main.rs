@@ -41,7 +41,10 @@ fn main() -> std::io::Result<()> {
         .parse(&pre_parsed.tokens)
         .unwrap_or_else(|token| {
             let (line, col) = token.span.line_col(&source);
-            eprintln!("{}:{line}:{col}: syntax error: unexpected {:?}", args.path, token.kind);
+            eprintln!(
+                "{}:{line}:{col}: syntax error: unexpected {:?}",
+                args.path, token.kind
+            );
             process::exit(1);
         });
     if args.tree {

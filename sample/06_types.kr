@@ -3,9 +3,9 @@
  * Avec un type, la variable vaut le zéro du type ; avec une valeur, le type est déduit.
  */
 
-외부 정수를 주는 printf(문자 주소 형식, …)
+외부 정수를 반환하는 printf(문자 주소 형식, …)
 
-정수를 주는 main() {
+정수를 반환하는 main() {
     큰은 정수예요.                 // 64 bits, 0
     작은은 짧은 정수예요.          // 32 bits (int du C)
     양은 부호 없는 정수예요.       // non signé
@@ -28,5 +28,5 @@
     7을 소수로 바꿔서 비율에 넣어요.
     "%f\n"과 비율을 printf해요.    // 7.0
 
-    0을 줘요.
+    0을 반환해요.
 }

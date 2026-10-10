@@ -1,0 +1,9 @@
+// Post-parseur : 두 annonce deux paramètres, trois suivent.
+
+두 정수 가와 나와 라를 받아 더하고 정수를 반환 {
+    (가 + 나 + 라)를 반환해요.
+}
+
+정수를 반환하는 main() {
+    0을 반환해요.
+}

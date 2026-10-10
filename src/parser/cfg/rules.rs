@@ -40,6 +40,9 @@ macro_rules! term {
     (Bool) => {
         Term(ParserTokenKind::Bool(false))
     };
+    (Counter) => {
+        Term(ParserTokenKind::Counter(0))
+    };
     (Eof) => {
         Term(ParserTokenKind::Eof)
     };
@@ -63,12 +66,14 @@ pub const RULES: &[ParserProduction] = &[
         NTerm(Block),
     ),
     rule!(Function =>
-        NTerm(ReturnType),
         NTerm(SentenceParameters),
-        term!(Verb::Da),
+        term!(Keyword::Receiving),
+        term!(Verb::Go),
+        NTerm(TypeSpec),
+        term!(Particle::Object),
+        term!(Keyword::Gives),
         NTerm(Block),
     ),
-    rule!(Function => NTerm(SentenceParameters), term!(Verb::Da), NTerm(Block)),
     rule!(ExternFunction =>
         term!(Keyword::Extern),
         NTerm(FunctionHead),
@@ -91,12 +96,15 @@ pub const RULES: &[ParserProduction] = &[
     rule!(ParameterList => NTerm(Parameter)),
     rule!(ParameterList => NTerm(ParameterList), term!(Punctuation::Comma), NTerm(Parameter)),
     rule!(Parameter => NTerm(TypeSpec), term!(Name)),
-    // Not empty: an empty list would have to be reduced before a type, where the return type
-    // can start too
-    rule!(SentenceParameters => NTerm(Parameter), term!(Particle::Object)),
-    rule!(SentenceParameters => NTerm(SentenceLinks), NTerm(Parameter), term!(Particle::Object)),
-    rule!(SentenceLinks => NTerm(Parameter), term!(Particle::With)),
-    rule!(SentenceLinks => NTerm(SentenceLinks), NTerm(Parameter), term!(Particle::With)),
+    // Not empty, and the first parameter has its type: a function without parameters keeps the
+    // C form. The post-parser checks that a counter announces as many names as follow it
+    rule!(SentenceParameters => NTerm(SentenceList), term!(Particle::Object)),
+    rule!(SentenceList => NTerm(SentenceGroup)),
+    rule!(SentenceList => NTerm(SentenceList), term!(Particle::With), NTerm(SentenceItem)),
+    rule!(SentenceItem => NTerm(SentenceGroup)),
+    rule!(SentenceItem => term!(Name)),
+    rule!(SentenceGroup => NTerm(Parameter)),
+    rule!(SentenceGroup => term!(Counter), NTerm(Parameter)),
     // Types
     rule!(TypeSpec => NTerm(BaseType)),
     rule!(TypeSpec => term!(Keyword::Short), NTerm(BaseType)),

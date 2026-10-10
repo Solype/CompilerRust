@@ -16,7 +16,7 @@ fn every_keyword_is_found() {
     for (text, keyword) in KEYWORDS {
         assert_eq!(is_keyword(text), Some(*keyword), "{text}");
     }
-    assert_eq!(is_keyword("주는"), Some(Keyword::Giving));
+    assert_eq!(is_keyword("반환하는"), Some(Keyword::Giving));
     assert_eq!(is_keyword("값"), Some(Keyword::Value));
 }
 
@@ -59,7 +59,7 @@ fn both_spellings_give_the_same_particle() {
 
 #[test]
 fn only_whole_particles() {
-    for word in ["나를", "정수를", "이에", "에요", "줘요", "", "을를"] {
+    for word in ["나를", "정수를", "이에", "에요", "반환해요", "", "을를"] {
         assert_eq!(is_particle(word), None, "{word:?}");
     }
 }
@@ -105,7 +105,7 @@ fn longest_particle_wins() {
 
 #[test]
 fn no_particle_at_the_end() {
-    for word in ["정수", "만약", "줘요", "main", ""] {
+    for word in ["정수", "만약", "반환해요", "main", ""] {
         assert_eq!(has_particule(word), None, "{word:?}");
     }
 }
@@ -137,7 +137,7 @@ fn unknown(src: &str) -> String {
 #[test]
 fn function_header() {
     assert_eq!(
-        pre("정수를 주는 main()"),
+        pre("정수를 반환하는 main()"),
         [
             Type(Type::Int),
             Particle(Particle::Object),
@@ -175,8 +175,8 @@ fn keywords_are_not_split() {
     assert_eq!(pre("만약"), [Keyword(Keyword::If)]);
     assert_eq!(pre("아니면"), [Keyword(Keyword::Otherwise)]);
     assert_eq!(pre("아닌"), [Keyword(Keyword::IsNot)]);
-    assert_eq!(pre("주는"), [Keyword(Keyword::Giving)]);
-    assert_eq!(pre("줘요"), [Keyword(Keyword::Return)]);
+    assert_eq!(pre("반환하는"), [Keyword(Keyword::Giving)]);
+    assert_eq!(pre("반환해요"), [Keyword(Keyword::Return)]);
 }
 
 #[test]
@@ -220,7 +220,7 @@ fn undeclared_words_are_errors_left_whole() {
 #[test]
 fn return_42() {
     assert_eq!(
-        pre("42를 줘요."),
+        pre("42를 반환해요."),
         [
             Int(42),
             Particle(Particle::Object),
@@ -257,13 +257,13 @@ fn declared_verb_in_every_form() {
 
 #[test]
 fn verb_used_before_its_definition() {
-    let tokens = pre("main() { 3을 제곱해서 줘요 } 제곱하다() { }");
+    let tokens = pre("main() { 3을 제곱해서 반환해요 } 제곱하다() { }");
     assert_eq!(tokens[6], verb("제곱하다", Ending::Seo));
 }
 
 #[test]
 fn definition_with_or_without_return_type() {
-    let tokens = pre("정수를 주는 더하다(정수 가, 정수 나) { }");
+    let tokens = pre("정수를 반환하는 더하다(정수 가, 정수 나) { }");
     assert_eq!(tokens[3], verb("더하다", Ending::Da));
     // nothing before it: no return value
     assert_eq!(pre("인사하다() { }")[0], verb("인사하다", Ending::Da));
@@ -304,9 +304,50 @@ fn verb_without_parentheses_is_a_warning() {
             "바다".to_string()
         )]
     );
-    assert!(warnings("정수를 주는 더하다(정수 가) { }").is_empty());
+    assert!(warnings("정수를 반환하는 더하다(정수 가) { }").is_empty());
     assert!(warnings("인사하다() { 인사해요 }").is_empty());
-    assert!(warnings("정수를 주는 정수 가를 제곱하다 { }").is_empty());
+    assert!(warnings("정수 가를 받아 제곱하고 정수를 반환 { }").is_empty());
+    // a dictionary form only declares with `(`
+    assert_eq!(
+        warnings("제곱하다 { }"),
+        [PreParseWarningKind::VerbWithoutParentheses(
+            "제곱하다".to_string()
+        )]
+    );
+}
+
+#[test]
+fn sentence_declaration_gives_its_verb_in_go() {
+    let tokens = pre("정수 가를 받아 제곱하고 정수를 반환");
+    assert_eq!(tokens[3], Keyword(Keyword::Receiving));
+    assert_eq!(tokens[4], verb("제곱하다", Ending::Go));
+    assert_eq!(tokens[7], Keyword(Keyword::Gives));
+    // and its other forms are verbs before the declaration too
+    assert_eq!(
+        pre("제곱해요 정수 가를 받아 제곱하고")[0],
+        verb("제곱하다", Ending::Yo)
+    );
+}
+
+#[test]
+fn counter_only_before_a_type() {
+    assert_eq!(pre("두 정수"), [Counter(2), Type(Type::Int)]);
+    assert_eq!(
+        pre("열 짧은 소수"),
+        [Counter(10), Keyword(Keyword::Short), Type(Type::Float)]
+    );
+    assert_eq!(pre("세 부호 없는 정수")[0], Counter(3));
+    // elsewhere, 세 is free for a name
+    assert_eq!(
+        pre("세는 1이에요."),
+        [
+            Name("세".to_string()),
+            Particle(Particle::Topic),
+            Int(1),
+            Particle(Particle::ItIs),
+            ParserTokenKind::Punctuation(Punctuation::Dot),
+        ]
+    );
 }
 
 /// The names declared in `src`, sorted and without duplicates, like `expected`: every
@@ -346,7 +387,7 @@ fn variable_at_the_start_of_any_statement() {
     assert_names("main() { 결과는 0이에요. }", &["결과"]);
     assert_names("만약 1 > 0이면 { } 결과는 0이에요.", &["결과"]);
     assert_names("고정된 끝은 10이에요.", &["끝"]);
-    assert_names("0을 줘요 결과는 0이에요", &["결과"]);
+    assert_names("0을 반환해요 결과는 0이에요", &["결과"]);
     assert_names(
         "결과는 0이에요. 결과에 0을 넣어요 수는 1이에요",
         &["결과", "수"],
@@ -361,13 +402,21 @@ fn not_a_variable_declaration() {
     assert_eq!(unknown("가는 1이에요. 가 없는 정수"), "없는");
     assert_eq!(unknown("3과 결과는"), "결과는");
     // a keyword, and a particle with no name before it
-    assert_names("주는", &[]);
+    assert_names("반환하는", &[]);
     assert_eq!(unknown("는 0이에요"), "는");
 }
 
 #[test]
 fn sentence_declaration_names() {
-    assert_names("정수 하나와 소수 둘과 정수 셋을 더하다 {\n}\n", &["하나", "둘", "셋"]);
+    assert_names(
+        "정수 하나와 소수 둘과 정수 셋을 받아 더하고 정수를 반환 {\n}\n",
+        &["하나", "둘", "셋"],
+    );
+    // the names after the first one of a counted group come without their type
+    assert_names(
+        "두 정수 가와 나와 소수 라를 받아 더하고 정수를 반환 {\n}\n",
+        &["가", "나", "라"],
+    );
 }
 
 #[test]
@@ -407,7 +456,7 @@ fn loop_variable_is_split_in_the_output() {
     );
     // no type before 결과를: not a declaration, left whole
     assert_eq!(
-        unknown("정수 칸을 0부터 10까지 세면서 { } 결과를 줘요"),
+        unknown("정수 칸을 0부터 10까지 세면서 { } 결과를 반환해요"),
         "결과를"
     );
 }
@@ -454,7 +503,7 @@ fn used_names_are_split() {
 #[test]
 fn used_before_its_declaration() {
     assert_eq!(
-        pre("결과를 줘요. 결과는 0이에요.")[..2],
+        pre("결과를 반환해요. 결과는 0이에요.")[..2],
         [name("결과"), Particle(Particle::Object)]
     );
 }
@@ -551,7 +600,7 @@ fn unsigned_is_merged() {
 fn booleans() {
     assert_eq!(pre("참"), [Bool(true)]);
     assert_eq!(
-        pre("거짓을 줘요"),
+        pre("거짓을 반환해요"),
         [
             Bool(false),
             Particle(Particle::Object),

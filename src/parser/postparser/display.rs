@@ -1,7 +1,8 @@
 use std::fmt;
 
 use super::structs::{
-    Argument, BinaryOp, Expr, Function, Param, Program, Statement, Type, UnaryOp,
+    Argument, BinaryOp, Expr, ExprKind, Function, Param, Program, Statement, StatementKind, Type,
+    UnaryOp,
 };
 
 /// The AST as pseudo-code: one function after the other, blocks indented by 4 spaces
@@ -85,17 +86,17 @@ fn block(f: &mut fmt::Formatter, statements: &[Statement], depth: usize) -> fmt:
 /// One statement, already indented; ends with its newline
 fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Result {
     let indent = "    ".repeat(depth);
-    return match statement {
-        Statement::Declare { name, ty } => writeln!(f, "let {name}: {ty}"),
-        Statement::Init {
+    return match &statement.kind {
+        StatementKind::Declare { name, ty } => writeln!(f, "let {name}: {ty}"),
+        StatementKind::Init {
             name,
             value,
             constant,
         } => writeln!(f, "{} {name} = {value}", if *constant { "const" } else { "let" }),
-        Statement::Assign { target, value } => writeln!(f, "{target} = {value}"),
-        Statement::Return(value) => writeln!(f, "return {value}"),
-        Statement::Call(call) => writeln!(f, "{call}"),
-        Statement::If {
+        StatementKind::Assign { target, value } => writeln!(f, "{target} = {value}"),
+        StatementKind::Return(value) => writeln!(f, "return {value}"),
+        StatementKind::Call(call) => writeln!(f, "{call}"),
+        StatementKind::If {
             condition,
             then,
             otherwise,
@@ -105,7 +106,7 @@ fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Res
             match otherwise.as_deref() {
                 None => writeln!(f, "{indent}}}"),
                 // `아니면 만약`: `} else if …` instead of a nested block
-                Some([inner @ Statement::If { .. }]) => {
+                Some([inner]) if matches!(inner.kind, StatementKind::If { .. }) => {
                     write!(f, "{indent}}} else ")?;
                     line(f, inner, depth)
                 }
@@ -116,12 +117,12 @@ fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Res
                 }
             }
         }
-        Statement::While { condition, body } => {
+        StatementKind::While { condition, body } => {
             writeln!(f, "while {condition} {{")?;
             block(f, body, depth + 1)?;
             writeln!(f, "{indent}}}")
         }
-        Statement::For {
+        StatementKind::For {
             variable,
             ty,
             from,
@@ -136,34 +137,34 @@ fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Res
             block(f, body, depth + 1)?;
             writeln!(f, "{indent}}}")
         }
-        Statement::Break => writeln!(f, "break"),
-        Statement::Continue => writeln!(f, "continue"),
+        StatementKind::Break => writeln!(f, "break"),
+        StatementKind::Continue => writeln!(f, "continue"),
     };
 }
 
 /// An operand of an operator: in parentheses when it is itself an operation, `(a + b) * c`
 fn operand(expr: &Expr) -> String {
-    return match expr {
-        Expr::Binary { .. } => format!("({expr})"),
+    return match expr.kind {
+        ExprKind::Binary { .. } => format!("({expr})"),
         _ => expr.to_string(),
     };
 }
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return match self {
-            Expr::Int(number) => write!(f, "{number}"),
-            Expr::Float(number) => write!(f, "{number:?}"),
-            Expr::Str(text) => write!(f, "{text:?}"),
-            Expr::Bool(value) => write!(f, "{value}"),
-            Expr::Name(name) => write!(f, "{name}"),
-            Expr::Null => write!(f, "null"),
-            Expr::SizeOf(ty) => write!(f, "sizeof({ty})"),
-            Expr::Unary { op, operand: inner } => write!(f, "{op}{}", operand(inner)),
-            Expr::Binary { op, left, right } => {
+        return match &self.kind {
+            ExprKind::Int(number) => write!(f, "{number}"),
+            ExprKind::Float(number) => write!(f, "{number:?}"),
+            ExprKind::Str(text) => write!(f, "{text:?}"),
+            ExprKind::Bool(value) => write!(f, "{value}"),
+            ExprKind::Name(name) => write!(f, "{name}"),
+            ExprKind::Null => write!(f, "null"),
+            ExprKind::SizeOf(ty) => write!(f, "sizeof({ty})"),
+            ExprKind::Unary { op, operand: inner } => write!(f, "{op}{}", operand(inner)),
+            ExprKind::Binary { op, left, right } => {
                 write!(f, "{} {op} {}", operand(left), operand(right))
             }
-            Expr::Call { verb, args } => {
+            ExprKind::Call { verb, args } => {
                 let args: Vec<String> = args.iter().map(Argument::to_string).collect();
                 write!(f, "{verb}({})", args.join(", "))
             }

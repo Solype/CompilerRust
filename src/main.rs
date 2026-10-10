@@ -44,7 +44,12 @@ fn main() -> std::io::Result<()> {
     if args.tree {
         println!("{}", tree.show(RULES));
     }
-    print!("{}", convert_to_ast_tree(&tree));
+    let ast = convert_to_ast_tree(&tree).unwrap_or_else(|err| {
+        let (line, col) = err.span.line_col(&source);
+        eprintln!("{}:{line}:{col}: {err}", args.path);
+        process::exit(1);
+    });
+    print!("{ast}");
 
     let mut elf_file = ElfFile64::default();
     elf_file.declare_non_defined_sym(&"my_exit".to_string(), SymbolType::Function);

@@ -1,3 +1,5 @@
+use crate::lexer::span::Span;
+
 use super::super::parser_token::Particle;
 
 /// The whole file
@@ -9,6 +11,8 @@ pub struct Program {
 /// `정수를 주는 더하다(정수 가, 정수 나) { … }`, or `외부 …(…)` without a body
 pub struct Function {
     pub name: String,
+    /// The name only: `더하다`, `printf`
+    pub span: Span,
     /// `None` without `TYPE을 주는`: the function returns nothing
     pub return_type: Option<Type>,
     pub params: Vec<Param>,
@@ -22,6 +26,8 @@ pub struct Function {
 pub struct Param {
     pub ty: Type,
     pub name: String,
+    /// The name only: `가`
+    pub span: Span,
 }
 
 pub enum Type {
@@ -47,7 +53,13 @@ pub enum Type {
     Custom(String),
 }
 
-pub enum Statement {
+/// A statement and its source, from its first token to its `.`
+pub struct Statement {
+    pub kind: StatementKind,
+    pub span: Span,
+}
+
+pub enum StatementKind {
     /// `수는 정수예요.`: a variable without a value yet
     Declare { name: String, ty: Type },
     /// `결과는 0이에요.`, `고정된 끝은 10이에요.`, `합은 3과 4를 더한 값이에요.`
@@ -89,7 +101,14 @@ pub enum Statement {
     Continue,
 }
 
-pub enum Expr {
+/// An expression and its source: `(가 + 나)` with its parentheses, a call from the first argument
+/// of its chain to its verb
+pub struct Expr {
+    pub kind: ExprKind,
+    pub span: Span,
+}
+
+pub enum ExprKind {
     Int(i64),
     Float(f64),
     Str(String),

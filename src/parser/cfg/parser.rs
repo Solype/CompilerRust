@@ -1,3 +1,5 @@
+use crate::lexer::span::Span;
+
 use super::parsing_table::ParsingState::{self, Accept};
 
 use super::super::parser_token::ParserToken;
@@ -16,7 +18,30 @@ pub enum TreeNode<'a> {
     },
 }
 
-impl TreeNode<'_> {
+impl<'a> TreeNode<'a> {
+    /// From the start of the first token to the end of the last one; `None` for an empty rule (ε)
+    pub fn span(&self) -> Option<Span> {
+        let first = self.first_token()?;
+        let last = self.last_token()?;
+        return Some(Span::new(first.span.start, last.span.end));
+    }
+
+    fn first_token(&self) -> Option<&'a ParserToken> {
+        return match self {
+            TreeNode::Leaf(token) => Some(token),
+            TreeNode::Branch { children, .. } => children.iter().find_map(TreeNode::first_token),
+        };
+    }
+
+    fn last_token(&self) -> Option<&'a ParserToken> {
+        return match self {
+            TreeNode::Leaf(token) => Some(token),
+            TreeNode::Branch { children, .. } => {
+                children.iter().rev().find_map(TreeNode::last_token)
+            }
+        };
+    }
+
     /// One line per node, indented by its depth: the left side of the rule for a branch, the
     /// token for a leaf
     pub fn show(&self, rules: &[ParserProduction]) -> String {

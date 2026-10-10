@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 use std::{vec};
 
@@ -28,8 +28,9 @@ where T: Copy + ElfWritable + Debug + Default,
     pub strtab: Strtab,
     pub shstrtab: Strtab,
     pub symtab: SymbolCollection<T>,
-    pub rels: HashMap<usize, Vec<ElfRel<T>>>,
-    pub relas: HashMap<usize, Vec<ElfRela<T>>>,
+    /// By section index: a `BTreeMap` writes the `.rel(a).*` sections in the same order each run
+    pub rels: BTreeMap<usize, Vec<ElfRel<T>>>,
+    pub relas: BTreeMap<usize, Vec<ElfRela<T>>>,
     pub(super) pending_relocs: Vec<PendingReloc>,
     /// Defined labels: (section, offset in the section)
     pub(super) labels: HashMap<LabelId, (usize, usize)>,
@@ -64,8 +65,8 @@ where
             symtab: SymbolCollection::new(),
             strtab: Strtab::default(),
             shstrtab: Strtab::default(),
-            rels: HashMap::<usize, Vec<ElfRel<T>>>::default(),
-            relas: HashMap::<usize, Vec<ElfRela<T>>>::default(),
+            rels: BTreeMap::<usize, Vec<ElfRel<T>>>::default(),
+            relas: BTreeMap::<usize, Vec<ElfRela<T>>>::default(),
             pending_relocs: Vec::new(),
             labels: HashMap::new(),
         }

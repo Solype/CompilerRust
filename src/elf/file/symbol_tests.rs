@@ -489,3 +489,25 @@ fn data_relocation_in_32_bits_writes_the_addend() {
     let rel = &elf.rels[&data][0];
     assert_eq!(rel.r_info & 0xFF, 1, "R_386_32");
 }
+
+#[test]
+fn rela_sections_follow_their_target_sections() {
+    // three sections with relocations: their .rela.* come in the order of the sections, so the
+    // same program always gives the same bytes
+    let mut elf = ElfFile::<u64>::default();
+    let text = text_section(&mut elf);
+    let data = data_section(&mut elf, 8);
+    let rodata = data_section(&mut elf, 8);
+    function(&mut elf, text, "f", vec![lea(RAX, MemAddress::symbol("x"), QWORD), ret()]);
+    relocated(&mut elf, data, "x", &[0; 8], 8, &[quad(0, "f")]);
+    relocated(&mut elf, rodata, "y", &[0; 8], 8, &[quad(0, "x")]);
+    elf.prepare_writing().unwrap();
+
+    let targets: Vec<u32> = elf
+        .shdrs
+        .iter()
+        .filter(|shdr| shdr.sh_type == ShType::Rela as u32)
+        .map(|shdr| shdr.sh_info)
+        .collect();
+    assert_eq!(targets, vec![text as u32, data as u32, rodata as u32]);
+}

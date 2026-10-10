@@ -1,0 +1,9 @@
+// Parseur : la condition de 만약 finit par 면 ou 이면.
+
+정수를 주는 main() {
+    가는 0이에요.
+    만약 가 > 0 {
+        1을 줘요.
+    }
+    가를 줘요.
+}

@@ -1,0 +1,37 @@
+/*
+ * 05_boucles.kr : 인 동안 (while), 이 아닌 동안 (while not),
+ * 세면서 (for, B exclu), 그만해요 (break) et 넘어가요 (continue).
+ */
+
+외부 정수를 주는 printf(문자 주소 형식, …)
+
+정수를 주는 main() {
+    // tant que : 1, 2, 4, 8, 16, 32, 64
+    숫자는 1이에요.
+    숫자 < 100인 동안 {
+        "%ld\n"과 숫자를 printf해요.
+        숫자에 (숫자 * 2)를 넣어요.
+    }
+
+    // tant que ce n'est pas : compte à rebours 3, 2, 1
+    남은은 3이에요.
+    (남은 == 0)이 아닌 동안 {
+        "%ld\n"과 남은을 printf해요.
+        남은에 (남은 - 1)을 넣어요.
+    }
+
+    // la boucle déclare 칸 : 0 à 4
+    정수 칸을 0부터 5까지 세면서 {
+        "%ld\n"과 칸을 printf해요.
+    }
+
+    // sur une variable existante, avec 넘어가요 et 그만해요 : 1, 2, 4, 5
+    수는 정수예요.
+    수를 1부터 10까지 세면서 {
+        만약 수 == 3이면 { 넘어가요. }
+        만약 수 == 6이면 { 그만해요. }
+        "%ld\n"과 수를 printf해요.
+    }
+
+    0을 줘요.
+}

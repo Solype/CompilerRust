@@ -1,0 +1,31 @@
+/*
+ * 09_premiers.kr : les nombres premiers sous 50.
+ * (소수 veut dire « nombre premier » et « nombre décimal » : ici, le premier.)
+ */
+
+외부 정수를 주는 printf(문자 주소 형식, …)
+
+// 1 si 가 est premier, 0 sinon
+정수를 주는 정수 가를 검사하다 {
+    만약 가 < 2면 {
+        0을 줘요.
+    }
+    약수는 2예요.
+    (약수 * 약수) <= 가인 동안 {
+        만약 가 % 약수 == 0이면 {
+            0을 줘요.
+        }
+        약수에 (약수 + 1)을 넣어요.
+    }
+    1을 줘요.
+}
+
+정수를 주는 main() {
+    판정은 정수예요.
+    정수 후보를 0부터 50까지 세면서 {
+        후보를 검사해서 판정에 넣어요.
+        만약 판정 == 0이면 { 넘어가요. }
+        "%ld\n"과 후보를 printf해요.
+    }
+    0을 줘요.
+}

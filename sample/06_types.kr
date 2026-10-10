@@ -1,0 +1,32 @@
+/*
+ * 06_types.kr : tous les types et valeurs.
+ * Avec un type, la variable vaut le zéro du type ; avec une valeur, le type est déduit.
+ */
+
+외부 정수를 주는 printf(문자 주소 형식, …)
+
+정수를 주는 main() {
+    큰은 정수예요.                 // 64 bits, 0
+    작은은 짧은 정수예요.          // 32 bits (int du C)
+    양은 부호 없는 정수예요.       // non signé
+    비율은 0.5예요.                // 소수, déduit
+    근사는 짧은 소수예요.          // 32 bits (float du C)
+    참값은 참이에요.               // 논리
+    거짓값은 거짓이에요.
+    글자는 문자예요.
+    조각은 바이트예요.             // 8 bits non signé
+
+    이름은 문자 주소예요.          // char*, vaut 빈 주소
+    이중은 정수 주소 주소예요.     // pointeur de pointeur
+    점수는 정수 10개예요.          // tableau de 10 정수
+    없음은 빈 주소예요.
+
+    넓이는 정수의 크기예요.        // sizeof : 8
+    "%ld\n"과 넓이를 printf해요.
+
+    // conversion avec le verbe intégré 바꾸다
+    7을 소수로 바꿔서 비율에 넣어요.
+    "%f\n"과 비율을 printf해요.    // 7.0
+
+    0을 줘요.
+}

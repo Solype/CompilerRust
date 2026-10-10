@@ -1,0 +1,6 @@
+// Post-parseur : 줘요 ne rend qu'une valeur, l'erreur pointe sur la deuxième.
+
+정수를 주는 main() {
+    가는 1이에요.
+    가를 2를 줘요.
+}

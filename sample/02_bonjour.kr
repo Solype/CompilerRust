@@ -1,0 +1,12 @@
+/*
+ * 02_bonjour.kr : afficher avec printf, déclaré avec 외부 (libc).
+ * Les fonctions latines s'appellent avec 하다 : printf해요.
+ */
+
+외부 정수를 주는 printf(문자 주소 형식, …)
+
+정수를 주는 main() {
+    "안녕하세요!\n"을 printf해요.
+    "%ld + %ld = %ld\n"과 2와 3과 5를 printf해요.
+    0을 줘요.
+}

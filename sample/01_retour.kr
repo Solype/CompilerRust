@@ -1,0 +1,8 @@
+/*
+ * 01_retour.kr : le plus petit programme.
+ * main rend 42 : `echo $?` après l'exécution affiche 42.
+ */
+
+정수를 주는 main() {
+    42를 줘요.
+}

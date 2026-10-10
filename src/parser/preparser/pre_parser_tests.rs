@@ -367,7 +367,7 @@ fn not_a_variable_declaration() {
 
 #[test]
 fn sentence_declaration_names() {
-    assert_names("정수 하나와 실수 둘과 정수 셋을 더하다 {\n}\n", &["하나", "둘", "셋"]);
+    assert_names("정수 하나와 소수 둘과 정수 셋을 더하다 {\n}\n", &["하나", "둘", "셋"]);
 }
 
 #[test]

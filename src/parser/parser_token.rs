@@ -7,7 +7,7 @@ use crate::lexer::span::Span;
 pub enum ParserTokenKind {
     /// A word of the language: 만약, 주는, 외부…
     Keyword(Keyword),
-    /// 정수, 실수…; `주소` and `&` after a type are both `Type(Address)`
+    /// 정수, 소수…; `주소` and `&` after a type are both `Type(Address)`
     Type(Type),
     /// A declared name: variable, parameter, function, `main`, `printf`
     Name(String),
@@ -94,7 +94,7 @@ pub enum Keyword {
 pub enum Type {
     /// 정수 : 64-bit integer
     Int,
-    /// 실수 : 64-bit float
+    /// 소수 : 64-bit float
     Float,
     /// 논리 : boolean
     Bool,

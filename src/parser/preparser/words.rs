@@ -54,7 +54,7 @@ pub(super) const PARTICULES: &[(&str, Particle)] = &[
 /// Every type word; `&` after a type is also `Address`, handled elsewhere
 pub(super) const TYPES: &[(&str, Type)] = &[
     ("정수", Type::Int),
-    ("실수", Type::Float),
+    ("소수", Type::Float),
     ("논리", Type::Bool),
     ("문자", Type::Char),
     ("바이트", Type::Byte),

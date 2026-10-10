@@ -441,7 +441,7 @@ APRÈS
 ==================================================
 
 [ ] Passe sémantique séparée (vérification des types)
-[ ] 실수 (SSE, déjà prêt dans le backend)
+[ ] 소수 (SSE, déjà prêt dans le backend)
 [ ] Pointeurs (TYPE 주소, ou TYPE& : & après un mot de type = 주소) et tableaux (TYPE N개)
 [ ] Verbes irréguliers (table + annotation)
 [ ] Allocation de registres à la place du codegen en pile

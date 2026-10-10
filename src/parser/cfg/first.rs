@@ -16,7 +16,7 @@ pub struct First {
     /// (`main()`), `Statements` (`{ }`) and `OptionalDot` (no final `.`)
     pub nullable: HashSet<NTerm>,
     /// For each non-terminal, the tokens it can start with, found by going down the leftmost node
-    /// of its rules: FIRST(`ReturnType`) = {정수, 실수, 논리, 문자, 바이트, 짧은, 부호 없는}
+    /// of its rules: FIRST(`ReturnType`) = {정수, 소수, 논리, 문자, 바이트, 짧은, 부호 없는}
     pub first: HashMap<NTerm, Vec<&'static ParserTokenKind>>,
 }
 

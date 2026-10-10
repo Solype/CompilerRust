@@ -32,7 +32,7 @@ pub enum NTerm {
     SentenceLinks,
     /// `정수`, `짧은 정수`, `부호 없는 정수`, `문자 주소`, `정수&&`, `정수 10개`
     TypeSpec,
-    /// `정수`, `실수`, `논리`, `문자`, `바이트`
+    /// `정수`, `소수`, `논리`, `문자`, `바이트`
     BaseType,
     /// `{ … }`
     Block,
@@ -57,7 +57,7 @@ pub enum NTerm {
     /// `더해요`, `printf해요`, `줘요`
     EndVerb,
     Arguments,
-    /// `3과`, `4를`, `결과에`, `1부터`, `10까지`, `실수로`, `정수 칸을`
+    /// `3과`, `4를`, `결과에`, `1부터`, `10까지`, `소수로`, `정수 칸을`
     Argument,
     ArgumentParticle,
     /// A simple term, `-5`, or `(EXPR)`: what can carry a particle

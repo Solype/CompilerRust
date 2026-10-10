@@ -11,7 +11,7 @@ use super::structs::{
 
 /// The parse tree of `Parser::parse` (its `Items` root) as an AST. Each function below converts
 /// one non-terminal: the rules it handles are in its comment, and the children it gets follow
-/// their right side. A program the grammar accepts but the AST cannot hold (`부호 없는 실수`,
+/// their right side. A program the grammar accepts but the AST cannot hold (`부호 없는 소수`,
 /// `줘요` with two values…) panics: those checks will become real errors later
 pub fn convert_to_ast_tree(tree: &TreeNode) -> Program {
     let mut prog = Program::default();
@@ -193,7 +193,7 @@ fn type_spec(node: &TreeNode) -> Type {
     };
 }
 
-/// BaseType → 정수 | 실수 | 논리 | 문자 | 바이트, with its `짧은` or `부호 없는`
+/// BaseType → 정수 | 소수 | 논리 | 문자 | 바이트, with its `짧은` or `부호 없는`
 fn base_type(node: &TreeNode, modifier: Option<&ParserTokenKind>) -> Type {
     let [leaf] = branch(node).1 else {
         unreachable!()

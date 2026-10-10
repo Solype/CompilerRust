@@ -30,7 +30,7 @@ pub enum Type {
         short: bool,
         unsigned: bool,
     },
-    /// 실수: 64 bits; `짧은 실수`: 32 bits
+    /// 소수: 64 bits; `짧은 소수`: 32 bits
     Float {
         short: bool,
     },

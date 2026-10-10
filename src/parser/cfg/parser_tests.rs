@@ -85,7 +85,7 @@ fn extra_brace() {
 
 #[test]
 fn float_literals() {
-    let source = "실수를 주는 main() {\n    가는 0.5예요.\n    -1.25를 줘요.\n}\n";
+    let source = "소수를 주는 main() {\n    가는 0.5예요.\n    -1.25를 줘요.\n}\n";
     let tokens = tokens(source);
     assert!(parser().parse(&tokens).is_ok());
     assert!(tokens.iter().any(|token| matches!(token.kind, ParserTokenKind::Float(0.5))));
@@ -94,6 +94,6 @@ fn float_literals() {
 #[test]
 fn sentence_declarations() {
     let source = "정수를 주는 정수 가를 제곱하다 {\n    (가 * 가)를 줘요.\n}\n\
-                  정수 하나와 실수 둘과 정수 셋을 인사하다 {\n}\n";
+                  정수 하나와 소수 둘과 정수 셋을 인사하다 {\n}\n";
     assert!(parser().parse(&tokens(source)).is_ok());
 }

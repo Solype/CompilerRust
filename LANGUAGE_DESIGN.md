@@ -112,15 +112,15 @@ formes sont équivalentes.
 ### Surcharge (à faire)
 
 Les fonctions sont des verbes, et le choix de verbes naturels est limité : `더하다` doit pouvoir
-additionner des `정수` comme des `실수`. Un même verbe peut donc être déclaré **plusieurs fois**,
+additionner des `정수` comme des `소수`. Un même verbe peut donc être déclaré **plusieurs fois**,
 avec des paramètres différents.
 
 ```
 정수를 주는 더하다(정수 가, 정수 나) { (가 + 나)를 줘요 }
-실수를 주는 더하다(실수 가, 실수 나) { (가 + 나)를 줘요 }
+소수를 주는 더하다(소수 가, 소수 나) { (가 + 나)를 줘요 }
 
 3과 4를 더해서 줘요          // la version 정수
-1.5와 2.5를 더해서 줘요      // la version 실수
+1.5와 2.5를 더해서 줘요      // la version 소수
 ```
 
 - Les déclarations d'un même verbe doivent différer par le **nombre** ou les **types** de leurs
@@ -276,7 +276,7 @@ le choix selon le 받침 (`나을` → « 받침이 없으니 '를'을 쓰세요
 | | Concept | Mot | Notes |
 | --- | --- | --- | --- |
 | ★ | fonction | `TYPE을/를 주는 VERBE다(TYPE nom, …) { … }` | « VERBE, qui donne un TYPE » ; sans retour : `VERBE다(…) { … }` |
-| | variable | `NOM은/는 VALEUR이에요/예요` ou `NOM은/는 TYPE이에요/예요` | avec une valeur : type déduit (`0` → `정수`, `0.5` → `실수`) ; avec un type : valeur par défaut (zéro du type) ; `이에요` après une consonne, `예요` après une voyelle ; modifiable par défaut |
+| | variable | `NOM은/는 VALEUR이에요/예요` ou `NOM은/는 TYPE이에요/예요` | avec une valeur : type déduit (`0` → `정수`, `0.5` → `소수`) ; avec un type : valeur par défaut (zéro du type) ; `이에요` après une consonne, `예요` après une voyelle ; modifiable par défaut |
 | | constante | `고정된 NOM은/는 VALEUR이에요/예요` | voir Modificateurs |
 | ★ | fonction externe (libc) | `외부 TYPE을/를 주는 nom(TYPE nom, …)` | nom latin, sans corps ; `…` pour les variadiques : `외부 정수를 주는 printf(문자 주소 형식, …)` |
 | | structure | 구조 | |
@@ -284,7 +284,7 @@ le choix selon le 받침 (`나을` → « 받침이 없으니 '를'을 쓰세요
 
 ```
 개수는 0이에요              // 정수, vaut 0
-평균은 0.5예요              // 실수, vaut 0.5
+평균은 0.5예요              // 소수, vaut 0.5
 개수는 정수예요             // 정수, valeur par défaut 0
 이름은 문자 주소예요        // 문자 주소 (char*), vaut 빈 주소
 이름은 문자&예요            // pareil, avec l'abréviation &
@@ -305,8 +305,8 @@ pour toujours.
 | | entier 16 bits | | rarement utile, à ajouter si besoin |
 | | entier 8 bits | `바이트` | non signé ; octets, chaînes C ; `바이트를` |
 | | entier non signé | `부호 없는 정수` | 부호 = signe, 없다 → `없는` ; terme standard en informatique coréenne |
-| | flottant (64 bits) | `실수` | « nombre réel » ; homonyme de 실수 « erreur » ; `실수를` |
-| | flottant (32 bits) | `짧은 실수` | même modificateur que `짧은 정수` |
+| | flottant (64 bits) | `소수` | « nombre décimal » (小數) ; homonyme de 소수 « nombre premier » (素數) ; `소수를` |
+| | flottant (32 bits) | `짧은 소수` | même modificateur que `짧은 정수` |
 | | booléen | `논리` | « logique » ; `논리를` |
 | | caractère | `문자` | `문자를` |
 | | pointeur | `TYPE 주소` ou `TYPE&` | « adresse » : `정수 주소 가` = `정수& 가` = 가, adresse d'un entier ; `&` est une abréviation de `주소`, collée ou non (`정수&`, `정수 &`), répétable (`정수&&` = `정수 주소 주소`) |
@@ -400,7 +400,7 @@ Après un mot de type (`정수`, `문자`…), `&` n'est pas le ET bit à bit ma
 ```
 만약 가 > 0 그리고 나 > 0이면 { … }
 만약 (가 > 0)이 아니면 { … }          // si ce n'est pas (가 > 0)
-가를 실수로 바꿔서 2.5를 더해서 줘요     // (실수) 가 + 2.5
+가를 소수로 바꿔서 2.5를 더해서 줘요     // (소수) 가 + 2.5
 ```
 
 `아니면` sert déjà de « sinon », mais il n'y a pas de conflit : « sinon » vient juste après `}`, la

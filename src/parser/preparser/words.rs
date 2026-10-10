@@ -9,7 +9,9 @@ use crate::parser::parser_token::{
 /// Every one-word keyword; `부호 없는` (Unsigned) is two lexer tokens, merged by the pre-parser
 pub(super) const KEYWORDS: &[(&str, Keyword)] = &[
     ("외부", Extern),
-    ("주는", Giving),
+    ("반환하는", Giving),
+    ("받아", Receiving),
+    ("반환", Gives),
     ("고정된", Const),
     ("짧은", Short),
     ("빈", Void),
@@ -18,7 +20,7 @@ pub(super) const KEYWORDS: &[(&str, Keyword)] = &[
     ("아닌", IsNot),
     ("동안", While),
     ("세면서", Counting),
-    ("줘요", Return),
+    ("반환해요", Return),
     ("그만해요", Stop),
     ("넘어가요", Skip),
     ("그리고", And),
@@ -80,7 +82,7 @@ pub(super) fn is_bool(word: &str) -> Option<bool> {
         .map(|(_, value)| *value)
 }
 
-/// The keyword `word` is exactly, if any: "주는" → Giving, but "정수를" → None
+/// The keyword `word` is exactly, if any: "반환하는" → Giving, but "정수를" → None
 pub(super) fn is_keyword(word: &str) -> Option<Keyword> {
     KEYWORDS
         .iter()
@@ -98,7 +100,7 @@ pub(super) fn is_particle(word: &str) -> Option<Particle> {
 
 /// Splits the particle off the end of `word`: "합은" → ("합", Topic), "를" → ("", Object);
 /// None if it ends with no particle. When two fit (이면 / 면), the longest wins: "사이면" →
-/// ("사", IfItIs). Check keywords first: "주는", "아니면" and "아닌" end like particles
+/// ("사", IfItIs). Check keywords first: "반환하는", "아니면" and "아닌" end like particles
 pub(super) fn has_particule(word: &str) -> Option<(&str, Particle)> {
     PARTICULES
         .iter()
@@ -135,18 +137,41 @@ pub(super) fn is_name_particle(rest: &str) -> Option<Particle> {
         .map(|(_, particle)| *particle)
 }
 
-/// Built-in verbs used in several forms (넣어요, 넣어서); 주다 and 세다 only appear as the
-/// keywords 줘요 and 세면서
+/// Built-in verbs used in several forms (넣어요, 넣어서); 반환하다 and 세다 only appear as the
+/// keywords 반환해요 and 세면서
 pub(super) const BUILTIN_VERBS: &[&str] = &["넣다", "바꾸다", "하다"];
 
-/// Every form of `infinitive` the pre-parser recognizes: 더하다 → 더하다, 더해서, 더해요, 더한;
-/// None if it is not a verb (no final 다)
-pub(super) fn verb_forms(infinitive: &str) -> Option<[(String, Ending); 4]> {
+/// Every form of `infinitive` the pre-parser recognizes: 더하다 → 더하다, 더해서, 더해요, 더한,
+/// 더하고; None if it is not a verb (no final 다)
+pub(super) fn verb_forms(infinitive: &str) -> Option<[(String, Ending); 5]> {
     let form = get_verb_form(infinitive.to_string())?;
     Some([
         (infinitive.to_string(), Ending::Da),
         (form.seo(), Ending::Seo),
         (form.yo(), Ending::Yo),
         (form.adnominal(), Ending::Adnominal),
+        (form.go(), Ending::Go),
     ])
+}
+
+/// The native numbers that announce several parameters of one type: `두 정수 가와 나를`. From
+/// 두: 한 (1) is also the -(으)ㄴ form of 하다, and one parameter needs no counter
+pub(super) const COUNTERS: &[(&str, usize)] = &[
+    ("두", 2),
+    ("세", 3),
+    ("네", 4),
+    ("다섯", 5),
+    ("여섯", 6),
+    ("일곱", 7),
+    ("여덟", 8),
+    ("아홉", 9),
+    ("열", 10),
+];
+
+/// The number `word` is exactly, if it is a counter: "두" → 2
+pub(super) fn is_counter(word: &str) -> Option<usize> {
+    COUNTERS
+        .iter()
+        .find(|(text, _)| *text == word)
+        .map(|(_, count)| *count)
 }

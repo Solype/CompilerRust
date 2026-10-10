@@ -15,7 +15,7 @@ use super::structs::{
 /// The parse tree of `Parser::parse` (its `Items` root) as an AST. Each function below converts
 /// one non-terminal: the rules it handles are in its comment, and the children it gets follow
 /// their right side. A program the grammar accepts but the AST cannot hold (`부호 없는 소수`,
-/// `줘요` with two values…) is an error at the first such place; a tree that does not follow
+/// `반환해요` with two values…) is an error at the first such place; a tree that does not follow
 /// the rules panics
 pub fn convert_to_ast_tree(tree: &TreeNode) -> Result<Program, PostParseError> {
     let mut prog = Program::default();
@@ -87,23 +87,12 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
         (NTerm::Function, [head, _, params, _, body]) => (head, params, Some(block(body)?)),
         // ExternFunction → 외부 FunctionHead ( Parameters )
         (NTerm::ExternFunction, [_, head, _, params, _]) => (head, params, None),
-        // Function → ReturnType SentenceParameters VERB-다 Block
-        (NTerm::Function, [return_type, params, name, body]) => {
+        // Function → SentenceParameters 받아 VERB-고 TypeSpec 를 반환 Block
+        (NTerm::Function, [params, _, name, return_type, _, _, body]) => {
             return Ok(Function {
                 name: verb(name),
                 span: span(name),
-                return_type: Some(type_spec(&branch(return_type).1[0])?),
-                params: sentence_parameters(params)?,
-                variadic: false,
-                body: Some(block(body)?),
-            });
-        }
-        // Function → SentenceParameters VERB-다 Block
-        (NTerm::Function, [params, name, body]) => {
-            return Ok(Function {
-                name: verb(name),
-                span: span(name),
-                return_type: None,
+                return_type: Some(type_spec(return_type)?),
                 params: sentence_parameters(params)?,
                 variadic: false,
                 body: Some(block(body)?),
@@ -124,7 +113,7 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
 }
 
 /// FunctionHead → ReturnType FunctionName | FunctionName
-/// ReturnType → TypeSpec 를 주는
+/// ReturnType → TypeSpec 를 반환하는
 /// FunctionName → VERB-다 | Name
 fn function_head(node: &TreeNode) -> Result<(String, Span, Option<Type>), PostParseError> {
     let (return_type, function_name) = match branch(node).1 {
@@ -178,16 +167,119 @@ fn parameter(node: &TreeNode) -> Result<Param, PostParseError> {
     });
 }
 
-/// SentenceParameters → Parameter 를 | SentenceLinks Parameter 를
-/// SentenceLinks → Parameter 와 | SentenceLinks Parameter 와
+/// SentenceParameters → SentenceList 를
+/// A name alone takes the type of the group before it, which must have a counter: `두 정수 가와
+/// 나를` is 가 and 나, both 정수. The counter must announce as many names as its group has
 fn sentence_parameters(node: &TreeNode) -> Result<Vec<Param>, PostParseError> {
-    let (mut params, last) = match branch(node).1 {
-        [last, _] => (Vec::new(), last),
-        [before, last, _] => (sentence_parameters(before)?, last),
-        _ => unreachable!(),
+    let [list, _] = branch(node).1 else {
+        unreachable!()
     };
-    params.push(parameter(last)?);
+    let mut items = Vec::new();
+    sentence_list(list, &mut items);
+    let mut params = Vec::new();
+    let mut group: Option<Group> = None;
+    for item in items {
+        match branch_or_leaf(item) {
+            // SentenceGroup → Parameter | Counter Parameter
+            Some((NTerm::SentenceGroup, children)) => {
+                if let Some(group) = group {
+                    group.check()?;
+                }
+                let (counter, param_node) = match children {
+                    [param_node] => (None, param_node),
+                    [counter, param_node] => match token(counter) {
+                        ParserTokenKind::Counter(count) => (Some(*count), param_node),
+                        kind => panic!("a counter was expected, found {kind:?}"),
+                    },
+                    _ => unreachable!(),
+                };
+                let [ty, _] = branch(param_node).1 else {
+                    unreachable!()
+                };
+                group = Some(Group {
+                    counter,
+                    ty,
+                    names: 1,
+                    span: span(item),
+                });
+                params.push(parameter(param_node)?);
+            }
+            // SentenceItem → Name
+            None => {
+                let name = name(item);
+                let Some(group) = group.as_mut().filter(|group| group.counter.is_some()) else {
+                    return Err(PostParseError::new(
+                        PostParseErrorKind::ParameterWithoutType(name),
+                        span(item),
+                    ));
+                };
+                group.names += 1;
+                group.span = Span::new(group.span.start, span(item).end);
+                params.push(Param {
+                    ty: type_spec(group.ty)?,
+                    name,
+                    span: span(item),
+                });
+            }
+            Some(_) => unreachable!(),
+        }
+    }
+    if let Some(group) = group {
+        group.check()?;
+    }
     return Ok(params);
+}
+
+/// SentenceList → SentenceGroup | SentenceList 와 SentenceItem
+/// SentenceItem → SentenceGroup | Name
+/// Each parameter in order: a `SentenceGroup` node, or the leaf of a name alone
+fn sentence_list<'t, 'a>(node: &'t TreeNode<'a>, items: &mut Vec<&'t TreeNode<'a>>) {
+    match branch(node).1 {
+        [group] => items.push(group),
+        [before, _, item] => {
+            sentence_list(before, items);
+            match item {
+                TreeNode::Branch { children, .. } => items.push(&children[0]),
+                TreeNode::Leaf(_) => unreachable!(),
+            }
+        }
+        _ => unreachable!(),
+    }
+}
+
+/// The left side and the children of a branch, `None` for a leaf
+fn branch_or_leaf<'t, 'a>(node: &'t TreeNode<'a>) -> Option<(NTerm, &'t [TreeNode<'a>])> {
+    return match node {
+        TreeNode::Branch { .. } => Some(branch(node)),
+        TreeNode::Leaf(_) => None,
+    };
+}
+
+/// The parameters that share one type in a sentence declaration: `두 정수 가와 나`
+struct Group<'t, 'a> {
+    /// `두` → 2; `None` for a parameter alone, with its own type
+    counter: Option<usize>,
+    /// The `TypeSpec` of the first parameter, that the names alone take too
+    ty: &'t TreeNode<'a>,
+    names: usize,
+    /// From the counter (or the type) to the last name
+    span: Span,
+}
+
+impl Group<'_, '_> {
+    /// The counter announces as many names as the group has
+    fn check(&self) -> Result<(), PostParseError> {
+        return match self.counter {
+            Some(expected) if expected != self.names => Err(PostParseError::new(
+                PostParseErrorKind::CounterMismatch {
+                    expected,
+                    found: self.names,
+                },
+                self.span,
+            )),
+            _ => Ok(()),
+        };
+    }
 }
 
 ////////////////////////////////
@@ -443,7 +535,7 @@ fn to_argument((arg, arg_span): (Arg, Span)) -> Result<Argument, PostParseError>
 /// Steps → Step | Steps Step
 /// Step → Arguments LinkVerb | LinkVerb, and EndStep the same with EndVerb
 /// The result of each step is the first argument of the next one; the end verb makes the
-/// statement: 줘요 a `Return`, 넣어요 an `Assign`, any other verb a `Call`
+/// statement: 반환해요 a `Return`, 넣어요 an `Assign`, any other verb a `Call`
 fn chain(node: &TreeNode) -> Result<StatementKind, PostParseError> {
     let (steps, end) = match branch(node).1 {
         [steps, end] => (step_list(steps)?, end),
@@ -480,8 +572,8 @@ fn step_list(node: &TreeNode) -> Result<Vec<Step>, PostParseError> {
     return Ok(steps);
 }
 
-/// The arguments, the verb and the source of a step; the verb is `None` for 줘요
-/// LinkVerb → VERB-서 | Name VERB-서 (`printf해서`), EndVerb → VERB-요 | Name VERB-요 | 줘요
+/// The arguments, the verb and the source of a step; the verb is `None` for 반환해요
+/// LinkVerb → VERB-서 | Name VERB-서 (`printf해서`), EndVerb → VERB-요 | Name VERB-요 | 반환해요
 fn step(node: &TreeNode) -> Result<Step, PostParseError> {
     let (args, verb_node) = match branch(node).1 {
         [args, verb_node] => (arguments(args)?, verb_node),
@@ -519,7 +611,7 @@ fn call(
     });
 }
 
-/// `X를 줘요`, or `… 해서 줘요` that gives the result of the chain. The error is on the argument
+/// `X를 반환해요`, or `… 해서 반환해요` that gives the result of the chain. The error is on the argument
 /// that is too many or without 을/를, or on the whole chain (`chain_span`) without a value
 fn give(
     previous: Option<Expr>,

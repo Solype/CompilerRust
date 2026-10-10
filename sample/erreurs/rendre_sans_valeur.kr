@@ -1,5 +1,5 @@
-// Post-parseur : 줘요 sans valeur.
+// Post-parseur : 반환해요 sans valeur.
 
-정수를 주는 main() {
-    줘요.
+정수를 반환하는 main() {
+    반환해요.
 }

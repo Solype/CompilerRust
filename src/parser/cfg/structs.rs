@@ -10,14 +10,14 @@ pub enum NTerm {
     Items,
     /// A function or an extern declaration
     Item,
-    /// `정수를 주는 더하다(정수 가, 정수 나) { … }`, or as a sentence:
-    /// `정수를 주는 정수 가와 정수 나를 더하다 { … }`
+    /// `정수를 반환하는 더하다(정수 가, 정수 나) { … }`, or as a sentence:
+    /// `정수 가와 정수 나를 받아 더하고 정수를 반환 { … }`
     Function,
-    /// `외부 정수를 주는 printf(문자 주소 형식, …)`
+    /// `외부 정수를 반환하는 printf(문자 주소 형식, …)`
     ExternFunction,
-    /// `정수를 주는 더하다`, or `인사하다` without a return type
+    /// `정수를 반환하는 더하다`, or `인사하다` without a return type
     FunctionHead,
-    /// `정수를 주는`
+    /// `정수를 반환하는`
     ReturnType,
     /// A verb in -다, or a latin name (`main`, `printf`)
     FunctionName,
@@ -26,10 +26,15 @@ pub enum NTerm {
     ParameterList,
     /// `정수 가`
     Parameter,
-    /// The parameters of a sentence declaration: `정수 가와 정수 나를`, `정수 가를`
+    /// The parameters of a sentence declaration, the last one with `을/를`: `정수 가와 정수 나를`,
+    /// `정수 가를`, `두 정수 가와 나를`
     SentenceParameters,
-    /// The parameters before the last one, each with `와/과`: `정수 가와`
-    SentenceLinks,
+    /// The parameters linked by `와/과`, the first one with its type: `정수 가와 나`
+    SentenceList,
+    /// A parameter after `와/과`: with its type, or a name alone in a counted group (`나`)
+    SentenceItem,
+    /// A parameter with its type, maybe counted: `정수 가`, `두 정수 가`
+    SentenceGroup,
     /// `정수`, `짧은 정수`, `부호 없는 정수`, `문자 주소`, `정수&&`, `정수 10개`
     TypeSpec,
     /// `정수`, `소수`, `논리`, `문자`, `바이트`
@@ -44,17 +49,17 @@ pub enum NTerm {
     VariableDeclaration,
     /// What is before `이에요/예요`: a value, a type, or `… 더한 값`
     DeclarationValue,
-    /// `3과 4를 더해서 5를 곱해서 줘요`
+    /// `3과 4를 더해서 5를 곱해서 반환해요`
     Chain,
     /// The `-아/어서` steps of a chain
     Steps,
     /// `3과 4를 더해서`
     Step,
-    /// `5를 곱해요`, `42를 줘요`
+    /// `5를 곱해요`, `42를 반환해요`
     EndStep,
     /// `더해서`, `printf해서`
     LinkVerb,
-    /// `더해요`, `printf해요`, `줘요`
+    /// `더해요`, `printf해요`, `반환해요`
     EndVerb,
     Arguments,
     /// `3과`, `4를`, `결과에`, `1부터`, `10까지`, `소수로`, `정수 칸을`
@@ -107,7 +112,7 @@ pub struct ParserProduction {
     pub right: &'static [ParserNode],
 }
 
-/// Only the kind of token counts for `Name`, `Int`, `Float`, `Str`, `Bool` and the verb's infinitive: their
+/// Only the kind of token counts for `Name`, `Int`, `Float`, `Str`, `Bool`, `Counter` and the verb's infinitive: their
 /// value in the rules is a placeholder
 pub(super) fn same_terminal(a: &ParserTokenKind, b: &ParserTokenKind) -> bool {
     return match (a, b) {
@@ -115,7 +120,8 @@ pub(super) fn same_terminal(a: &ParserTokenKind, b: &ParserTokenKind) -> bool {
         | (ParserTokenKind::Int(_), ParserTokenKind::Int(_))
         | (ParserTokenKind::Float(_), ParserTokenKind::Float(_))
         | (ParserTokenKind::Str(_), ParserTokenKind::Str(_))
-        | (ParserTokenKind::Bool(_), ParserTokenKind::Bool(_)) => true,
+        | (ParserTokenKind::Bool(_), ParserTokenKind::Bool(_))
+        | (ParserTokenKind::Counter(_), ParserTokenKind::Counter(_)) => true,
 
         (
             ParserTokenKind::Verb { ending, .. },

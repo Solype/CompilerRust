@@ -34,7 +34,7 @@ fn leaves<'a>(node: &TreeNode<'a>, out: &mut Vec<&'a ParserToken>) {
 /// `cargo test tree_of_main -- --nocapture` to see the tree
 #[test]
 fn tree_of_main() {
-    let tokens = tokens("정수를 주는 main() {\n    42를 줘요.\n}\n");
+    let tokens = tokens("정수를 반환하는 main() {\n    42를 반환해요.\n}\n");
     let tree = parser().parse(&tokens).ok().unwrap();
     println!("{}", tree.show(RULES));
 
@@ -67,7 +67,7 @@ fn proto_kr() {
 
 #[test]
 fn missing_brace() {
-    let tokens = tokens("정수를 주는 main()\n    42를 줘요.\n}\n");
+    let tokens = tokens("정수를 반환하는 main()\n    42를 반환해요.\n}\n");
     let Err(token) = parser().parse(&tokens) else {
         panic!("a body without its {{ is accepted");
     };
@@ -76,16 +76,16 @@ fn missing_brace() {
 
 #[test]
 fn extra_brace() {
-    let tokens = tokens("정수를 주는 main() {\n    42를 줘요.\n}\n}\n");
+    let tokens = tokens("정수를 반환하는 main() {\n    42를 반환해요.\n}\n}\n");
     let Err(token) = parser().parse(&tokens) else {
         panic!("a second }} is accepted");
     };
-    assert_eq!(token.span.line_col("정수를 주는 main() {\n    42를 줘요.\n}\n}\n"), (4, 1));
+    assert_eq!(token.span.line_col("정수를 반환하는 main() {\n    42를 반환해요.\n}\n}\n"), (4, 1));
 }
 
 #[test]
 fn float_literals() {
-    let source = "소수를 주는 main() {\n    가는 0.5예요.\n    -1.25를 줘요.\n}\n";
+    let source = "소수를 반환하는 main() {\n    가는 0.5예요.\n    -1.25를 반환해요.\n}\n";
     let tokens = tokens(source);
     assert!(parser().parse(&tokens).is_ok());
     assert!(tokens.iter().any(|token| matches!(token.kind, ParserTokenKind::Float(0.5))));
@@ -93,7 +93,16 @@ fn float_literals() {
 
 #[test]
 fn sentence_declarations() {
-    let source = "정수를 주는 정수 가를 제곱하다 {\n    (가 * 가)를 줘요.\n}\n\
-                  정수 하나와 소수 둘과 정수 셋을 인사하다 {\n}\n";
+    let source = "정수 가를 받아 제곱하고 정수를 반환 {\n    (가 * 가)를 반환해요.\n}\n\
+                  정수 하나와 소수 둘과 정수 셋을 받아 섞고 정수를 반환 {\n    0을 반환해요.\n}\n\
+                  두 짧은 정수 가와 나와 세 소수 라와 마와 바를 받아 고르고 소수 주소를 반환 {\n\
+                  \x20   빈 주소를 반환해요.\n}\n";
     assert!(parser().parse(&tokens(source)).is_ok());
+}
+
+#[test]
+fn sentence_declaration_without_its_return_type() {
+    // not yet: a sentence declaration always ends with `TYPE을 반환`
+    let source = "정수 가를 받아 제곱하고 {\n}\n";
+    assert!(parser().parse(&tokens(source)).is_err());
 }

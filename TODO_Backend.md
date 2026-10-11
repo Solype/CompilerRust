@@ -5,14 +5,15 @@ PROGRESS (estimate)
 ==================================================
 
 Backend (x86-64 encoder + ELF) : ~75-80 %
-Full compiler                  : ~30 %
+Full compiler                  : ~55 %
 
     x86-64 encoder + ELF           ~75-80 %
-    Lexer                          ~5 %  (automaton, not wired in yet)
-    Parser + AST                   0 %
+    Lexer                          done (hand-written)
+    Pre-parser                     done, except scopes and 받침 checks
+    Parser (LR(1)) + AST           done for Proto.kr
     Semantic analysis              0 %
     Code generation AST -> IR      0 %
-    CLI                            0 %
+    CLI                            done (--tree, --demo)
 
 ==================================================
 DONE
@@ -109,14 +110,14 @@ Atomics:
 [X] Cmpxchg
 
 Tests:
-[X] 1248 tests: 1223 encoding tests (src/elf/instructions/encode_tests/),
+[X] 1249 tests: 1223 encoding tests (src/elf/instructions/encode_tests/),
     reference bytes produced by GNU as, one family per file
 [X] Relocation tests (offset, type, addend) compared with readelf
 [X] Symbol table tests (src/elf/file/symbol_tests.rs)
 [X] Fixed the 199 wrong encodings found (see TEST_REPORT.md)
 
 Organization:
-[X] main.rs reduced to building the ELF
+[X] main.rs runs the front-end; the ELF of the samples only with --demo
 [X] Test programs moved to src/samples/
 [X] One test function per instruction family (same name in the binary)
 

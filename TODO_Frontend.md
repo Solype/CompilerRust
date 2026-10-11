@@ -10,10 +10,10 @@ ORGANISATION
 src/
   lexer/      tokens + positions
   hangeul/    décomposition des syllabes, 받침, conjugaison
-  parser/     pré-parser (découpage des particules, mots classés) puis
-              tokens -> AST
-  ast.rs      types de l'AST
-  codegen/    AST -> Vec<Instruction>
+  parser/     preparser/ (découpage des particules, mots classés),
+              cfg/ (grammaire, table LR(1), arbre de dérivation),
+              postparser/ (arbre -> AST, types de l'AST dans structs.rs)
+  codegen/    AST -> Vec<Instruction> (à faire)
   elf/        (existant)
 
 Le lexer est écrit à la main (l'ancien automate lexical_analisys/ est supprimé).
@@ -188,6 +188,7 @@ Pièges :
 --------------------------------------------------
 
 [X] ./compiler --tokens fichier.kr : un token par ligne, puis quitter
+    (retirée dans 5aeb848, remplacée par --tree)
 [X] Adapter read_source() dans main.rs : il refuse aujourd'hui tout argument
     en plus du fichier
     format libre, par exemple pour la ligne 7 de Proto.kr :
@@ -271,7 +272,7 @@ Particle, Bool. Le parser ne voit plus que des catégories fixes.
 [X] Verbes : première passe, tout mot en 다 est un verbe ; table
     « forme conjuguée -> (infinitif, terminaison) », appel avant la définition
 [X] Verbes intégrés : 넣다, 바꾸다, 하다 (printf해요)
-[X] Warning : verbe en 다 sans ( derrière (바다 est sans doute un nom)
+[X] Warning : verbe en 다 sans ( ni { derrière (바다 est sans doute un nom)
 [X] Noms déclarés : paramètres (정수 가,), variables (결과는 en début
     d'instruction), variable de boucle (정수 칸을)
 [X] Noms utilisés découpés : plus long nom déclaré en tête, reste = particule
@@ -282,7 +283,7 @@ Particle, Bool. Le parser ne voit plus que des catégories fixes.
     paramètre qui suit (정수& 가)
 [X] 부호 없는 -> Keyword(Unsigned), un seul token sur les deux mots
 [X] 참 / 거짓 -> Bool, seuls ou avec particule (참이면)
-[X] Option --pre-tokens
+[X] Option --pre-tokens (retirée dans 5aeb848)
 [ ] Portées : aujourd'hui les noms sont ceux de tout le fichier, sans portée
     (nom utilisé hors de sa portée accepté) ; à faire avec le parser
 
@@ -317,8 +318,8 @@ celui de la dernière syllabe PRONONCÉE, et pas seulement sur les noms :
 ==================================================
 
 tests/kr/42.kr :
-    정수를 주는 main() {
-        42를 줘요.
+    정수를 반환하는 main() {
+        42를 반환해요.
     }
 
 [ ] Parser à table (LR(1)) : automate à états + pile, dans src/parser/cfg/
@@ -327,31 +328,33 @@ tests/kr/42.kr :
     [X] token_matches_node : Name, Int, Str, Bool comparés sur le genre,
         Verb sur la terminaison, le reste avec ==
     [X] Annulables et FIRST (first.rs), FIRST d'une suite (of_sequence)
-    [ ] Items LR(1) : (règle, position du point, lookahead) ; un état = un
+    [X] Items LR(1) : (règle, position du point, lookahead) ; un état = un
         ensemble d'items sous forme canonique
-    [ ] Clôture : [A -> α . B β, a] ajoute [B -> . γ, b] pour b dans FIRST(β a)
-    [ ] goto(I, X) : avancer le point sur X, puis clôture
-    [ ] Collection des états : état 0 = clôture de
+    [X] Clôture : [A -> α . B β, a] ajoute [B -> . γ, b] pour b dans FIRST(β a)
+    [X] goto(I, X) : avancer le point sur X, puis clôture
+    [X] Collection des états : état 0 = clôture de
         [StartSymbol -> . Items Eof, Eof], file de travail, transitions notées
-    [ ] Tables ACTION (shift état / reduce règle / accept / erreur) et GOTO
+    [X] Tables ACTION (shift état / reduce règle / accept / erreur) et GOTO
         (état x non-terminal -> état) ; accept sur Eof dans
         [StartSymbol -> Items . Eof]
     [ ] Conflits : signalés avec l'état, ses items, le terminal et les deux
         actions ; test « zéro conflit » sur RULES
+        (aujourd'hui : seulement le nombre de conflits, sur stderr)
     [ ] (optionnel) LALR(1) : fusion des états de même cœur si la table est
         trop grosse
-    [ ] Boucle : pile d'états (et de valeurs AST) ; shift empile, reduce dépile
-        |règle| éléments, construit le nœud, puis GOTO sur le non-terminal
+    [X] Boucle : pile d'états ; shift empile, reduce dépile |règle| éléments,
+        construit le nœud de l'arbre de dérivation, puis GOTO sur le non-terminal
     [ ] Erreur : état sans action pour le token -> message avec les tokens
         attendus (ceux qui ont une action dans cet état)
-    [ ] Tests : 42.kr puis Proto.kr acceptés, programmes faux refusés
-    [ ] AST : Program { functions }, Function { nom, params, type_retour, corps },
-        Stmt::Return(Expr), Expr::Int
+        (aujourd'hui : « syntax error: unexpected <token> »)
+    [X] Tests : 42.kr puis Proto.kr acceptés, programmes faux refusés
+    [X] AST (postparser/structs.rs) : Program, Function, Statement, Expr, Type,
+        avec un Span ; option --tree pour l'arbre de dérivation
     [X] Particules, cas simple : mot-clé connu en tête (정수를 -> 정수 + 를),
         ou particule seule (를 après 42) -> pré-parser
 [ ] Codegen : mov rax, 42 ; ret
 [ ] Écrire un .o avec main global (réutiliser add_section / add_function)
-[ ] Retirer les samples de main.rs (les garder pour les tests de l'encodeur)
+[X] Retirer les samples de main.rs : seulement avec --demo
 [ ] Lien : gcc fichier.o -o prog (la libc fournit _start)
 [ ] Script de test : compile chaque tests/kr/*.kr, lance le binaire, compare
     code de sortie et stdout avec un .expected
@@ -362,10 +365,10 @@ Vérification : ./prog; echo $? -> 42
 ÉTAPE 4 : EXPRESSIONS ARITHMÉTIQUES
 ==================================================
 
-[ ] Parser : précédence du C dans les tables, un non-terminal par niveau
+[X] Parser : précédence du C dans les tables, un non-terminal par niveau
     (ou règles de précédence / associativité pour trancher les conflits
     shift/reduce)
-[ ] - unaire, et "- suivi d'un nombre" = terme simple
+[X] - unaire, et "- suivi d'un nombre" = terme simple
 [ ] Codegen en pile, résultat dans rax :
     a op b -> calculer a ; push rax ; calculer b ; mov rcx, rax ; pop rax ; op rax, rcx
 [ ] / et % : cqo ; idiv rcx (quotient rax, reste rdx)
@@ -386,27 +389,31 @@ Vérification : un .kr par opérateur ; ((3 + 4) * 5)를 줘요 -> 35
     reste = particule valide -> pré-parser
 [ ] Pile de portées dans le parser
 [ ] Conflit de noms (사 et 사과 dans la même portée) = erreur
-[ ] Parsing d'une chaîne : arguments + particules, verbe conjugué ;
+[X] Parsing d'une chaîne : arguments + particules, verbe conjugué ;
     résultat précédent = premier argument implicite
-[ ] Destination NOM에 en tête -> argument du dernier verbe
+[X] Destination NOM에 en tête -> argument du dernier verbe
+[X] Déclaration en phrase : 두 정수 가와 나를 받아 비교하고 정수를 반환 { … },
+    sans paramètre 인사하고 정수를 반환 { … } ou 인사하다 { … }
+[ ] Déclaration en phrase avec paramètres sans retour (정수 가를 받아 보여준다)
 [ ] Codegen :
     [ ] SysV : rdi, rsi, rdx, rcx, r8, r9 ; retour dans rax
     [ ] Prologue push rbp ; mov rbp, rsp ; sub rsp, N (N multiple de 16)
     [ ] Paramètres recopiés sur la pile ([rbp-8], [rbp-16], ...)
 
-Vérification : 3과 4를 더해서 제곱해서 줘요 -> 49
+Vérification : 3과 4를 더해서 제곱해서 반환해요 -> 49
 
 ==================================================
 ÉTAPE 6 : VARIABLES ET AFFECTATION
 ==================================================
 
-[ ] Déclarations : 개수는 0이에요 / 개수는 정수예요 (zéro du type) / 고정된 ...
+[X] Déclarations : 개수는 0이에요 / 개수는 정수예요 (zéro du type) / 고정된 ...
+    (parser et AST)
 [ ] Une case de pile par variable
-[ ] Affectation : 넣어요, destination en tête ou en fin de chaîne
+[X] Affectation : 넣어요, destination en tête ou en fin de chaîne (parser et AST)
 [ ] Erreurs :
     [ ] affecter un 고정된
-    [ ] 고정된 avec un type seul
-    [ ] nom non déclaré
+    [X] 고정된 avec un type seul (ConstantWithoutValue)
+    [X] nom non déclaré (UnknownIdentifier, sans portées)
     [ ] double déclaration
 [ ] Messages : fichier:ligne:colonne, ligne fautive, ^ sous l'erreur
     (une syllabe hangul occupe 2 colonnes dans le terminal)
@@ -415,6 +422,8 @@ Vérification : 3과 4를 더해서 제곱해서 줘요 -> 49
 ÉTAPE 7 : CONTRÔLE DE FLUX
 ==================================================
 
+[X] Parser et AST : 만약 / 아니면 만약 / 아니면, 동안, 세면서, 그리고 / 또는,
+    négations, 그만해요 / 넘어가요 ; reste le codegen ci-dessous
 [ ] 만약 ... 이면 / 아니면 만약 / 아니면 (LabelId + jcc)
 [ ] COND인 동안
 [ ] NOM을 A부터 B까지 세면서 : borne de fin exclue (< et non <=)
@@ -427,6 +436,8 @@ Vérification : 3과 4를 더해서 제곱해서 줘요 -> 49
 ÉTAPE 8 : PRINTF, PUIS TOUT PROTO.KR
 ==================================================
 
+[X] Parser et AST : 외부 (variadique …), appels NOM_LATIN해요, chaînes ;
+    reste le codegen ci-dessous
 [ ] 외부 : symbole non défini, lié par PLT32
 [ ] Appel NOM_LATIN해요 / 해서 (tokens déjà prêts : Name + Verb 하다)
 [ ] Chaînes littérales en .rodata avec un label ; lea rdi, [rip+label]
@@ -441,7 +452,10 @@ APRÈS
 ==================================================
 
 [ ] Passe sémantique séparée (vérification des types)
-[ ] 소수 (SSE, déjà prêt dans le backend)
-[ ] Pointeurs (TYPE 주소, ou TYPE& : & après un mot de type = 주소) et tableaux (TYPE N개)
+[ ] 소수 (SSE, déjà prêt dans le backend) ; littéraux déjà dans le lexer et l'AST
+[ ] Pointeurs (TYPE 주소, ou TYPE& : & après un mot de type = 주소) et tableaux (TYPE N개) ;
+    types déjà dans le parser et l'AST, reste le codegen
+[ ] Structures (구조) : à concevoir d'abord dans LANGUAGE_DESIGN.md (ligne vide),
+    après le codegen (tailles, alignement, offsets)
 [ ] Verbes irréguliers (table + annotation)
 [ ] Allocation de registres à la place du codegen en pile

@@ -246,8 +246,8 @@ impl<'a> PreParser<'a> {
         }
     }
 
-    /// A verb in its dictionary form must be followed by `(`: `더하다(…)` is a definition, `바다`
-    /// alone is probably a name ending in 다
+    /// A verb in its dictionary form must be followed by `(` or `{`: `더하다(…)` and `인사하다 {`
+    /// are definitions, `바다` alone is probably a name ending in 다
     fn check_parentheses(&self, parsed: &[ParserToken]) -> Option<PreParseWarning> {
         let [token] = parsed else { return None };
         let ParserTokenKind::Verb {
@@ -259,7 +259,7 @@ impl<'a> PreParser<'a> {
         };
         let defined = matches!(
             self.peek().kind,
-            LexerTokenKind::Punctuation(Punctuation::LParen)
+            LexerTokenKind::Punctuation(Punctuation::LParen | Punctuation::LBrace)
         );
         (!defined).then(|| {
             PreParseWarning::new(
@@ -271,19 +271,35 @@ impl<'a> PreParser<'a> {
 
     /// First pass: the infinitive of every verb of the file, so that a call before the
     /// definition is a verb too. 다 marks the functions: any Hangul word ending in 다 is a verb in
-    /// its dictionary form. A sentence declaration gives its verb in -고 right after 받아:
-    /// `받아 비교하고` → 비교하다
+    /// its dictionary form. A sentence declaration gives its verb in -고, right after 받아 or with
+    /// `반환` after it and before the `{`: `받아 비교하고`, `인사하고 정수를 반환` → 비교하다, 인사하다
     fn declared_verbs(tokens: &[LexerToken]) -> impl Iterator<Item = String> {
-        let words = tokens.iter().map(|token| match &token.kind {
-            LexerTokenKind::HangulWord(word) => Some(word.as_str()),
-            _ => None,
-        });
-        let previous = std::iter::once(None).chain(words.clone());
-        previous.zip(words).filter_map(|pair| match pair {
-            (_, Some(word)) if word.ends_with('다') => Some(word.to_string()),
-            (Some("받아"), Some(word)) => word.strip_suffix('고').map(|stem| format!("{stem}다")),
-            _ => None,
+        tokens.iter().enumerate().filter_map(|(i, token)| {
+            let LexerTokenKind::HangulWord(word) = &token.kind else {
+                return None;
+            };
+            if word.ends_with('다') {
+                return Some(word.to_string());
+            }
+            let stem = word.strip_suffix('고')?;
+            let after_receiving = i > 0
+                && matches!(&tokens[i - 1].kind, LexerTokenKind::HangulWord(prev) if prev == "받아");
+            (after_receiving || Self::gives_before_block(&tokens[i + 1..]))
+                .then(|| format!("{stem}다"))
         })
+    }
+
+    /// Whether `반환` comes before the next `{` or `}`: the end of a sentence declaration
+    fn gives_before_block(tokens: &[LexerToken]) -> bool {
+        tokens
+            .iter()
+            .take_while(|token| {
+                !matches!(
+                    token.kind,
+                    LexerTokenKind::Punctuation(Punctuation::LBrace | Punctuation::RBrace)
+                )
+            })
+            .any(|token| matches!(&token.kind, LexerTokenKind::HangulWord(word) if word == "반환"))
     }
 
     /// Replaces every `Ident` left that is a declared name, alone or followed by a particle a name

@@ -74,6 +74,14 @@ pub const RULES: &[ParserProduction] = &[
         term!(Keyword::Gives),
         NTerm(Block),
     ),
+    rule!(Function =>
+        term!(Verb::Go),
+        NTerm(TypeSpec),
+        term!(Particle::Object),
+        term!(Keyword::Gives),
+        NTerm(Block),
+    ),
+    rule!(Function => term!(Verb::Da), NTerm(Block)),
     rule!(ExternFunction =>
         term!(Keyword::Extern),
         NTerm(FunctionHead),
@@ -96,8 +104,8 @@ pub const RULES: &[ParserProduction] = &[
     rule!(ParameterList => NTerm(Parameter)),
     rule!(ParameterList => NTerm(ParameterList), term!(Punctuation::Comma), NTerm(Parameter)),
     rule!(Parameter => NTerm(TypeSpec), term!(Name)),
-    // Not empty, and the first parameter has its type: a function without parameters keeps the
-    // C form. The post-parser checks that a counter announces as many names as follow it
+    // Not empty, and the first parameter has its type: a function without parameters has its own
+    // rules. The post-parser checks that a counter announces as many names as follow it
     rule!(SentenceParameters => NTerm(SentenceList), term!(Particle::Object)),
     rule!(SentenceList => NTerm(SentenceGroup)),
     rule!(SentenceList => NTerm(SentenceList), term!(Particle::With), NTerm(SentenceItem)),

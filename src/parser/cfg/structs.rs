@@ -11,7 +11,8 @@ pub enum NTerm {
     /// A function or an extern declaration
     Item,
     /// `정수를 반환하는 더하다(정수 가, 정수 나) { … }`, or as a sentence:
-    /// `정수 가와 정수 나를 받아 더하고 정수를 반환 { … }`
+    /// `정수 가와 정수 나를 받아 더하고 정수를 반환 { … }`, without parameters `인사하고 정수를 반환 { … }`
+    /// or `인사하다 { … }`
     Function,
     /// `외부 정수를 반환하는 printf(문자 주소 형식, …)`
     ExternFunction,

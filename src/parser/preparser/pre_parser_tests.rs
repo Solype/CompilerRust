@@ -307,13 +307,8 @@ fn verb_without_parentheses_is_a_warning() {
     assert!(warnings("정수를 반환하는 더하다(정수 가) { }").is_empty());
     assert!(warnings("인사하다() { 인사해요 }").is_empty());
     assert!(warnings("정수 가를 받아 제곱하고 정수를 반환 { }").is_empty());
-    // a dictionary form only declares with `(`
-    assert_eq!(
-        warnings("제곱하다 { }"),
-        [PreParseWarningKind::VerbWithoutParentheses(
-            "제곱하다".to_string()
-        )]
-    );
+    // a dictionary form also declares with `{`: a function without parameters nor return
+    assert!(warnings("제곱하다 { }").is_empty());
 }
 
 #[test]

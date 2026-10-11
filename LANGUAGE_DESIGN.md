@@ -110,8 +110,10 @@ le verbe à la forme `-고`, et le type rendu suivi du nom `반환`. Les deux fo
   le compilateur retrouve l'infinitif (`비교하다`) et génère les autres formes.
 - `반환` seul, sans `하다`, est le style des spécifications (개조식) ; dans le corps, le retour garde
   le 해요체 : `반환해요`.
-- Sans type de retour ou sans paramètre, la forme C reste la seule pour l'instant :
-  `인사하다() { … }`. La forme en phrase sans retour (`정수 가를 받아 보여준다`) est à faire.
+- Sans paramètre, la phrase commence au verbe : `인사하고 정수를 반환 { … }`. Sans paramètre ni
+  retour, l'infinitif suivi du bloc : `인사하다 { … }`.
+- Avec des paramètres mais sans type de retour, la forme C reste la seule pour l'instant :
+  `보여주다(정수 가) { … }`. La forme en phrase sans retour (`정수 가를 받아 보여준다`) est à faire.
 
 ### Formes générées
 

@@ -83,6 +83,28 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
         unreachable!()
     };
     let (head, params, body) = match branch(inner) {
+        // Function → VERB-고 TypeSpec 를 반환 Block
+        (NTerm::Function, [name @ TreeNode::Leaf(_), return_type, _, _, body]) => {
+            return Ok(Function {
+                name: verb(name),
+                span: span(name),
+                return_type: Some(type_spec(return_type)?),
+                params: Vec::new(),
+                variadic: false,
+                body: Some(block(body)?),
+            });
+        }
+        // Function → VERB-다 Block
+        (NTerm::Function, [name, body]) => {
+            return Ok(Function {
+                name: verb(name),
+                span: span(name),
+                return_type: None,
+                params: Vec::new(),
+                variadic: false,
+                body: Some(block(body)?),
+            });
+        }
         // Function → FunctionHead ( Parameters ) Block
         (NTerm::Function, [head, _, params, _, body]) => (head, params, Some(block(body)?)),
         // ExternFunction → 외부 FunctionHead ( Parameters )

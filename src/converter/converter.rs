@@ -137,9 +137,57 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         span: Span,
     ) -> Result<Type, ConvertError> {
-        let name: String = verb.to_string();
-        let Some(index) = self.functions.get(&name) else {
-            return Err(ConvertError::new(ConvertErrorKind::NotInteger, span));
+        let mut types = Vec::new();
+        for arg in args {
+            match arg {
+                Argument::Value { value, .. } | Argument::Previous(value) => {
+                    types.push(self.get_type(value, scope)?)
+                }
+                // `정수로`: the target type of 바꾸다
+                Argument::ToType(ty) => types.push(ty.clone()),
+            }
+        }
+        // `바꾸다`: built in, gives its value as the type of its `로` argument
+        if verb == "바꾸다" {
+            if let Some(Argument::ToType(ty)) =
+                args.iter().find(|arg| matches!(arg, Argument::ToType(_)))
+            {
+                return Ok(ty.clone());
+            }
+        }
+        let suffixes: Vec<String> = types.iter().map(|ty| format!("${ty}")).collect();
+        let fullname = verb.to_string() + &suffixes.concat();
+        // `외부` and `main`: their name alone, any arguments their parameters accept
+        let by_name = self.functions.get(verb).filter(|index| {
+            let func = &self.program.functions[**index];
+            func.params.len() == types.len() || (func.variadic && types.len() > func.params.len())
+        });
+        // The others: `printf` without arguments must not find the `외부` printf
+        let mangled = |index: &&usize| {
+            let func = &self.program.functions[**index];
+            func.body.is_some() && func.name != "main"
+        };
+        // Variadic: the types of the first arguments, then `$...`
+        let variadic = || {
+            (0..=types.len()).rev().find_map(|count| {
+                self.functions
+                    .get(&(verb.to_string() + &suffixes[..count].concat() + "$..."))
+                    .filter(&mangled)
+            })
+        };
+        let Some(index) = by_name
+            .or_else(|| self.functions.get(&fullname).filter(&mangled))
+            .or_else(variadic)
+        else {
+            let kind = ConvertErrorKind::UnknownFunction {
+                verb: verb.to_string(),
+                types: types
+                    .iter()
+                    .map(Type::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            };
+            return Err(ConvertError::new(kind, span));
         };
         let func = &self.program.functions[*index];
         return Ok(func.return_type.clone().unwrap_or(Type::Null));

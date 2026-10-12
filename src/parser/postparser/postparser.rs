@@ -8,8 +8,8 @@ use super::super::parser_token::{Keyword, ParserTokenKind, Particle, Type as Tok
 
 use super::post_parse_error::{PostParseError, PostParseErrorKind};
 use super::structs::{
-    Argument, BinaryOp, Expr, ExprKind, Function, Param, Program, Statement, StatementKind, Type,
-    UnaryOp,
+    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Param, Program,
+    Statement, StatementKind, Type, UnaryOp, While,
 };
 
 /// The parse tree of `Parser::parse` (its `Items` root) as an AST. Each function below converts
@@ -416,10 +416,10 @@ fn variable_declaration(node: &TreeNode) -> Result<StatementKind, PostParseError
                     span(node),
                 ));
             }
-            return Ok(StatementKind::Declare {
+            return Ok(StatementKind::Declare(Declare {
                 name,
                 ty: type_spec(inner)?,
-            });
+            }));
         }
         [operand] => expression(operand)?,
         [args, adnominal, _] => Expr {
@@ -441,11 +441,11 @@ fn variable_declaration(node: &TreeNode) -> Result<StatementKind, PostParseError
         },
         _ => unreachable!(),
     };
-    return Ok(StatementKind::Init {
+    return Ok(StatementKind::Init(Init {
         name,
         value,
         constant,
-    });
+    }));
 }
 
 /// IfStatement → 만약 Condition Block | 만약 Condition Block 아니면 Block
@@ -472,11 +472,11 @@ fn if_statement(node: &TreeNode) -> Result<StatementKind, PostParseError> {
             }],
         }),
     };
-    return Ok(StatementKind::If {
+    return Ok(StatementKind::If(If {
         condition,
         then: block(then)?,
         otherwise,
-    });
+    }));
 }
 
 /// WhileLoop → Expression 인 동안 Block | Expression 이 아닌 동안 Block
@@ -486,10 +486,10 @@ fn while_loop(node: &TreeNode) -> Result<StatementKind, PostParseError> {
         [expr, _, _, _, body] => (not(expression(expr)?), body),
         _ => unreachable!(),
     };
-    return Ok(StatementKind::While {
+    return Ok(StatementKind::While(While {
         condition,
         body: block(body)?,
-    });
+    }));
 }
 
 /// ForLoop → Arguments 세면서 Block: `수를 1부터 끝까지`, or `정수 수를 …` to declare 수
@@ -521,13 +521,13 @@ fn for_loop(node: &TreeNode) -> Result<StatementKind, PostParseError> {
     let (Some((variable, ty)), Some(from), Some(until)) = (variable, from, until) else {
         return Err(error(span(args)));
     };
-    return Ok(StatementKind::For {
+    return Ok(StatementKind::For(For {
         variable,
         ty,
         from,
         until,
         body: block(body)?,
-    });
+    }));
 }
 
 ////////////////////////////////
@@ -683,7 +683,7 @@ fn put(
     let (Some(target), Some(value)) = (target, value) else {
         return Err(error(chain_span));
     };
-    return Ok(StatementKind::Assign { target, value });
+    return Ok(StatementKind::Assign(Assign { target, value }));
 }
 
 /// Arguments → Argument | Arguments Argument

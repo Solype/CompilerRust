@@ -8,7 +8,9 @@ use super::super::cfg::parser::Parser;
 use super::super::cfg::rules::RULES;
 use super::post_parse_error::PostParseErrorKind;
 use super::postparser::convert_to_ast_tree;
-use super::structs::{Argument, Expr, ExprKind, Program, Statement, StatementKind, Type};
+use super::structs::{
+    Argument, Assign, Expr, ExprKind, If, Program, Statement, StatementKind, Type,
+};
 
 /// Building the table takes seconds in debug: once for all the tests
 fn parser() -> &'static Parser {
@@ -116,7 +118,7 @@ fn call_spans_from_the_start_of_its_chain() {
     let program = ast(source);
     let assign = &body(&program)[1];
     assert_eq!(text(source, assign.span), "3과 4를 더해서 5를 곱해서 결과에 넣어요.");
-    let StatementKind::Assign { value, .. } = &assign.kind else {
+    let StatementKind::Assign(Assign { value, .. }) = &assign.kind else {
         panic!("an assignment was expected");
     };
     assert_eq!(text(source, value.span), "3과 4를 더해서 5를 곱해서");
@@ -127,7 +129,7 @@ fn call_spans_from_the_start_of_its_chain() {
 fn not_spans_its_operand() {
     let source = "정수를 반환하는 main() {\n    가는 0이에요.\n    만약 (가 > 0)이 아니면 {\n        1을 반환해요.\n    }\n    가를 반환해요.\n}\n";
     let program = ast(source);
-    let StatementKind::If { condition, .. } = &body(&program)[1].kind else {
+    let StatementKind::If(If { condition, .. }) = &body(&program)[1].kind else {
         panic!("an if was expected");
     };
     let ExprKind::Unary { operand, .. } = &condition.kind else {
@@ -141,13 +143,13 @@ fn not_spans_its_operand() {
 fn else_if_spans_from_its_if() {
     let source = "정수를 반환하는 main() {\n    가는 0이에요.\n    만약 가 > 0면 {\n        1을 반환해요.\n    } 아니면 만약 가 == 0면 {\n        0을 반환해요.\n    }\n    가를 반환해요.\n}\n";
     let program = ast(source);
-    let StatementKind::If { otherwise, .. } = &body(&program)[1].kind else {
+    let StatementKind::If(If { otherwise, .. }) = &body(&program)[1].kind else {
         panic!("an if was expected");
     };
     let [inner] = otherwise.as_deref().unwrap() else {
         panic!("one statement was expected in 아니면");
     };
-    assert!(matches!(inner.kind, StatementKind::If { .. }));
+    assert!(matches!(inner.kind, StatementKind::If(_)));
     assert_eq!(text(source, inner.span), "만약 가 == 0면 {\n        0을 반환해요.\n    }");
 }
 

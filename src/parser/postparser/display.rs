@@ -1,8 +1,8 @@
 use std::fmt;
 
 use super::structs::{
-    Argument, BinaryOp, Expr, ExprKind, Function, Param, Program, Statement, StatementKind, Type,
-    UnaryOp,
+    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Param, Program,
+    Statement, StatementKind, Type, UnaryOp, While,
 };
 
 /// The AST as pseudo-code: one function after the other, blocks indented by 4 spaces
@@ -70,6 +70,7 @@ impl fmt::Display for Type {
             Type::Address(ty) => write!(f, "{ty}&"),
             Type::Array(ty, count) => write!(f, "{ty}[{count}]"),
             Type::Custom(name) => write!(f, "{name}"),
+            Type::Null => write!(f, "null"),
         };
     }
 }
@@ -87,26 +88,26 @@ fn block(f: &mut fmt::Formatter, statements: &[Statement], depth: usize) -> fmt:
 fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Result {
     let indent = "    ".repeat(depth);
     return match &statement.kind {
-        StatementKind::Declare { name, ty } => writeln!(f, "let {name}: {ty}"),
-        StatementKind::Init {
+        StatementKind::Declare(Declare { name, ty }) => writeln!(f, "let {name}: {ty}"),
+        StatementKind::Init(Init {
             name,
             value,
             constant,
-        } => writeln!(f, "{} {name} = {value}", if *constant { "const" } else { "let" }),
-        StatementKind::Assign { target, value } => writeln!(f, "{target} = {value}"),
+        }) => writeln!(f, "{} {name} = {value}", if *constant { "const" } else { "let" }),
+        StatementKind::Assign(Assign { target, value }) => writeln!(f, "{target} = {value}"),
         StatementKind::Return(value) => writeln!(f, "return {value}"),
         StatementKind::Call(call) => writeln!(f, "{call}"),
-        StatementKind::If {
+        StatementKind::If(If {
             condition,
             then,
             otherwise,
-        } => {
+        }) => {
             writeln!(f, "if {condition} {{")?;
             block(f, then, depth + 1)?;
             match otherwise.as_deref() {
                 None => writeln!(f, "{indent}}}"),
                 // `아니면 만약`: `} else if …` instead of a nested block
-                Some([inner]) if matches!(inner.kind, StatementKind::If { .. }) => {
+                Some([inner]) if matches!(inner.kind, StatementKind::If(_)) => {
                     write!(f, "{indent}}} else ")?;
                     line(f, inner, depth)
                 }
@@ -117,18 +118,18 @@ fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Res
                 }
             }
         }
-        StatementKind::While { condition, body } => {
+        StatementKind::While(While { condition, body }) => {
             writeln!(f, "while {condition} {{")?;
             block(f, body, depth + 1)?;
             writeln!(f, "{indent}}}")
         }
-        StatementKind::For {
+        StatementKind::For(For {
             variable,
             ty,
             from,
             until,
             body,
-        } => {
+        }) => {
             match ty {
                 Some(ty) => write!(f, "for {variable}: {ty}")?,
                 None => write!(f, "for {variable}")?,

@@ -108,8 +108,41 @@ impl<'a> Converter<'a> {
                 short: false,
                 unsigned: true,
             }),
-            _ => unimplemented!(),
+            ExprKind::Unary { operand, .. } => self.get_type(operand, scope),
+            ExprKind::Binary { op, left, right } => {
+                let left = self.get_type(left, scope)?;
+                // Checks the names of the right side too
+                self.get_type(right, scope)?;
+                match op {
+                    BinaryOp::Or
+                    | BinaryOp::And
+                    | BinaryOp::Eq
+                    | BinaryOp::NotEq
+                    | BinaryOp::Lt
+                    | BinaryOp::Le
+                    | BinaryOp::Gt
+                    | BinaryOp::Ge => Ok(Type::Bool),
+                    _ => Ok(left),
+                }
+            }
+            ExprKind::Call { verb, args } => self.get_call_type(verb, args, scope, expr.span),
         }
+    }
+
+    /// The return type of the function `verb` that takes `args`, once the arguments are checked
+    fn get_call_type(
+        &self,
+        verb: &str,
+        args: &[Argument],
+        scope: &Scope,
+        span: Span,
+    ) -> Result<Type, ConvertError> {
+        let name: String = verb.to_string();
+        let Some(index) = self.functions.get(&name) else {
+            return Err(ConvertError::new(ConvertErrorKind::NotInteger, span));
+        };
+        let func = &self.program.functions[*index];
+        return Ok(func.return_type.clone().unwrap_or(Type::Null));
     }
 
     /// The variable `name` of `scope`, or else of the blocks around it
@@ -226,11 +259,13 @@ impl<'a> Converter<'a> {
         value: &'a Expr,
         span: Span,
     ) -> Result<(), ConvertError> {
+        self.get_type(value, scope)?;
         Ok(())
     }
 
     /// `… printf해요.`: a call whose result is unused
     fn convert_call(&mut self, scope: &Scope, call: &'a Expr) -> Result<(), ConvertError> {
+        self.get_type(call, scope)?;
         Ok(())
     }
 

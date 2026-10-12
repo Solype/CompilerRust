@@ -1,3 +1,4 @@
+mod converter;
 mod elf;
 mod hangeul;
 mod lexer;
@@ -7,6 +8,7 @@ mod samples;
 use std::fs;
 use std::{env, process};
 
+use converter::converter::Converter;
 use parser::cfg::parser::Parser;
 use parser::cfg::rules::RULES;
 use parser::postparser::postparser::convert_to_ast_tree;
@@ -56,6 +58,11 @@ fn main() -> std::io::Result<()> {
         process::exit(1);
     });
     print!("{ast}");
+    Converter::new(&ast).convert().unwrap_or_else(|err| {
+        let (line, col) = err.span.line_col(&source);
+        eprintln!("{}:{line}:{col}: {err}", args.path);
+        process::exit(1);
+    });
 
     Ok(())
 }

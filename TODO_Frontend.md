@@ -13,6 +13,7 @@ src/
   parser/     preparser/ (découpage des particules, mots classés),
               cfg/ (grammaire, table LR(1), arbre de dérivation),
               postparser/ (arbre -> AST, types de l'AST dans structs.rs)
+  converter/  analyse sémantique de l'AST (étape 2.6)
   codegen/    AST -> Vec<Instruction> (à faire)
   elf/        (existant)
 
@@ -312,6 +313,93 @@ celui de la dernière syllabe PRONONCÉE, et pas seulement sur les noms :
 [ ] Chaîne ("%ld\n"과) : pas de règle, accepter les deux formes
 [ ] (으)로 : 로 après un 받침 ㄹ (결말로), pas 으로 ; aujourd'hui (으)로 ne
     suit qu'un type et aucun ne finit par ㄹ
+
+==================================================
+ÉTAPE 2.6 : CONVERTER, ANALYSE SÉMANTIQUE (src/converter/)
+==================================================
+
+But : vérifier l'AST avant le codegen. Erreurs ConvertError { kind, span }
+(convert_error.rs), affichées fichier:ligne:colonne comme les autres.
+Ordre : noms et portées, puis type de chaque expression (règle appels,
+retours, opérateurs), puis chemins.
+
+--------------------------------------------------
+2.6.1 Fonctions
+--------------------------------------------------
+
+[X] Table des fonctions avant les corps (get_all_functions) : appel d'une
+    fonction définie plus bas permis
+[X] Nom complet : nom$type$type, $... si variadique
+[X] 외부 et main sans mangling (le linker et la libc cherchent le nom seul)
+[X] Erreurs SameSignature (même nom, mêmes types) et SameSymbol (deux 외부 ou
+    main de même nom)
+[ ] Message trompeur : printf() défini sans paramètre et 외부 printf donnent
+    SameSignature au lieu d'un conflit avec le 외부
+[ ] main existe, renvoie 정수, sans paramètre (ou argc / argv)
+
+--------------------------------------------------
+2.6.2 Noms et portées
+--------------------------------------------------
+
+[ ] Pile de portées : une table des variables par bloc
+[ ] Variable déjà déclarée dans le même bloc ; masquage dans un bloc
+    intérieur : à décider
+[ ] Variable utilisée avant sa déclaration ou inconnue (ExprKind::Name,
+    cible d'Assign) ; les fonctions, elles, peuvent être définies après
+[ ] Variable lue après Declare sans valeur (erreur ou warning)
+[ ] Deux paramètres de même nom ; variable locale du nom d'un paramètre
+[ ] For : ty Some = déclare la variable, visible dans le corps seulement ;
+    ty None = la variable doit exister
+[ ] Type::Custom inconnu (pas de déclaration de type : toujours une erreur
+    pour l'instant)
+
+--------------------------------------------------
+2.6.3 Appels
+--------------------------------------------------
+
+[ ] Verbe sans aucune fonction de ce nom
+[ ] Choix de la surcharge : nom complet depuis les types des arguments,
+    puis recherche dans functions ; aucune / plusieurs (conversion implicite)
+    ; variadique : au moins les paramètres fixes
+[ ] Résultat d'une fonction sans retour (return_type None) utilisé dans une
+    expression ou un Init
+[ ] Verbes intégrés : 바꾸다 avec son Argument::ToType, particules selon le
+    rôle attendu
+
+--------------------------------------------------
+2.6.4 Retour
+--------------------------------------------------
+
+[ ] Return dans une fonction sans type de retour
+[ ] Type de la valeur différent de return_type
+[ ] Fonction avec retour dont un chemin n'atteint aucun Return (If sans
+    otherwise...)
+[ ] Code après Return / Break / Continue (warning)
+
+--------------------------------------------------
+2.6.5 Types
+--------------------------------------------------
+
+[ ] Init / Assign : type de la valeur = type de la variable ; fixer les
+    conversions implicites (court <-> long, signé <-> non signé, littéral
+    entier -> 소수)
+[ ] Binaires : arithmétique sur nombres ; Rem, bit à bit, décalages sur
+    entiers ; And / Or sur 논리 ; comparaisons entre deux valeurs du même type
+[ ] Unaires : Neg sur nombre, BitNot sur entier, Not sur 논리
+[ ] Condition d'If / While : 논리
+[ ] For : from, until et variable entiers
+[ ] Littéral qui ne tient pas dans son type (짧은 = 32 bits, négatif dans
+    부호 없는)
+[ ] Null seulement vers une Address
+[ ] Array de taille 0 ; affectation d'un tableau entier
+
+--------------------------------------------------
+2.6.6 Constantes et contrôle
+--------------------------------------------------
+
+[ ] Assign vers un 고정된
+[ ] Assign vers une fonction au lieu d'une variable
+[ ] Break / Continue hors boucle
 
 ==================================================
 ÉTAPE 3 : PREMIÈRE TRANCHE, MAIN QUI REND 42

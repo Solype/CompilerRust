@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fs::TryLockError::Error;
 use std::os::linux::raw::stat;
 
 use crate::lexer::span::Span;
@@ -164,6 +165,7 @@ impl<'a> Converter<'a> {
         while_loop: &'a While,
     ) -> Result<(), ConvertError> {
         let scope = Scope::new(BlockKind::Loop(), Some(parent));
+        let _cond = self.convert_condition(&while_loop.condition, parent)?;
         return self.convert_block(&while_loop.body, &scope);
     }
 
@@ -174,7 +176,15 @@ impl<'a> Converter<'a> {
         declare: &'a Declare,
         span: Span,
     ) -> Result<(), ConvertError> {
-        Ok(())
+        self.declare(
+            scope,
+            &declare.name,
+            Variable {
+                ty: declare.ty.clone(),
+                constant: false,
+            },
+            span,
+        )
     }
 
     /// `결과는 0이에요.`: adds the variable to `scope`
@@ -184,7 +194,15 @@ impl<'a> Converter<'a> {
         init: &'a Init,
         span: Span,
     ) -> Result<(), ConvertError> {
-        Ok(())
+        self.declare(
+            scope,
+            &init.name,
+            Variable {
+                ty: self.get_type(&init.value, scope)?,
+                constant: init.constant,
+            },
+            span,
+        )
     }
 
     /// `… 결과에 넣어요.`
@@ -194,6 +212,10 @@ impl<'a> Converter<'a> {
         assign: &'a Assign,
         span: Span,
     ) -> Result<(), ConvertError> {
+        let Some(_) = self.find_variable(scope, &assign.target) else {
+            let kind = ConvertErrorKind::UnknownVariable(assign.target.clone());
+            return Err(ConvertError::new(kind, span));
+        };
         Ok(())
     }
 
@@ -214,6 +236,7 @@ impl<'a> Converter<'a> {
 
     /// `만약 … { … } 아니면 { … }`
     fn convert_if(&mut self, parent: &Scope, if_statement: &'a If) -> Result<(), ConvertError> {
+        let _cond = self.convert_condition(&if_statement.condition, parent)?;
         return self.convert_block(&if_statement.then, parent);
     }
 

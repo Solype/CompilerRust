@@ -13,6 +13,8 @@ pub enum ConvertErrorKind {
     AlreadyDeclared(String),
     /// A name that is no variable of the blocks around it
     UnknownVariable(String),
+    /// No function of this verb takes arguments of these types
+    UnknownFunction { verb: String, types: String },
     /// `넣어요` or `세면서` on a `고정된` variable
     AssignToConstant(String),
     /// `반환해요` in a function without `TYPE을 반환하는`
@@ -54,6 +56,9 @@ impl fmt::Display for ConvertErrorKind {
             ),
             Self::AlreadyDeclared(name) => write!(f, "'{name}' is already declared in this block"),
             Self::UnknownVariable(name) => write!(f, "'{name}' is not a variable declared here"),
+            Self::UnknownFunction { verb, types } => {
+                write!(f, "no function '{verb}' takes the arguments ({types})")
+            }
             Self::AssignToConstant(name) => {
                 write!(f, "'{name}' is 고정된: its value cannot change")
             }

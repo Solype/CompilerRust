@@ -30,6 +30,7 @@ pub struct Param {
     pub span: Span,
 }
 
+#[derive(Clone)]
 pub enum Type {
     /// 정수: 64 bits; `짧은 정수`: 32 bits; `부호 없는 정수`: unsigned
     Int {
@@ -51,6 +52,8 @@ pub enum Type {
     /// `TYPE N개`: N values of TYPE
     Array(Box<Type>, usize),
     Custom(String),
+    /// The type of `빈 주소`: fits any `Address`
+    Null,
 }
 
 /// A statement and its source, from its first token to its `.`
@@ -60,45 +63,63 @@ pub struct Statement {
 }
 
 pub enum StatementKind {
-    /// `수는 정수예요.`: a variable without a value yet
-    Declare { name: String, ty: Type },
-    /// `결과는 0이에요.`, `고정된 끝은 10이에요.`, `합은 3과 4를 더한 값이에요.`
-    Init {
-        name: String,
-        value: Expr,
-        /// `고정된`
-        constant: bool,
-    },
-    /// A chain ending with `넣어요`: `3과 4를 더해서 결과에 넣어요.`
-    Assign { target: String, value: Expr },
+    Declare(Declare),
+    Init(Init),
+    Assign(Assign),
     /// A chain ending with `반환해요`: `(가 + 나)를 반환해요.`
     Return(Expr),
     /// A chain ending with any other verb, its result unused: `"%ld\n"과 결과를 printf해요.`
     Call(Expr),
-    /// `만약 COND면 { … } 아니면 { … }`; `아니면 만약` is an `If` alone in `otherwise`
-    If {
-        condition: Expr,
-        then: Vec<Statement>,
-        otherwise: Option<Vec<Statement>>,
-    },
-    /// `COND인 동안 { … }`; `COND이 아닌 동안` has its condition negated
-    While {
-        condition: Expr,
-        body: Vec<Statement>,
-    },
-    /// `수를 1부터 끝까지 세면서 { … }`: from `from` included to `until` excluded
-    For {
-        variable: String,
-        /// `정수 수를 …`: the variable is declared by the loop
-        ty: Option<Type>,
-        from: Expr,
-        until: Expr,
-        body: Vec<Statement>,
-    },
+    If(If),
+    While(While),
+    For(For),
     /// 그만해요
     Break,
     /// 넘어가요
     Continue,
+}
+
+/// `수는 정수예요.`: a variable without a value yet
+pub struct Declare {
+    pub name: String,
+    pub ty: Type,
+}
+
+/// `결과는 0이에요.`, `고정된 끝은 10이에요.`, `합은 3과 4를 더한 값이에요.`
+pub struct Init {
+    pub name: String,
+    pub value: Expr,
+    /// `고정된`
+    pub constant: bool,
+}
+
+/// A chain ending with `넣어요`: `3과 4를 더해서 결과에 넣어요.`
+pub struct Assign {
+    pub target: String,
+    pub value: Expr,
+}
+
+/// `만약 COND면 { … } 아니면 { … }`; `아니면 만약` is an `If` alone in `otherwise`
+pub struct If {
+    pub condition: Expr,
+    pub then: Vec<Statement>,
+    pub otherwise: Option<Vec<Statement>>,
+}
+
+/// `COND인 동안 { … }`; `COND이 아닌 동안` has its condition negated
+pub struct While {
+    pub condition: Expr,
+    pub body: Vec<Statement>,
+}
+
+/// `수를 1부터 끝까지 세면서 { … }`: from `from` included to `until` excluded
+pub struct For {
+    pub variable: String,
+    /// `정수 수를 …`: the variable is declared by the loop
+    pub ty: Option<Type>,
+    pub from: Expr,
+    pub until: Expr,
+    pub body: Vec<Statement>,
 }
 
 /// An expression and its source: `(가 + 나)` with its parentheses, a call from the first argument

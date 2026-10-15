@@ -1,0 +1,7 @@
+// Converter : 가 est déclaré deux fois dans le même bloc.
+
+정수를 반환하는 main() {
+    가는 1이에요.
+    가는 2이에요.
+    가를 반환해요.
+}

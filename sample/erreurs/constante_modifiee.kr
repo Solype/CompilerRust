@@ -1,0 +1,7 @@
+// Converter : 끝 est 고정된, 넣어요 ne peut pas changer sa valeur.
+
+정수를 반환하는 main() {
+    고정된 끝은 10이에요.
+    끝에 20을 넣어요.
+    끝을 반환해요.
+}

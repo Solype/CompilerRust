@@ -1,0 +1,9 @@
+// Converter : la condition du 만약 est un 정수, pas un 논리.
+
+정수를 반환하는 main() {
+    가는 1이에요.
+    만약 가면 {
+        0을 반환해요.
+    }
+    1을 반환해요.
+}

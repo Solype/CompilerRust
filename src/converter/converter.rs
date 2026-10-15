@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
     Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Program,
-    Statement, StatementKind, Type, While,
+    Statement, StatementKind, Type, UnaryOp, While,
 };
 
 use super::convert_error::{type_name, ConvertError, ConvertErrorKind};
@@ -121,11 +121,51 @@ impl<'a> Converter<'a> {
                 short: false,
                 unsigned: true,
             }),
-            ExprKind::Unary { operand, .. } => self.get_type(operand, scope),
+            ExprKind::Unary { op, operand } => {
+                let ty = self.get_type(operand, scope)?;
+                let accepted = match op {
+                    UnaryOp::Neg => is_number(&ty),
+                    UnaryOp::BitNot => matches!(ty, Type::Int { .. }),
+                    UnaryOp::Not => ty == Type::Bool,
+                };
+                if !accepted {
+                    return Err(operands_error(unary_name(op), &[&ty], expr.span));
+                }
+                Ok(ty)
+            }
             ExprKind::Binary { op, left, right } => {
-                let left = self.get_type(left, scope)?;
-                // Checks the names of the right side too
-                self.get_type(right, scope)?;
+                let left_ty = self.get_type(left, scope)?;
+                let right_ty = self.get_type(right, scope)?;
+                // A literal takes the type of the other side: `작은 + 1` is a 짧은 정수
+                let ty = if fits(right, &right_ty, &left_ty) {
+                    Some(&left_ty)
+                } else if fits(left, &left_ty, &right_ty) {
+                    Some(&right_ty)
+                } else {
+                    None
+                };
+                let accepted = ty.filter(|ty| match op {
+                    BinaryOp::Or | BinaryOp::And => **ty == Type::Bool,
+                    BinaryOp::Eq | BinaryOp::NotEq => true,
+                    BinaryOp::Lt
+                    | BinaryOp::Le
+                    | BinaryOp::Gt
+                    | BinaryOp::Ge
+                    | BinaryOp::Add
+                    | BinaryOp::Sub
+                    | BinaryOp::Mul
+                    | BinaryOp::Div => is_number(ty),
+                    BinaryOp::BitOr
+                    | BinaryOp::BitXor
+                    | BinaryOp::BitAnd
+                    | BinaryOp::Shl
+                    | BinaryOp::Shr
+                    | BinaryOp::Rem => matches!(ty, Type::Int { .. }),
+                });
+                let Some(ty) = accepted else {
+                    let types = [&left_ty, &right_ty];
+                    return Err(operands_error(binary_name(op), &types, expr.span));
+                };
                 match op {
                     BinaryOp::Or
                     | BinaryOp::And
@@ -135,7 +175,7 @@ impl<'a> Converter<'a> {
                     | BinaryOp::Le
                     | BinaryOp::Gt
                     | BinaryOp::Ge => Ok(Type::Bool),
-                    _ => Ok(left),
+                    _ => Ok(ty.clone()),
                 }
             }
             ExprKind::Call { verb, args } => self.get_call_type(verb, args, scope, expr.span),
@@ -151,13 +191,19 @@ impl<'a> Converter<'a> {
         span: Span,
     ) -> Result<Type, ConvertError> {
         let mut types = Vec::new();
+        // The expression of each argument, `None` for a `정수로`
+        let mut values = Vec::new();
         for arg in args {
             match arg {
                 Argument::Value { value, .. } | Argument::Previous(value) => {
-                    types.push(self.get_type(value, scope)?)
+                    types.push(self.get_type(value, scope)?);
+                    values.push(Some(value));
                 }
                 // `정수로`: the target type of 바꾸다
-                Argument::ToType(ty) => types.push(ty.clone()),
+                Argument::ToType(ty) => {
+                    types.push(ty.clone());
+                    values.push(None);
+                }
             }
         }
         // `바꾸다`: built in, gives its value as the type of its `로` argument
@@ -188,21 +234,51 @@ impl<'a> Converter<'a> {
                     .filter(&mangled)
             })
         };
-        let Some(index) = by_name
+        let types_names = || types.iter().map(type_name).collect::<Vec<_>>().join(", ");
+        let exact = by_name
             .or_else(|| self.functions.get(&fullname).filter(&mangled))
-            .or_else(variadic)
-        else {
-            let kind = ConvertErrorKind::UnknownFunction {
-                verb: verb.to_string(),
-                types: types
+            .or_else(variadic);
+        let func = match exact {
+            Some(index) => &self.program.functions[*index],
+            // `작은과 1을 더해요`: the functions whose parameters take the literals
+            None => {
+                let candidates: Vec<&Function> = self
+                    .program
+                    .functions
                     .iter()
-                    .map(type_name)
-                    .collect::<Vec<_>>()
-                    .join(", "),
-            };
-            return Err(ConvertError::new(kind, span));
+                    .filter(|func| func.name == verb && func.body.is_some() && func.name != "main")
+                    .filter(|func| {
+                        func.params.len() == types.len()
+                            || (func.variadic && types.len() > func.params.len())
+                    })
+                    .filter(|func| {
+                        func.params.iter().zip(values.iter().zip(&types)).all(
+                            |(param, (value, ty))| match value {
+                                Some(value) => fits(value, ty, &param.ty),
+                                None => *ty == param.ty,
+                            },
+                        )
+                    })
+                    .collect();
+                match candidates[..] {
+                    [func] => func,
+                    [] => {
+                        let kind = ConvertErrorKind::UnknownFunction {
+                            verb: verb.to_string(),
+                            types: types_names(),
+                        };
+                        return Err(ConvertError::new(kind, span));
+                    }
+                    _ => {
+                        let kind = ConvertErrorKind::AmbiguousCall {
+                            verb: verb.to_string(),
+                            types: types_names(),
+                        };
+                        return Err(ConvertError::new(kind, span));
+                    }
+                }
+            }
         };
-        let func = &self.program.functions[*index];
         return Ok(func.return_type.clone().unwrap_or(Type::Null));
     }
 
@@ -284,7 +360,7 @@ impl<'a> Converter<'a> {
             return Err(ConvertError::new(ConvertErrorKind::NotInteger, span));
         }
         for bound in [&for_loop.from, &for_loop.until] {
-            if self.get_type(bound, parent)? != ty {
+            if !fits(bound, &self.get_type(bound, parent)?, &ty) {
                 return Err(ConvertError::new(ConvertErrorKind::NotInteger, bound.span));
             }
         }
@@ -353,7 +429,7 @@ impl<'a> Converter<'a> {
             return Err(ConvertError::new(kind, span));
         }
         let assign_value_ty = self.get_type(&assign.value, scope)?;
-        if var.ty != assign_value_ty {
+        if !fits(&assign.value, &assign_value_ty, &var.ty) {
             let kind = ConvertErrorKind::WrongAssignType {
                 name: assign.target.clone(),
                 expected: type_name(&var.ty),
@@ -379,7 +455,7 @@ impl<'a> Converter<'a> {
             });
         };
         let decl_ret_ty = fnc.return_type.clone().unwrap_or(Type::Null);
-        if decl_ret_ty != ret_ty {
+        if !fits(value, &ret_ty, &decl_ret_ty) {
             let kind = match &fnc.return_type {
                 None => ConvertErrorKind::ReturnWithoutType(fnc.name.clone()),
                 Some(_) => ConvertErrorKind::WrongReturnType {
@@ -489,4 +565,61 @@ impl<'a> Converter<'a> {
         // for func in self.program.functions.iter() {}
         Ok(())
     }
+}
+
+/// Whether `expr`, of type `ty`, goes where `expected` goes: the same type, or a literal that
+/// takes the expected type (`0` for a 짧은 정수, `1.5` for a 짧은 소수, `빈 주소` for any 주소)
+fn fits(expr: &Expr, ty: &Type, expected: &Type) -> bool {
+    if ty == expected {
+        return true;
+    }
+    return match (ty, expected) {
+        (Type::Int { .. }, Type::Int { .. }) | (Type::Float { .. }, Type::Float { .. }) => {
+            is_literal(expr)
+        }
+        (Type::Null, Type::Address(_)) => matches!(expr.kind, ExprKind::Null),
+        _ => false,
+    };
+}
+
+/// A number written in the source, maybe with `-` or computed from other literals: `(1 + 2)`
+fn is_literal(expr: &Expr) -> bool {
+    return match &expr.kind {
+        ExprKind::Int(_) | ExprKind::Float(_) => true,
+        ExprKind::Unary { operand, .. } => is_literal(operand),
+        ExprKind::Binary { left, right, .. } => is_literal(left) && is_literal(right),
+        _ => false,
+    };
+}
+
+fn is_number(ty: &Type) -> bool {
+    return matches!(ty, Type::Int { .. } | Type::Float { .. });
+}
+
+/// `op` cannot take operands of `types`
+fn operands_error(op: String, types: &[&Type], span: Span) -> ConvertError {
+    let types = types
+        .iter()
+        .map(|ty| type_name(ty))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let kind = ConvertErrorKind::WrongOperands { op, types };
+    return ConvertError::new(kind, span);
+}
+
+/// `op` as the source writes it: `아닌` for the negation of a condition
+fn unary_name(op: &UnaryOp) -> String {
+    return match op {
+        UnaryOp::Not => "아닌".to_string(),
+        _ => op.to_string(),
+    };
+}
+
+/// `op` as the source writes it: `또는` and `그리고` for the conditions
+fn binary_name(op: &BinaryOp) -> String {
+    return match op {
+        BinaryOp::Or => "또는".to_string(),
+        BinaryOp::And => "그리고".to_string(),
+        _ => op.to_string(),
+    };
 }

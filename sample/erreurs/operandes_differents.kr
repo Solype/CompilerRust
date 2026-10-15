@@ -1,0 +1,6 @@
+// Converter : + additionne deux nombres du même type, pas un 정수 et un 논리.
+
+정수를 반환하는 main() {
+    가는 1이에요.
+    (가 + 참)을 반환해요.
+}

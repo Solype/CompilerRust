@@ -1,0 +1,9 @@
+// Converter : 넘어가요 dans un 만약, mais hors de toute boucle.
+
+정수를 반환하는 main() {
+    가는 1이에요.
+    만약 가 > 0이면 {
+        넘어가요.
+    }
+    0을 반환해요.
+}

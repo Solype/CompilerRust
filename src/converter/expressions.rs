@@ -108,8 +108,41 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         span: Span,
     ) -> Result<Option<Type>, ConvertError> {
+        let (types, values) = self.get_argument_types(args, scope)?;
+        if let Some(ty) = cast_type(verb, args) {
+            return Ok(Some(ty));
+        }
+        if let Some(func) = self.find_exact_function(verb, &types) {
+            return Ok(func.return_type.clone());
+        }
+        let types_names = || types.iter().map(type_name).collect::<Vec<_>>().join(", ");
+        match self.find_functions_by_literals(verb, &types, &values)[..] {
+            [func] => Ok(func.return_type.clone()),
+            [] => {
+                let kind = ConvertErrorKind::UnknownFunction {
+                    verb: verb.to_string(),
+                    types: types_names(),
+                };
+                Err(ConvertError::new(kind, span))
+            }
+            _ => {
+                let kind = ConvertErrorKind::AmbiguousCall {
+                    verb: verb.to_string(),
+                    types: types_names(),
+                };
+                Err(ConvertError::new(kind, span))
+            }
+        }
+    }
+
+    /// The type of each argument, once its names are checked, and its expression: `None` for a
+    /// `정수로`
+    fn get_argument_types<'e>(
+        &self,
+        args: &'e [Argument],
+        scope: &Scope,
+    ) -> Result<(Vec<Type>, Vec<Option<&'e Expr>>), ConvertError> {
         let mut types = Vec::new();
-        // The expression of each argument, `None` for a `정수로`
         let mut values = Vec::new();
         for arg in args {
             match arg {
@@ -124,26 +157,21 @@ impl<'a> Converter<'a> {
                 }
             }
         }
-        // `바꾸다`: built in, gives its value as the type of its `로` argument
-        if verb == "바꾸다" {
-            if let Some(Argument::ToType(ty)) =
-                args.iter().find(|arg| matches!(arg, Argument::ToType(_)))
-            {
-                return Ok(Some(ty.clone()));
-            }
-        }
+        Ok((types, values))
+    }
+
+    /// The function `verb` whose parameters have exactly `types`
+    fn find_exact_function(&self, verb: &str, types: &[Type]) -> Option<&'a Function> {
+        let functions = &self.program.functions;
         let suffixes: Vec<String> = types.iter().map(|ty| format!("${ty}")).collect();
         let fullname = verb.to_string() + &suffixes.concat();
         // `외부` and `main`: their name alone, any arguments their parameters accept
-        let by_name = self.functions.get(verb).filter(|index| {
-            let func = &self.program.functions[**index];
-            func.params.len() == types.len() || (func.variadic && types.len() > func.params.len())
-        });
+        let by_name = self
+            .functions
+            .get(verb)
+            .filter(|index| takes_count(&functions[**index], types.len()));
         // The others: `printf` without arguments must not find the `외부` printf
-        let mangled = |index: &&usize| {
-            let func = &self.program.functions[**index];
-            func.body.is_some() && func.name != "main"
-        };
+        let mangled = |index: &&usize| is_mangled(&functions[**index]);
         // Variadic: the types of the first arguments, then `$...`
         let variadic = || {
             (0..=types.len()).rev().find_map(|count| {
@@ -152,53 +180,57 @@ impl<'a> Converter<'a> {
                     .filter(&mangled)
             })
         };
-        let types_names = || types.iter().map(type_name).collect::<Vec<_>>().join(", ");
-        let exact = by_name
+        by_name
             .or_else(|| self.functions.get(&fullname).filter(&mangled))
-            .or_else(variadic);
-        let func = match exact {
-            Some(index) => &self.program.functions[*index],
-            // `작은과 1을 더해요`: the functions whose parameters take the literals
-            None => {
-                let candidates: Vec<&Function> = self
-                    .program
-                    .functions
-                    .iter()
-                    .filter(|func| func.name == verb && func.body.is_some() && func.name != "main")
-                    .filter(|func| {
-                        func.params.len() == types.len()
-                            || (func.variadic && types.len() > func.params.len())
-                    })
-                    .filter(|func| {
-                        func.params.iter().zip(values.iter().zip(&types)).all(
-                            |(param, (value, ty))| match value {
-                                Some(value) => fits(value, ty, &param.ty),
-                                None => *ty == param.ty,
-                            },
-                        )
-                    })
-                    .collect();
-                match candidates[..] {
-                    [func] => func,
-                    [] => {
-                        let kind = ConvertErrorKind::UnknownFunction {
-                            verb: verb.to_string(),
-                            types: types_names(),
-                        };
-                        return Err(ConvertError::new(kind, span));
-                    }
-                    _ => {
-                        let kind = ConvertErrorKind::AmbiguousCall {
-                            verb: verb.to_string(),
-                            types: types_names(),
-                        };
-                        return Err(ConvertError::new(kind, span));
-                    }
-                }
-            }
-        };
-        return Ok(func.return_type.clone());
+            .or_else(variadic)
+            .map(|index| &functions[*index])
     }
+
+    /// `작은과 1을 더해요`: the functions `verb` whose parameters take the arguments of `types`,
+    /// their literals with the type of the parameter
+    fn find_functions_by_literals(
+        &self,
+        verb: &str,
+        types: &[Type],
+        values: &[Option<&Expr>],
+    ) -> Vec<&'a Function> {
+        let takes_args = |func: &Function| {
+            func.params
+                .iter()
+                .zip(values.iter().zip(types))
+                .all(|(param, (value, ty))| match value {
+                    Some(value) => fits(value, ty, &param.ty),
+                    None => *ty == param.ty,
+                })
+        };
+        self.program
+            .functions
+            .iter()
+            .filter(|func| func.name == verb && is_mangled(func))
+            .filter(|func| takes_count(func, types.len()) && takes_args(func))
+            .collect()
+    }
+}
+
+/// `바꾸다`: built in, gives its value as the type of its `로` argument
+fn cast_type(verb: &str, args: &[Argument]) -> Option<Type> {
+    if verb != "바꾸다" {
+        return None;
+    }
+    return args.iter().find_map(|arg| match arg {
+        Argument::ToType(ty) => Some(ty.clone()),
+        _ => None,
+    });
+}
+
+/// Whether `func` takes `count` arguments: as many as its parameters, or more when variadic
+fn takes_count(func: &Function, count: usize) -> bool {
+    return func.params.len() == count || (func.variadic && count > func.params.len());
+}
+
+/// Whether the symbol of `func` has the types of its parameters: neither `외부` nor `main`
+fn is_mangled(func: &Function) -> bool {
+    return func.body.is_some() && func.name != "main";
 }
 
 /// `op` cannot take operands of `types`

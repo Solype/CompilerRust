@@ -20,6 +20,14 @@ pub enum ConvertErrorKind {
     AssignToConstant(String),
     /// `반환해요` in a function without `TYPE을 반환하는`
     ReturnWithoutType(String),
+    /// The result of a function without `TYPE을 반환하는` used as a value
+    NoValue(String),
+    /// A function with `TYPE을 반환하는` that can end without `반환해요`
+    MissingReturn(String),
+    /// No `main` in the program
+    NoMain,
+    /// `main` does not return a 정수
+    MainNotInteger,
     /// `반환해요` of a value whose type is not the `TYPE을 반환하는` of its function
     WrongReturnType { expected: String, found: String },
     /// `넣어요` of a value whose type is not the type of its variable
@@ -79,6 +87,14 @@ impl fmt::Display for ConvertErrorKind {
                 f,
                 "'{name}' returns nothing: write TYPE을 반환하는 to return a value"
             ),
+            Self::NoValue(verb) => {
+                write!(f, "'{verb}' returns nothing: its result cannot be used")
+            }
+            Self::MissingReturn(name) => {
+                write!(f, "'{name}' can end without 반환해요: every path must return a value")
+            }
+            Self::NoMain => write!(f, "the program has no main"),
+            Self::MainNotInteger => write!(f, "main must return a 정수: write 정수를 반환하는 main"),
             Self::WrongReturnType { expected, found } => {
                 write!(f, "this function returns {expected}, not {found}")
             }

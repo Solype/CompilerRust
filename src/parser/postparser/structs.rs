@@ -30,7 +30,7 @@ pub struct Param {
     pub span: Span,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Type {
     /// 정수: 64 bits; `짧은 정수`: 32 bits; `부호 없는 정수`: unsigned
     Int {

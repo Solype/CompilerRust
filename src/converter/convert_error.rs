@@ -19,6 +19,8 @@ pub enum ConvertErrorKind {
     AssignToConstant(String),
     /// `반환해요` in a function without `TYPE을 반환하는`
     ReturnWithoutType(String),
+    /// `반환해요` of a value whose type is not the `TYPE을 반환하는` of its function
+    WrongReturnType { expected: String, found: String },
     /// The condition of `만약` or `동안` is not a 논리
     NotBool,
     /// A bound or the variable of `세면서` is not a 정수
@@ -66,6 +68,9 @@ impl fmt::Display for ConvertErrorKind {
                 f,
                 "'{name}' returns nothing: write TYPE을 반환하는 to return a value"
             ),
+            Self::WrongReturnType { expected, found } => {
+                write!(f, "this function returns {expected}, not {found}")
+            }
             Self::NotBool => write!(f, "a condition must be a 논리"),
             Self::NotInteger => write!(f, "the bounds and the variable of 세면서 must be 정수"),
             Self::BreakOutOfLoop => write!(f, "그만해요 can only be used in a loop"),

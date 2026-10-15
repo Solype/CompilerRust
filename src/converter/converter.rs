@@ -7,6 +7,7 @@ use crate::parser::postparser::structs::{
     Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Param, Program,
     Statement, StatementKind, Type, UnaryOp, While,
 };
+use crate::samples::helpers::ret;
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
 
@@ -16,21 +17,23 @@ struct Variable {
     constant: bool,
 }
 
-enum BlockKind {
+enum BlockKind<'p> {
     Loop(),
     Block,
+    /// The body of a function: its name, its parameters and its return type
+    Function(&'p Function),
 }
 
 /// The variables declared in one block, inside the scope of the block around it
 struct Scope<'p> {
     variables: BTreeMap<String, Variable>,
-    kind: BlockKind,
+    kind: BlockKind<'p>,
     /// The block around this one; `None` for the body of a function
     parent: Option<&'p Scope<'p>>,
 }
 
 impl<'p> Scope<'p> {
-    fn new(kind: BlockKind, parent: Option<&'p Scope<'p>>) -> Self {
+    fn new(kind: BlockKind<'p>, parent: Option<&'p Scope<'p>>) -> Self {
         Self {
             variables: BTreeMap::new(),
             kind,
@@ -193,6 +196,15 @@ impl<'a> Converter<'a> {
         return Ok(func.return_type.clone().unwrap_or(Type::Null));
     }
 
+    fn find_scope_function<'s>(&self, scope: &'s Scope) -> Option<&'s Function> {
+        match scope.kind {
+            BlockKind::Block | BlockKind::Loop() => {
+                scope.parent.and_then(|p| self.find_scope_function(p))
+            }
+            BlockKind::Function(f) => Some(f),
+        }
+    }
+
     /// The variable `name` of `scope`, or else of the blocks around it
     fn find_variable<'s>(&self, scope: &'s Scope, name: &str) -> Option<&'s Variable> {
         match scope.variables.get(name) {
@@ -293,21 +305,42 @@ impl<'a> Converter<'a> {
         assign: &'a Assign,
         span: Span,
     ) -> Result<(), ConvertError> {
-        let Some(_) = self.find_variable(scope, &assign.target) else {
+        let Some(var) = self.find_variable(scope, &assign.target) else {
             let kind = ConvertErrorKind::UnknownVariable(assign.target.clone());
             return Err(ConvertError::new(kind, span));
         };
+        if var.constant {
+            let kind = ConvertErrorKind::AssignToConstant(assign.target.clone());
+            return Err(ConvertError::new(kind, span));
+        }
         Ok(())
     }
 
     /// `… 반환해요.`
-    fn convert_return(
+    fn convert_return<'s>(
         &mut self,
-        scope: &Scope,
+        scope: &'s Scope,
         value: &'a Expr,
         span: Span,
     ) -> Result<(), ConvertError> {
-        self.get_type(value, scope)?;
+        let ret_ty = self.get_type(value, scope)?;
+        let Some(fnc) = self.find_scope_function(scope) else {
+            return Err(ConvertError {
+                kind: ConvertErrorKind::ReturnWithoutType("".to_string()),
+                span,
+            });
+        };
+        let decl_ret_ty = fnc.return_type.clone().unwrap_or(Type::Null);
+        if decl_ret_ty != ret_ty {
+            let kind = match &fnc.return_type {
+                None => ConvertErrorKind::ReturnWithoutType(fnc.name.clone()),
+                Some(_) => ConvertErrorKind::WrongReturnType {
+                    expected: decl_ret_ty.to_string(),
+                    found: ret_ty.to_string(),
+                },
+            };
+            return Err(ConvertError { kind, span });
+        }
         Ok(())
     }
 
@@ -370,7 +403,7 @@ impl<'a> Converter<'a> {
         let Some(statements) = &func.body else {
             return Ok(());
         };
-        let mut scope = Scope::new(BlockKind::Block, None);
+        let mut scope = Scope::new(BlockKind::Function(func), None);
         for param in &func.params {
             if scope.variables.contains_key(&param.name) {
                 let kind = ConvertErrorKind::AlreadyDeclared(param.name.clone());

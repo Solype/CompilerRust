@@ -1,0 +1,12 @@
+// Converter : 수 n'existe que dans le bloc du 만약, 세면서 ne le trouve pas.
+
+정수를 반환하는 main() {
+    가는 1이에요.
+    만약 가 > 0이면 {
+        수는 0이에요.
+    }
+    수를 1부터 10까지 세면서 {
+        넘어가요.
+    }
+    0을 반환해요.
+}

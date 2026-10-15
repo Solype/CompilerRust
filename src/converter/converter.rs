@@ -1,14 +1,12 @@
 use std::collections::BTreeMap;
-use std::fs::TryLockError::Error;
-use std::os::linux::raw::stat;
 
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
-    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Param, Program,
-    Statement, StatementKind, Type, UnaryOp, While,
+    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Program,
+    Statement, StatementKind, Type, While,
 };
 
-use super::convert_error::{ConvertError, ConvertErrorKind};
+use super::convert_error::{type_name, ConvertError, ConvertErrorKind};
 
 struct Variable {
     ty: Type,
@@ -50,13 +48,16 @@ impl<'p> Scope<'p> {
             parent,
         }
     }
+
+    /// Whether this block or a block around it is a loop
+    fn in_loop(&self) -> bool {
+        self.kind == BlockKind::Loop() || self.parent.is_some_and(|parent| parent.in_loop())
+    }
 }
 
 pub struct Converter<'a> {
     program: &'a Program,
     functions: BTreeMap<String, usize>,
-    /// The number of loops around the statement being checked
-    loops: usize,
 }
 
 impl<'a> Converter<'a> {
@@ -64,7 +65,6 @@ impl<'a> Converter<'a> {
         Self {
             program,
             functions: BTreeMap::new(),
-            loops: 0,
         }
     }
 
@@ -196,7 +196,7 @@ impl<'a> Converter<'a> {
                 verb: verb.to_string(),
                 types: types
                     .iter()
-                    .map(Type::to_string)
+                    .map(type_name)
                     .collect::<Vec<_>>()
                     .join(", "),
             };
@@ -249,29 +249,45 @@ impl<'a> Converter<'a> {
         }
     }
 
-    fn convert_for_loop(&mut self, parent: &Scope, for_loop: &'a For) -> Result<(), ConvertError> {
+    /// `수를 1부터 끝까지 세면서 { … }`: the variable and the bounds are the same 정수 type
+    fn convert_for_loop(
+        &mut self,
+        parent: &Scope,
+        for_loop: &'a For,
+        span: Span,
+    ) -> Result<(), ConvertError> {
         let mut scope = Scope::new(BlockKind::Loop(), Some(parent));
-        let ty = self.get_type(&for_loop.from, &scope)?;
-        let until_ty = self.get_type(&for_loop.until, &scope)?;
+        let ty = match &for_loop.ty {
+            // `정수 수를 …`: declared by the loop, in its own scope
+            Some(ty) => {
+                let variable = Variable {
+                    ty: ty.clone(),
+                    constant: false,
+                };
+                scope.variables.insert(for_loop.variable.clone(), variable);
+                ty.clone()
+            }
+            // `수를 …`: a variable of the blocks around, that the loop changes
+            None => {
+                let Some(var) = self.find_variable(parent, &for_loop.variable) else {
+                    let kind = ConvertErrorKind::UnknownVariable(for_loop.variable.clone());
+                    return Err(ConvertError::new(kind, span));
+                };
+                if var.constant {
+                    let kind = ConvertErrorKind::AssignToConstant(for_loop.variable.clone());
+                    return Err(ConvertError::new(kind, span));
+                }
+                var.ty.clone()
+            }
+        };
         if !matches!(ty, Type::Int { .. }) {
-            return Err(ConvertError::new(
-                ConvertErrorKind::NotInteger,
-                for_loop.from.span,
-            ));
+            return Err(ConvertError::new(ConvertErrorKind::NotInteger, span));
         }
-        if ty != until_ty {
-            return Err(ConvertError::new(
-                ConvertErrorKind::NotInteger,
-                for_loop.until.span,
-            ));
+        for bound in [&for_loop.from, &for_loop.until] {
+            if self.get_type(bound, parent)? != ty {
+                return Err(ConvertError::new(ConvertErrorKind::NotInteger, bound.span));
+            }
         }
-        scope.variables.insert(
-            for_loop.variable.clone(),
-            Variable {
-                ty,
-                constant: false,
-            },
-        );
         return self.convert_block(&for_loop.body, &scope);
     }
 
@@ -340,8 +356,8 @@ impl<'a> Converter<'a> {
         if var.ty != assign_value_ty {
             let kind = ConvertErrorKind::WrongAssignType {
                 name: assign.target.clone(),
-                expected: var.ty.to_string(),
-                found: assign_value_ty.to_string(),
+                expected: type_name(&var.ty),
+                found: type_name(&assign_value_ty),
             };
             return Err(ConvertError::new(kind, span));
         }
@@ -367,8 +383,8 @@ impl<'a> Converter<'a> {
             let kind = match &fnc.return_type {
                 None => ConvertErrorKind::ReturnWithoutType(fnc.name.clone()),
                 Some(_) => ConvertErrorKind::WrongReturnType {
-                    expected: decl_ret_ty.to_string(),
-                    found: ret_ty.to_string(),
+                    expected: type_name(&decl_ret_ty),
+                    found: type_name(&ret_ty),
                 },
             };
             return Err(ConvertError { kind, span });
@@ -394,24 +410,16 @@ impl<'a> Converter<'a> {
 
     /// `그만해요`
     fn convert_break(&self, scope: &Scope, span: Span) -> Result<(), ConvertError> {
-        let mut c_scope = scope;
-        while c_scope.parent.is_some() {
-            if c_scope.kind == BlockKind::Loop() {
-                return Ok(());
-            }
-            c_scope = c_scope.parent.unwrap();
+        if scope.in_loop() {
+            return Ok(());
         }
         return Err(ConvertError::new(ConvertErrorKind::BreakOutOfLoop, span));
     }
 
     /// `넘어가요`
     fn convert_continue(&self, scope: &Scope, span: Span) -> Result<(), ConvertError> {
-        let mut c_scope = scope;
-        while c_scope.parent.is_some() {
-            if c_scope.kind == BlockKind::Loop() {
-                return Ok(());
-            }
-            c_scope = c_scope.parent.unwrap();
+        if scope.in_loop() {
+            return Ok(());
         }
         return Err(ConvertError::new(ConvertErrorKind::ContinueOutOfLoop, span));
     }
@@ -439,7 +447,9 @@ impl<'a> Converter<'a> {
                 StatementKind::While(while_loop) => {
                     self.convert_while_loop(&new_scope, while_loop)?
                 }
-                StatementKind::For(for_loop) => self.convert_for_loop(&new_scope, for_loop)?,
+                StatementKind::For(for_loop) => {
+                    self.convert_for_loop(&new_scope, for_loop, statement.span)?
+                }
                 StatementKind::Break => self.convert_break(&new_scope, statement.span)?,
                 StatementKind::Continue => self.convert_continue(&new_scope, statement.span)?,
             }

@@ -39,6 +39,10 @@ pub enum ConvertErrorKind {
     WrongOperands { op: String, types: String },
     /// Several functions of this verb take these arguments, through their literals
     AmbiguousCall { verb: String, types: String },
+    /// A literal whose value does not fit in the type it goes in: `-1` for a 부호 없는 정수
+    LiteralOutOfRange(String),
+    /// `바꾸다` between types it cannot convert: a 문자 주소 to a 소수
+    InvalidCast { from: String, to: String },
     /// The condition of `만약` or `동안` is not a 논리
     NotBool,
     /// A bound or the variable of `세면서` is not a 정수
@@ -113,6 +117,10 @@ impl fmt::Display for ConvertErrorKind {
                 "several functions '{verb}' take the arguments ({types}): give the literals \
                  a variable of the type to call"
             ),
+            Self::LiteralOutOfRange(ty) => write!(f, "this value does not fit in a {ty}"),
+            Self::InvalidCast { from, to } => {
+                write!(f, "바꾸다 cannot convert a {from} to a {to}")
+            }
             Self::NotBool => write!(f, "a condition must be a 논리"),
             Self::NotInteger => write!(f, "the bounds and the variable of 세면서 must be 정수"),
             Self::BreakOutOfLoop => write!(f, "그만해요 can only be used in a loop"),

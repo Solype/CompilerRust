@@ -1,0 +1,7 @@
+// Converter : un 부호 없는 정수 n'est jamais négatif.
+
+정수를 반환하는 main() {
+    양은 부호 없는 정수예요.
+    양에 -1을 넣어요.
+    0을 반환해요.
+}

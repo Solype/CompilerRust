@@ -1,0 +1,7 @@
+// Converter : 바꾸다 ne convertit pas un 문자 주소 en 소수.
+
+정수를 반환하는 main() {
+    비율은 소수예요.
+    "abc"를 소수로 바꿔서 비율에 넣어요.
+    0을 반환해요.
+}

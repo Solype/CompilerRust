@@ -7,7 +7,6 @@ use crate::parser::postparser::structs::{
     Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Param, Program,
     Statement, StatementKind, Type, UnaryOp, While,
 };
-use crate::samples::helpers::ret;
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
 
@@ -22,6 +21,17 @@ enum BlockKind<'p> {
     Block,
     /// The body of a function: its name, its parameters and its return type
     Function(&'p Function),
+}
+
+/// Two `Function` kinds are equal when they are the body of the same function of the program
+impl PartialEq for BlockKind<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Loop(), Self::Loop()) | (Self::Block, Self::Block) => true,
+            (Self::Function(a), Self::Function(b)) => std::ptr::eq(*a, *b),
+            _ => false,
+        }
+    }
 }
 
 /// The variables declared in one block, inside the scope of the block around it
@@ -242,6 +252,19 @@ impl<'a> Converter<'a> {
     fn convert_for_loop(&mut self, parent: &Scope, for_loop: &'a For) -> Result<(), ConvertError> {
         let mut scope = Scope::new(BlockKind::Loop(), Some(parent));
         let ty = self.get_type(&for_loop.from, &scope)?;
+        let until_ty = self.get_type(&for_loop.until, &scope)?;
+        if !matches!(ty, Type::Int { .. }) {
+            return Err(ConvertError::new(
+                ConvertErrorKind::NotInteger,
+                for_loop.from.span,
+            ));
+        }
+        if ty != until_ty {
+            return Err(ConvertError::new(
+                ConvertErrorKind::NotInteger,
+                for_loop.until.span,
+            ));
+        }
         scope.variables.insert(
             for_loop.variable.clone(),
             Variable {
@@ -313,6 +336,15 @@ impl<'a> Converter<'a> {
             let kind = ConvertErrorKind::AssignToConstant(assign.target.clone());
             return Err(ConvertError::new(kind, span));
         }
+        let assign_value_ty = self.get_type(&assign.value, scope)?;
+        if var.ty != assign_value_ty {
+            let kind = ConvertErrorKind::WrongAssignType {
+                name: assign.target.clone(),
+                expected: var.ty.to_string(),
+                found: assign_value_ty.to_string(),
+            };
+            return Err(ConvertError::new(kind, span));
+        }
         Ok(())
     }
 
@@ -353,17 +385,35 @@ impl<'a> Converter<'a> {
     /// `만약 … { … } 아니면 { … }`
     fn convert_if(&mut self, parent: &Scope, if_statement: &'a If) -> Result<(), ConvertError> {
         let _cond = self.convert_condition(&if_statement.condition, parent)?;
-        return self.convert_block(&if_statement.then, parent);
+        self.convert_block(&if_statement.then, parent)?;
+        if let Some(otherwise_block) = &if_statement.otherwise {
+            self.convert_block(&otherwise_block, parent)?;
+        }
+        return Ok(());
     }
 
     /// `그만해요`
     fn convert_break(&self, scope: &Scope, span: Span) -> Result<(), ConvertError> {
-        Ok(())
+        let mut c_scope = scope;
+        while c_scope.parent.is_some() {
+            if c_scope.kind == BlockKind::Loop() {
+                return Ok(());
+            }
+            c_scope = c_scope.parent.unwrap();
+        }
+        return Err(ConvertError::new(ConvertErrorKind::BreakOutOfLoop, span));
     }
 
     /// `넘어가요`
     fn convert_continue(&self, scope: &Scope, span: Span) -> Result<(), ConvertError> {
-        Ok(())
+        let mut c_scope = scope;
+        while c_scope.parent.is_some() {
+            if c_scope.kind == BlockKind::Loop() {
+                return Ok(());
+            }
+            c_scope = c_scope.parent.unwrap();
+        }
+        return Err(ConvertError::new(ConvertErrorKind::ContinueOutOfLoop, span));
     }
 
     /// Checks `block` in its own scope, which starts with the variables of `scope` (the

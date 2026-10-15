@@ -1,0 +1,9 @@
+// Converter : 수 est 고정된, 세면서 ne peut pas changer sa valeur.
+
+정수를 반환하는 main() {
+    고정된 수는 0이에요.
+    수를 1부터 10까지 세면서 {
+        넘어가요.
+    }
+    0을 반환해요.
+}

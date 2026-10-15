@@ -1,6 +1,7 @@
 use std::fmt;
 
 use crate::lexer::span::Span;
+use crate::parser::postparser::structs::Type;
 
 /// What the parser accepts but the program cannot run
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -97,3 +98,23 @@ impl fmt::Display for ConvertError {
 }
 
 impl std::error::Error for ConvertError {}
+
+/// `ty` as the source writes it, for the messages
+pub fn type_name(ty: &Type) -> String {
+    return match ty {
+        Type::Int { short, unsigned } => {
+            let short = if *short { "짧은 " } else { "" };
+            let unsigned = if *unsigned { "부호 없는 " } else { "" };
+            format!("{short}{unsigned}정수")
+        }
+        Type::Float { short: true } => "짧은 소수".to_string(),
+        Type::Float { short: false } => "소수".to_string(),
+        Type::Bool => "논리".to_string(),
+        Type::Char => "문자".to_string(),
+        Type::Byte => "바이트".to_string(),
+        Type::Address(ty) => format!("{} 주소", type_name(ty)),
+        Type::Array(ty, count) => format!("{} {count}개", type_name(ty)),
+        Type::Custom(name) => name.clone(),
+        Type::Null => "nothing".to_string(),
+    };
+}

@@ -28,6 +28,10 @@ pub enum ConvertErrorKind {
         expected: String,
         found: String,
     },
+    /// An operator on operands it does not take: `1 + 참`, `참 그리고 1`
+    WrongOperands { op: String, types: String },
+    /// Several functions of this verb take these arguments, through their literals
+    AmbiguousCall { verb: String, types: String },
     /// The condition of `만약` or `동안` is not a 논리
     NotBool,
     /// A bound or the variable of `세면서` is not a 정수
@@ -83,6 +87,12 @@ impl fmt::Display for ConvertErrorKind {
                 expected,
                 found,
             } => write!(f, "'{name}' has the type {expected}, not {found}"),
+            Self::WrongOperands { op, types } => write!(f, "'{op}' cannot take ({types})"),
+            Self::AmbiguousCall { verb, types } => write!(
+                f,
+                "several functions '{verb}' take the arguments ({types}): give the literals \
+                 a variable of the type to call"
+            ),
             Self::NotBool => write!(f, "a condition must be a 논리"),
             Self::NotInteger => write!(f, "the bounds and the variable of 세면서 must be 정수"),
             Self::BreakOutOfLoop => write!(f, "그만해요 can only be used in a loop"),

@@ -1,0 +1,8 @@
+// Converter : abs prend un 정수, 1.5 est un 소수.
+
+외부 정수를 반환하는 abs(정수 가)
+
+정수를 반환하는 main() {
+    1.5를 abs해요.
+    0을 반환해요.
+}

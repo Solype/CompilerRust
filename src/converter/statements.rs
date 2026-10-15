@@ -6,7 +6,7 @@ use crate::parser::postparser::structs::{
 use super::convert_error::{ConvertError, ConvertErrorKind};
 use super::converter::Converter;
 use super::scope::{BlockKind, Scope, Variable};
-use super::types::{fits, type_name};
+use super::types::{fits, range_error, type_name};
 
 impl<'a> Converter<'a> {
     /// `condition` must be a 논리
@@ -52,7 +52,11 @@ impl<'a> Converter<'a> {
             return Err(ConvertError::new(ConvertErrorKind::NotInteger, span));
         }
         for bound in [&for_loop.from, &for_loop.until] {
-            if !fits(bound, &self.get_type(bound, parent)?, &ty) {
+            let bound_ty = self.get_type(bound, parent)?;
+            if !fits(bound, &bound_ty, &ty) {
+                if let Some(err) = range_error(bound, &bound_ty, &ty) {
+                    return Err(err);
+                }
                 return Err(ConvertError::new(ConvertErrorKind::NotInteger, bound.span));
             }
         }
@@ -117,6 +121,9 @@ impl<'a> Converter<'a> {
         }
         let assign_value_ty = self.get_type(&assign.value, scope)?;
         if !fits(&assign.value, &assign_value_ty, &var.ty) {
+            if let Some(err) = range_error(&assign.value, &assign_value_ty, &var.ty) {
+                return Err(err);
+            }
             let kind = ConvertErrorKind::WrongAssignType {
                 name: assign.target.clone(),
                 expected: type_name(&var.ty),
@@ -146,6 +153,9 @@ impl<'a> Converter<'a> {
             return Err(ConvertError::new(kind, span));
         };
         if !fits(value, &ret_ty, decl_ret_ty) {
+            if let Some(err) = range_error(value, &ret_ty, decl_ret_ty) {
+                return Err(err);
+            }
             let kind = ConvertErrorKind::WrongReturnType {
                 expected: type_name(decl_ret_ty),
                 found: type_name(&ret_ty),

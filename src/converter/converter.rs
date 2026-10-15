@@ -178,18 +178,24 @@ impl<'a> Converter<'a> {
                     _ => Ok(ty.clone()),
                 }
             }
-            ExprKind::Call { verb, args } => self.get_call_type(verb, args, scope, expr.span),
+            ExprKind::Call { verb, args } => self
+                .get_call_type(verb, args, scope, expr.span)?
+                .ok_or_else(|| {
+                    let kind = ConvertErrorKind::NoValue(verb.clone());
+                    ConvertError::new(kind, expr.span)
+                }),
         }
     }
 
-    /// The return type of the function `verb` that takes `args`, once the arguments are checked
+    /// The return type of the function `verb` that takes `args`, once the arguments are checked;
+    /// `None` for a function without `TYPE을 반환하는`
     fn get_call_type(
         &self,
         verb: &str,
         args: &[Argument],
         scope: &Scope,
         span: Span,
-    ) -> Result<Type, ConvertError> {
+    ) -> Result<Option<Type>, ConvertError> {
         let mut types = Vec::new();
         // The expression of each argument, `None` for a `정수로`
         let mut values = Vec::new();
@@ -211,7 +217,7 @@ impl<'a> Converter<'a> {
             if let Some(Argument::ToType(ty)) =
                 args.iter().find(|arg| matches!(arg, Argument::ToType(_)))
             {
-                return Ok(ty.clone());
+                return Ok(Some(ty.clone()));
             }
         }
         let suffixes: Vec<String> = types.iter().map(|ty| format!("${ty}")).collect();
@@ -279,7 +285,7 @@ impl<'a> Converter<'a> {
                 }
             }
         };
-        return Ok(func.return_type.clone().unwrap_or(Type::Null));
+        return Ok(func.return_type.clone());
     }
 
     fn find_scope_function<'s>(&self, scope: &'s Scope) -> Option<&'s Function> {
@@ -454,23 +460,31 @@ impl<'a> Converter<'a> {
                 span,
             });
         };
-        let decl_ret_ty = fnc.return_type.clone().unwrap_or(Type::Null);
-        if !fits(value, &ret_ty, &decl_ret_ty) {
-            let kind = match &fnc.return_type {
-                None => ConvertErrorKind::ReturnWithoutType(fnc.name.clone()),
-                Some(_) => ConvertErrorKind::WrongReturnType {
-                    expected: type_name(&decl_ret_ty),
-                    found: type_name(&ret_ty),
-                },
+        let Some(decl_ret_ty) = &fnc.return_type else {
+            let kind = ConvertErrorKind::ReturnWithoutType(fnc.name.clone());
+            return Err(ConvertError::new(kind, span));
+        };
+        if !fits(value, &ret_ty, decl_ret_ty) {
+            let kind = ConvertErrorKind::WrongReturnType {
+                expected: type_name(decl_ret_ty),
+                found: type_name(&ret_ty),
             };
-            return Err(ConvertError { kind, span });
+            return Err(ConvertError::new(kind, span));
         }
         Ok(())
     }
 
     /// `… printf해요.`: a call whose result is unused
     fn convert_call(&mut self, scope: &Scope, call: &'a Expr) -> Result<(), ConvertError> {
-        self.get_type(call, scope)?;
+        match &call.kind {
+            // Alone, a call may return nothing
+            ExprKind::Call { verb, args } => {
+                self.get_call_type(verb, args, scope, call.span)?;
+            }
+            _ => {
+                self.get_type(call, scope)?;
+            }
+        }
         Ok(())
     }
 
@@ -551,13 +565,30 @@ impl<'a> Converter<'a> {
             };
             scope.variables.insert(param.name.clone(), variable);
         }
-        self.convert_block(statements, &scope)
+        self.convert_block(statements, &scope)?;
+        if func.return_type.is_some() && !always_returns(statements) {
+            let kind = ConvertErrorKind::MissingReturn(func.name.clone());
+            return Err(ConvertError::new(kind, func.span));
+        }
+        Ok(())
+    }
+
+    /// The program has a `main` that returns a 정수
+    fn check_main(&self) -> Result<(), ConvertError> {
+        let Some(main) = self.program.functions.iter().find(|func| func.name == "main") else {
+            return Err(ConvertError::new(ConvertErrorKind::NoMain, Span::new(0, 0)));
+        };
+        if !matches!(main.return_type, Some(Type::Int { .. })) {
+            return Err(ConvertError::new(ConvertErrorKind::MainNotInteger, main.span));
+        }
+        Ok(())
     }
 
     pub fn convert(&mut self) -> Result<(), ConvertError> {
         // Get the global variables
         // Get the structures
         self.get_all_functions()?;
+        self.check_main()?;
         let program = self.program;
         for func in &program.functions {
             self.convert_func(func)?;
@@ -565,6 +596,20 @@ impl<'a> Converter<'a> {
         // for func in self.program.functions.iter() {}
         Ok(())
     }
+}
+
+/// Whether every path through `block` ends with `반환해요`: a loop may run zero times, so only a
+/// `만약` whose two branches return counts
+fn always_returns(block: &[Statement]) -> bool {
+    return block.iter().any(|statement| match &statement.kind {
+        StatementKind::Return(_) => true,
+        StatementKind::If(If {
+            then,
+            otherwise: Some(otherwise),
+            ..
+        }) => always_returns(then) && always_returns(otherwise),
+        _ => false,
+    });
 }
 
 /// Whether `expr`, of type `ty`, goes where `expected` goes: the same type, or a literal that

@@ -6,14 +6,17 @@ through Claude Code).
 ## How this document was put together
 
 - **The commits**: every commit made with the AI between October 2 and 5, and some of those of
-  October 9, carry the line `Co-Authored-By: Claude`.
-- **The AI sessions still on record** (October 5 and 9): they give the detail, function by
-  function, of who wrote what in the grammar, the LR table, the parser and the AST.
+  October 9 and 10 (`d198bad`), carry the line `Co-Authored-By: Claude`.
+- **The AI sessions still on record** (October 5, 9 and 15): they give the detail, function by
+  function, of who wrote what in the grammar, the LR table, the parser, the AST and the
+  converter.
 - **Exception**: the commits `fc1447c`, `efaad85` and `d1c847c` (October 9) were made by the AI,
-  but without the `Co-Authored-By` line, at my request. Their content is detailed below.
+  but without the `Co-Authored-By` line, at my request. Their content is detailed below. The
+  same goes for the commits of October 15 (`996c222` to `41000ea`).
 - **Limits**:
   - the AI sessions of October 2 to 4 are no longer available: for that period, only the
     `Co-Authored-By` line counts;
+  - the AI sessions of October 10 to 12 are no longer available either: see "To be confirmed";
   - the commits of October 1 and 2 without that line (encoder tests, reports, REX/ModRM fixes)
     were made with the AI: I state it myself, no record shows it;
   - the commits of September 30 are still to be confirmed: see "To be confirmed".
@@ -33,6 +36,7 @@ through Claude Code).
 | Pre-parser (October 4 and 5) | AI for 70-80 %, me for the rest |
 | Grammar and FIRST (October 5) | AI, on my `ParserProduction` struct |
 | LR(1) table, parser, tree, AST (October 9) | Shared: detail below |
+| Converter, the semantic analysis (`src/converter`, October 12 to 15) | Shared: detail below |
 
 ## The backend: written by me, completed with the AI
 
@@ -62,8 +66,8 @@ I wrote no test by hand: they were all written by the AI.
   `src/elf/file/symbol_tests.rs`, the report `TEST_REPORT.md` and the `nextest.toml`
   configuration.
 - **Frontend**: `src/hangeul/hangul_tests.rs`, `src/lexer/lexer_tests.rs`,
-  `src/parser/preparser/pre_parser_tests.rs`, `src/parser/cfg/first_tests.rs` and
-  `src/parser/cfg/parser_tests.rs`.
+  `src/parser/preparser/pre_parser_tests.rs`, `src/parser/cfg/first_tests.rs`,
+  `src/parser/cfg/parser_tests.rs` and `src/parser/postparser/postparser_tests.rs`.
 
 The backend fixes of October 1 and 2 (jumps, REX.B/REX.X, 64-bit immediates, ModRM r12/r13) were
 found thanks to these tests, and made with the AI.
@@ -131,6 +135,37 @@ On this part, I wrote some of the code myself, guided by the explanations of the
 | The AST structs (`structs.rs`) | I started, AI completed |
 | The body of `convert_to_ast_tree` (`postparser.rs`) | AI |
 
+## October 12 to 15: the converter (`src/converter`)
+
+The converter checks the AST before the code generation: names and scopes, types, calls, returns,
+constants and loops.
+
+### October 12
+
+The session is no longer available. What is known of it: the AI wrote a whole `convert_block`,
+which I asked it to empty, because I had not written it myself. From then on, I wrote the checks of
+the converter, and the AI only the narrow pieces I asked for (imports, a struct, a fix, the simple
+arms of `get_type`).
+
+### October 15
+
+The session is on record. After each commit, the AI gave a to-do list of the checks still missing;
+I chose the points and asked for them. On that day, the AI wrote most of the code.
+
+| Element | Who |
+|---|---|
+| `PartialEq` of `BlockKind` | AI: my `derive` did not compile, it wrote the impl by hand |
+| The integer check of the `세면서` bounds | I started it, the AI completed it |
+| Fix of `convert_break` (`BreakOutOfLoop` instead of `ContinueOutOfLoop`) | Me |
+| `WrongAssignType`, in the place I had left for it in `convert_assign` | AI |
+| Variable of `세면서` (declared by the loop or existing, not `고정된`), `Scope::in_loop`, removing the `loops` field and the unused imports | AI |
+| Type names in the messages (`type_name`) | AI |
+| Literals taking the expected type (`fits`), `AmbiguousCall`, operand checks (`WrongOperands`) | AI |
+| Calls without a value (`NoValue`), missing return (`always_returns`, `MissingReturn`), `check_main` | AI |
+| Splitting `converter.rs` into `scope.rs`, `types.rs`, `expressions.rs`, `statements.rs` and `functions.rs` (`ebd3cc9`) | AI, at my request |
+| Error samples in `sample/erreurs/` | AI |
+| To-do lists, C equivalent of each type, explanation of the typed IR the codegen needs | AI, explanations only |
+
 ## How I used the AI
 
 Over the whole project, the AI was mostly used to **explain**: how a format, an encoding or an
@@ -143,7 +178,8 @@ sections above; the rest of the exchanges were explanations.
   the body, then it reviewed it.
 - **To review and fix**: checking my code, finding the bugs, running it on `Proto.kr`.
 - **To write directly**: the repetitive parts or the ones I delegated (all the tests, the grammar
-  rules, the lexer, the pre-parser, the conversion to the AST).
+  rules, the lexer, the pre-parser, the conversion to the AST, the converter checks of October
+  15).
 
 ## To be confirmed
 
@@ -152,3 +188,6 @@ without the AI. I still have to state their status:
 
 - `6773546` to `2c33af8` (September 30): moving the programs into `src/samples`, a fix for
   rust-analyzer, TODO.
+- `b04d848` to `7b6e27c` (October 10 to 12), except `d198bad`: printing the AST, float literals,
+  sentence declarations, spans in the AST, samples, the start of the converter. The sessions are
+  no longer available.

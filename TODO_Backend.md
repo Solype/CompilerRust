@@ -5,13 +5,14 @@ PROGRESS (estimate)
 ==================================================
 
 Backend (x86-64 encoder + ELF) : ~75-80 %
-Full compiler                  : ~55 %
+Full compiler                  : ~60 %
 
     x86-64 encoder + ELF           ~75-80 %
     Lexer                          done (hand-written)
     Pre-parser                     done, except scopes and 받침 checks
     Parser (LR(1)) + AST           done for Proto.kr
-    Semantic analysis              0 %
+    Semantic analysis              ~85 % (checks done; typed IR for the
+                                   codegen, literal ranges, casts left)
     Code generation AST -> IR      0 %
     CLI                            done (--tree, --demo)
 

@@ -13,8 +13,8 @@ src/
   parser/     preparser/ (découpage des particules, mots classés),
               cfg/ (grammaire, table LR(1), arbre de dérivation),
               postparser/ (arbre -> AST, types de l'AST dans structs.rs)
-  converter/  analyse sémantique de l'AST (étape 2.6)
-  codegen/    AST -> Vec<Instruction> (à faire)
+  converter/  analyse sémantique de l'AST, puis IR typée (étape 2.6)
+  codegen/    IR typée -> Vec<Instruction> (à faire)
   elf/        (existant)
 
 Le lexer est écrit à la main (l'ancien automate lexical_analisys/ est supprimé).
@@ -335,21 +335,26 @@ retours, opérateurs), puis chemins.
     main de même nom)
 [ ] Message trompeur : printf() défini sans paramètre et 외부 printf donnent
     SameSignature au lieu d'un conflit avec le 외부
-[ ] main existe, renvoie 정수, sans paramètre (ou argc / argv)
+[X] main existe et renvoie un 정수 (NoMain, MainNotInteger)
+[ ] main sans paramètre (ou argc / argv) ; choisir si seul 정수 (long) passe
+    ou 짧은 정수 (int) : aujourd'hui tout 정수 est accepté
 
 --------------------------------------------------
 2.6.2 Noms et portées
 --------------------------------------------------
 
-[ ] Pile de portées : une table des variables par bloc
-[ ] Variable déjà déclarée dans le même bloc ; masquage dans un bloc
-    intérieur : à décider
-[ ] Variable utilisée avant sa déclaration ou inconnue (ExprKind::Name,
-    cible d'Assign) ; les fonctions, elles, peuvent être définies après
+[X] Pile de portées : une table des variables par bloc (scope.rs)
+[X] Variable déjà déclarée dans le même bloc (AlreadyDeclared) ; masquage
+    permis dans un bloc intérieur
+[X] Variable utilisée avant sa déclaration ou inconnue (ExprKind::Name,
+    cible d'Assign, variable de 세면서) ; les fonctions, elles, peuvent être
+    définies après
 [ ] Variable lue après Declare sans valeur (erreur ou warning)
-[ ] Deux paramètres de même nom ; variable locale du nom d'un paramètre
-[ ] For : ty Some = déclare la variable, visible dans le corps seulement ;
-    ty None = la variable doit exister
+[X] Deux paramètres de même nom
+[ ] Variable locale du nom d'un paramètre : aujourd'hui permise (le corps est
+    un bloc à l'intérieur des paramètres, donc masquage)
+[X] For : ty Some = déclare la variable, visible dans le corps seulement ;
+    ty None = la variable doit exister et ne pas être 고정된
 [ ] Type::Custom inconnu (pas de déclaration de type : toujours une erreur
     pour l'instant)
 
@@ -357,49 +362,75 @@ retours, opérateurs), puis chemins.
 2.6.3 Appels
 --------------------------------------------------
 
-[ ] Verbe sans aucune fonction de ce nom
-[ ] Choix de la surcharge : nom complet depuis les types des arguments,
-    puis recherche dans functions ; aucune / plusieurs (conversion implicite)
-    ; variadique : au moins les paramètres fixes
-[ ] Résultat d'une fonction sans retour (return_type None) utilisé dans une
-    expression ou un Init
-[ ] Verbes intégrés : 바꾸다 avec son Argument::ToType, particules selon le
-    rôle attendu
+[X] Verbe sans aucune fonction de ce nom (UnknownFunction)
+[X] Choix de la surcharge : nom complet depuis les types des arguments,
+    puis recherche dans functions ; sinon les fonctions dont les paramètres
+    prennent les littéraux, plusieurs = AmbiguousCall ; variadique : types
+    des premiers arguments puis $...
+[X] Résultat d'une fonction sans retour (return_type None) utilisé dans une
+    expression ou un Init (NoValue)
+[ ] 외부 (extern) : trouvés par leur nom et leur nombre d'arguments seuls ;
+    vérifier les paramètres fixes avec fits (1.5를 abs해요 passe aujourd'hui)
+[ ] Verbes intégrés : 바꾸다 (cast) rend le type de son Argument::ToType sans
+    regarder la valeur ; règle des casts permis à fixer (nombre -> nombre,
+    주소 -> 주소...) ; particules selon le rôle attendu
 
 --------------------------------------------------
 2.6.4 Retour
 --------------------------------------------------
 
-[ ] Return dans une fonction sans type de retour
-[ ] Type de la valeur différent de return_type
-[ ] Fonction avec retour dont un chemin n'atteint aucun Return (If sans
-    otherwise...)
+[X] Return dans une fonction sans type de retour (ReturnWithoutType)
+[X] Type de la valeur différent de return_type (WrongReturnType)
+[X] Fonction avec retour dont un chemin n'atteint aucun Return (If sans
+    otherwise...) : MissingReturn
+[ ] 참인 동안 { … 반환해요 } sans rien après la boucle donne MissingReturn :
+    compter un 동안 sur le littéral 참 sans 그만해요
 [ ] Code après Return / Break / Continue (warning)
 
 --------------------------------------------------
 2.6.5 Types
 --------------------------------------------------
 
-[ ] Init / Assign : type de la valeur = type de la variable ; fixer les
-    conversions implicites (court <-> long, signé <-> non signé, littéral
-    entier -> 소수)
-[ ] Binaires : arithmétique sur nombres ; Rem, bit à bit, décalages sur
+[X] Init / Assign : type de la valeur = type de la variable (WrongAssignType)
+    ; conversions implicites : un littéral prend le type attendu de sa
+    famille (0 -> 짧은 정수, 1.5 -> 짧은 소수), aucune autre (pas de
+    littéral entier -> 소수)
+[X] Binaires : arithmétique sur nombres ; Rem, bit à bit, décalages sur
     entiers ; And / Or sur 논리 ; comparaisons entre deux valeurs du même type
-[ ] Unaires : Neg sur nombre, BitNot sur entier, Not sur 논리
-[ ] Condition d'If / While : 논리
-[ ] For : from, until et variable entiers
+    (WrongOperands)
+[X] Unaires : Neg sur nombre, BitNot sur entier, Not sur 논리
+[X] Condition d'If / While : 논리 (NotBool)
+[X] For : from, until et variable entiers, du même type (NotInteger)
 [ ] Littéral qui ne tient pas dans son type (짧은 = 32 bits, négatif dans
     부호 없는)
-[ ] Null seulement vers une Address
+[X] Null seulement vers une Address
 [ ] Array de taille 0 ; affectation d'un tableau entier
 
 --------------------------------------------------
 2.6.6 Constantes et contrôle
 --------------------------------------------------
 
-[ ] Assign vers un 고정된
-[ ] Assign vers une fonction au lieu d'une variable
-[ ] Break / Continue hors boucle
+[X] Assign vers un 고정된 (AssignToConstant), 세면서 compris
+[X] Assign vers une fonction au lieu d'une variable (UnknownVariable)
+[X] Break / Continue hors boucle (BreakOutOfLoop, ContinueOutOfLoop)
+[ ] convert_return : le cas None de scope.function() ne peut pas arriver
+    (unreachable!() à la place de ReturnWithoutType(""))
+[ ] Tests unitaires du converter (aujourd'hui : samples de sample/erreurs/)
+
+--------------------------------------------------
+2.6.7 Sortie pour le codegen : IR typée
+--------------------------------------------------
+
+Aujourd'hui convert() rend Result<(), ConvertError> : ce que le converter
+déduit est perdu. Le codegen en a besoin.
+
+[ ] convert() rend une IR typée : un arbre comme l'AST, mais résolu
+    (TFunction, TStatement, TExpr)
+[ ] Chaque expression porte son Type (taille 32 / 64 bits, signé ou non,
+    entier ou 소수 -> registres SSE), littéraux compris
+[ ] Chaque appel porte son symbole résolu (더하다$정수$정수, printf, main)
+[ ] Chaque variable devient un identifiant unique dans sa fonction (masquage
+    résolu) ; locals : Vec<Type> pour les cases de pile
 
 ==================================================
 ÉTAPE 3 : PREMIÈRE TRANCHE, MAIN QUI REND 42
@@ -499,10 +530,10 @@ Vérification : 3과 4를 더해서 제곱해서 반환해요 -> 49
 [ ] Une case de pile par variable
 [X] Affectation : 넣어요, destination en tête ou en fin de chaîne (parser et AST)
 [ ] Erreurs :
-    [ ] affecter un 고정된
+    [X] affecter un 고정된 (converter)
     [X] 고정된 avec un type seul (ConstantWithoutValue)
     [X] nom non déclaré (UnknownIdentifier, sans portées)
-    [ ] double déclaration
+    [X] double déclaration (converter, AlreadyDeclared)
 [ ] Messages : fichier:ligne:colonne, ligne fautive, ^ sous l'erreur
     (une syllabe hangul occupe 2 colonnes dans le terminal)
 
@@ -539,7 +570,7 @@ Vérification : sortie de Proto.kr = 35, 69, 1, 285, 4, 128, puis 1, 2, 4, 5
 APRÈS
 ==================================================
 
-[ ] Passe sémantique séparée (vérification des types)
+[X] Passe sémantique séparée (vérification des types) : src/converter/
 [ ] 소수 (SSE, déjà prêt dans le backend) ; littéraux déjà dans le lexer et l'AST
 [ ] Pointeurs (TYPE 주소, ou TYPE& : & après un mot de type = 주소) et tableaux (TYPE N개) ;
     types déjà dans le parser et l'AST, reste le codegen

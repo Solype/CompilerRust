@@ -11,6 +11,7 @@ pub struct Program {
 /// `정수를 반환하는 더하다(정수 가, 정수 나) { … }`, or `외부 …(…)` without a body
 pub struct Function {
     pub name: String,
+    pub mangled_name: String,
     /// The name only: `더하다`, `printf`
     pub span: Span,
     /// `None` without `TYPE을 반환하는`: the function returns nothing

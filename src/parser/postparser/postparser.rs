@@ -77,6 +77,23 @@ fn items(node: &TreeNode) -> Result<Vec<Function>, PostParseError> {
     };
 }
 
+fn mangle_name(name: String, params: &Vec<Param>, is_variadic: bool, is_libc: bool) -> String {
+    if is_libc {
+        return name;
+    }
+    let mut fullname = name.clone();
+    let p = params
+        .iter()
+        .map(|p| format!("${}", p.ty))
+        .collect::<String>();
+
+    fullname += &p;
+    if is_variadic {
+        fullname += "$...";
+    }
+    return fullname;
+}
+
 /// Item → Function | ExternFunction
 fn function(node: &TreeNode) -> Result<Function, PostParseError> {
     let [inner] = branch(node).1 else {
@@ -87,6 +104,7 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
         (NTerm::Function, [name @ TreeNode::Leaf(_), return_type, _, _, body]) => {
             return Ok(Function {
                 name: verb(name),
+                mangled_name: mangle_name(verb(name), &vec![], false, true),
                 span: span(name),
                 return_type: Some(type_spec(return_type)?),
                 params: Vec::new(),
@@ -98,6 +116,7 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
         (NTerm::Function, [name, body]) => {
             return Ok(Function {
                 name: verb(name),
+                mangled_name: mangle_name(verb(name), &vec![], false, false),
                 span: span(name),
                 return_type: None,
                 params: Vec::new(),
@@ -111,11 +130,13 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
         (NTerm::ExternFunction, [_, head, _, params, _]) => (head, params, None),
         // Function → SentenceParameters 받아 VERB-고 TypeSpec 를 반환 Block
         (NTerm::Function, [params, _, name, return_type, _, _, body]) => {
+            let params = sentence_parameters(params)?;
             return Ok(Function {
                 name: verb(name),
+                mangled_name: mangle_name(verb(name), &params, false, false),
                 span: span(name),
                 return_type: Some(type_spec(return_type)?),
-                params: sentence_parameters(params)?,
+                params,
                 variadic: false,
                 body: Some(block(body)?),
             });
@@ -125,7 +146,8 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
     let (name, name_span, return_type) = function_head(head)?;
     let (params, variadic) = parameters(params)?;
     return Ok(Function {
-        name,
+        name: name.clone(),
+        mangled_name: mangle_name(name, &params, variadic, false),
         span: name_span,
         return_type,
         params,
@@ -619,7 +641,9 @@ fn call(
     args: Vec<(Arg, Span)>,
     step_span: Span,
 ) -> Result<Expr, PostParseError> {
-    let start = previous.as_ref().map_or(step_span.start, |previous| previous.span.start);
+    let start = previous
+        .as_ref()
+        .map_or(step_span.start, |previous| previous.span.start);
     let mut all = Vec::new();
     if let Some(previous) = previous {
         all.push(Argument::Previous(previous));

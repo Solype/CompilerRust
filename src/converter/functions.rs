@@ -1,3 +1,4 @@
+use crate::converter::ir;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{Function, If, Statement, StatementKind, Type};
 
@@ -36,11 +37,27 @@ impl<'a> Converter<'a> {
     }
 
     /// Checks the body of `func`, its parameters in the same scope as its variables
-    pub(super) fn convert_func(&mut self, func: &'a Function) -> Result<(), ConvertError> {
+    pub(super) fn convert_func(
+        &mut self,
+        func: &'a Function,
+    ) -> Result<(ir::structs::Function), ConvertError> {
         // `외부`: nothing to check
+
         let Some(statements) = &func.body else {
-            return Ok(());
+            let ir_func = ir::structs::Function::new(
+                func.name.clone(),
+                func.return_type.clone(),
+                func.variadic,
+            );
+            return Ok(ir_func);
         };
+
+        let mut ir_func = ir::structs::Function::new(
+            func.mangled_name.clone(),
+            func.return_type.clone(),
+            func.variadic,
+        );
+
         let mut scope = Scope::new(BlockKind::Function(func), None);
         for param in &func.params {
             if scope.variables.contains_key(&param.name) {
@@ -54,11 +71,12 @@ impl<'a> Converter<'a> {
             scope.variables.insert(param.name.clone(), variable);
         }
         self.convert_block(statements, &scope)?;
+
         if func.return_type.is_some() && !always_returns(statements) {
             let kind = ConvertErrorKind::MissingReturn(func.name.clone());
             return Err(ConvertError::new(kind, func.span));
         }
-        Ok(())
+        Ok(ir_func)
     }
 
     /// The program has a `main` that returns a 정수

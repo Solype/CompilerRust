@@ -1,10 +1,9 @@
 use crate::converter::expressions::Callee;
-use crate::converter::ir::structs::Instr::Cast;
+use crate::converter::ir;
 use crate::converter::scope::LoopLabels;
-use crate::converter::{ir, scope};
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
-    Assign, Declare, Expr, ExprKind, For, Function, If, Init, Statement, StatementKind, Type, While,
+    Assign, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind, Type, While,
 };
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
@@ -34,7 +33,7 @@ impl<'a> Converter<'a> {
         span: Span,
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let (label_start, label_end) = parent.generate_loop_label();
+        let (label_start, label_end) = parent.generate_labels("loop", "start");
         let mut scope = Scope::new(
             BlockKind::Loop(LoopLabels {
                 label_start: label_start.clone(),
@@ -50,7 +49,7 @@ impl<'a> Converter<'a> {
                     constant: false,
                     var_id: ir_func.new_var(ty.clone()),
                 };
-                scope.variables.insert(for_loop.variable.clone(), variable);
+                scope.declare(&for_loop.variable, variable, span)?;
                 ty.clone()
             }
             // `수를 …`: a variable of the blocks around, that the loop changes
@@ -91,7 +90,7 @@ impl<'a> Converter<'a> {
         while_loop: &'a While,
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let (label_start, label_end) = parent.generate_loop_label();
+        let (label_start, label_end) = parent.generate_labels("loop", "start");
         let scope = Scope::new(
             BlockKind::Loop(LoopLabels {
                 label_start,
@@ -133,7 +132,7 @@ impl<'a> Converter<'a> {
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
         let ty = self.get_type(&init.value, scope)?;
-        // Before the declaration: in `가는 가이에요`, the value is the 가 of the blocks around
+        // Before the declaration: in `가는 가이에요`, 가 is not declared yet, declare refuses it
         let oper = operand(&init.value, scope);
         let var = ir_func.new_var(ty.clone());
 
@@ -247,7 +246,7 @@ impl<'a> Converter<'a> {
                             args: vec![],
                         });
                     }
-                    Callee::Cast(ty) => {
+                    Callee::Cast(_) => {
                         // instr.push(ir);
                     }
                 }
@@ -262,17 +261,14 @@ impl<'a> Converter<'a> {
     /// `만약 … { … } 아니면 { … }`
     fn convert_if(
         &mut self,
-        parent: &mut Scope,
+        parent: &Scope,
         if_statement: &'a If,
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
         let _cond = self.convert_condition(&if_statement.condition, parent)?;
-        // Each branch takes its own count: two loops in `만약` and `아니면` get distinct labels
-        parent.block_count += 1;
-        let (otherwise_label, end_label) = parent.generate_if_labels();
+        let (otherwise_label, end_label) = parent.generate_labels("condition", "otherwise");
         let mut block_instr = self.convert_block(&if_statement.then, parent, ir_func)?;
         if let Some(otherwise_block) = &if_statement.otherwise {
-            parent.block_count += 1;
             block_instr.push(ir::structs::Instr::Label(
                 ir_func.label_id(&otherwise_label),
             ));
@@ -303,9 +299,13 @@ impl<'a> Converter<'a> {
         &self,
         scope: &Scope,
         span: Span,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        if scope.in_loop().is_some() {
-            return Ok(vec![]);
+        // The start of the innermost loop: the same name gives the Label its loop places
+        // shortcut: a 세면서 must jump to its increment instead, once the loop emits one
+        if let Some(loop_labels) = scope.in_loop() {
+            let start = ir_func.label_id(&loop_labels.label_start);
+            return Ok(vec![ir::structs::Instr::Jump(start)]);
         }
         return Err(ConvertError::new(ConvertErrorKind::ContinueOutOfLoop, span));
     }
@@ -338,20 +338,18 @@ impl<'a> Converter<'a> {
                 }
                 StatementKind::Call(call) => self.convert_call(&new_scope, call)?,
                 StatementKind::If(if_statement) => {
-                    self.convert_if(&mut new_scope, if_statement, ir_func)?
+                    self.convert_if(&new_scope, if_statement, ir_func)?
                 }
                 StatementKind::While(while_loop) => {
-                    new_scope.block_count += 1;
                     self.convert_while_loop(&new_scope, while_loop, ir_func)?
                 }
                 StatementKind::For(for_loop) => {
-                    new_scope.block_count += 1;
                     self.convert_for_loop(&new_scope, for_loop, statement.span, ir_func)?
                 }
-                StatementKind::Break => {
-                    self.convert_break(&new_scope, statement.span, ir_func)?
+                StatementKind::Break => self.convert_break(&new_scope, statement.span, ir_func)?,
+                StatementKind::Continue => {
+                    self.convert_continue(&new_scope, statement.span, ir_func)?
                 }
-                StatementKind::Continue => self.convert_continue(&new_scope, statement.span)?,
             };
             instructions.append(&mut new_inst);
         }

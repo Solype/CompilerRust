@@ -26,7 +26,7 @@ impl<'a> Converter<'a> {
         self.check_main()?;
         let program = self.program;
         for func in &program.functions {
-            let (fnc) = self.convert_func(func)?;
+            let fnc = self.convert_func(func)?;
             ir_prog.funcs.push(fnc);
         }
         // for func in self.program.functions.iter() {}

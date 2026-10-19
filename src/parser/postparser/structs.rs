@@ -168,6 +168,7 @@ pub enum Argument {
     ToType(Type),
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum UnaryOp {
     /// `-`
     Neg,
@@ -177,6 +178,7 @@ pub enum UnaryOp {
     Not,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum BinaryOp {
     /// 또는
     Or,

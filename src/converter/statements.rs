@@ -3,7 +3,7 @@ use crate::converter::ir;
 use crate::converter::scope::LoopLabels;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
-    Assign, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind, Type, While,
+    Argument, Assign, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind, Type, While,
 };
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
@@ -22,6 +22,67 @@ impl<'a> Converter<'a> {
         match self.get_type(condition, scope)? {
             Type::Bool => Ok(vec![]),
             _ => Err(ConvertError::new(ConvertErrorKind::NotBool, condition.span)),
+        }
+    }
+
+    fn convert_expr(
+        &self,
+        expr: &Expr,
+        scope: &Scope,
+        ir_func: &mut ir::structs::Function,
+        instrs: &mut Vec<ir::structs::Instr>, // on pousse dedans : pas de Vec à concaténer
+    ) -> Result<ir::structs::Operand, ConvertError> {
+        if let Some(leaf) = operand(expr, scope) {
+            return Ok(leaf);
+        }
+        let ty = self.get_type(expr, scope)?; // vérifs + type du résultat
+        match &expr.kind {
+            ExprKind::Binary { op, left, right } => {
+                let left = self.convert_expr(left, scope, ir_func, instrs)?;
+                let right = self.convert_expr(right, scope, ir_func, instrs)?;
+                let dest = ir_func.new_var(ty);
+                instrs.push(ir::structs::Instr::Binary {
+                    dest,
+                    op: *op,
+                    left,
+                    right,
+                });
+                Ok(ir::structs::Operand::Var(dest))
+            }
+            ExprKind::Unary { op, operand } => {
+                let src = self.convert_expr(operand, scope, ir_func, instrs)?;
+                let dest = ir_func.new_var(ty);
+                instrs.push(ir::structs::Instr::Unary { dest, op: *op, src });
+                Ok(ir::structs::Operand::Var(dest))
+            }
+            ExprKind::Call { verb, args } => {
+                let callee = self.resolve_call(verb, args, scope, expr.span)?;
+                let mut operands = Vec::new();
+                for arg in args {
+                    match arg {
+                        Argument::Value { value, .. } | Argument::Previous(value) => {
+                            operands.push(self.convert_expr(value, scope, ir_func, instrs)?);
+                        }
+                        Argument::ToType(_) => {}
+                    }
+                }
+                let dest = ir_func.new_var(ty);
+                match callee {
+                    Callee::Function(func) => instrs.push(ir::structs::Instr::Call {
+                        dest: Some(dest),
+                        symbol: func.mangled_name.clone(),
+                        args: operands,
+                    }),
+                    // 바꾸다 : une seule valeur, le cast lit les deux types dans vars
+                    Callee::Cast(_) => instrs.push(ir::structs::Instr::Cast {
+                        dest,
+                        src: operands.remove(0),
+                    }),
+                }
+                return Ok(ir::structs::Operand::Var(dest));
+            }
+            // Unary, Cast : même schéma ; Call : dest: Some(temporaire)
+            _ => unimplemented!(),
         }
     }
 
@@ -201,6 +262,7 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         value: &'a Expr,
         span: Span,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
         let ret_ty = self.get_type(value, scope)?;
         let Some(fnc) = scope.function() else {
@@ -223,7 +285,10 @@ impl<'a> Converter<'a> {
             };
             return Err(ConvertError::new(kind, span));
         }
-        Ok(vec![])
+        let mut instrs: Vec<ir::structs::Instr> = vec![];
+        let value = self.convert_expr(value, scope, ir_func, &mut instrs)?;
+        instrs.push(ir::structs::Instr::Return(value));
+        return Ok(instrs);
     }
 
     /// `… printf해요.`: a call whose result is unused
@@ -334,7 +399,7 @@ impl<'a> Converter<'a> {
                     self.convert_assign(&new_scope, assign, statement.span)?
                 }
                 StatementKind::Return(value) => {
-                    self.convert_return(&new_scope, value, statement.span)?
+                    self.convert_return(&new_scope, value, statement.span, ir_func)?
                 }
                 StatementKind::Call(call) => self.convert_call(&new_scope, call)?,
                 StatementKind::If(if_statement) => {

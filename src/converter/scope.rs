@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::collections::BTreeMap;
 
 use crate::lexer::span::Span;
@@ -40,7 +41,10 @@ impl PartialEq for BlockKind<'_> {
 /// The variables declared in one block, inside the scope of the block around it
 pub(super) struct Scope<'p> {
     pub(super) variables: BTreeMap<String, Variable>,
-    pub(super) block_count: usize,
+    /// The blocks opened in this one so far; a `Cell` as a block opens with `&` on its parent
+    block_count: Cell<usize>,
+    /// Its number among the blocks of its parent, from 1; 0 for the body of a function
+    index: usize,
     kind: BlockKind<'p>,
     /// The block around this one; `None` for the body of a function
     parent: Option<&'p Scope<'p>>,
@@ -48,9 +52,18 @@ pub(super) struct Scope<'p> {
 
 impl<'p> Scope<'p> {
     pub(super) fn new(kind: BlockKind<'p>, parent: Option<&'p Scope<'p>>) -> Self {
+        // The only place that counts the blocks: a new block takes the next number of its parent
+        let index = match parent {
+            Some(parent) => {
+                parent.block_count.set(parent.block_count.get() + 1);
+                parent.block_count.get()
+            }
+            None => 0,
+        };
         Self {
             variables: BTreeMap::new(),
-            block_count: 0,
+            block_count: Cell::new(0),
+            index,
             kind,
             parent,
         }
@@ -80,51 +93,30 @@ impl<'p> Scope<'p> {
         }
     }
 
-    /// The start and end labels of a loop in this block: the `block_count` of the blocks from the
-    /// function down to this one, unique in the function as each block opened in a block takes
-    /// the next count of its parent
-    pub(super) fn generate_loop_label(&self) -> (String, String) {
-        let mut counts = vec![self.block_count.to_string()];
+    /// The labels `{prefix}_{path}_{first}` and `{prefix}_{path}_end` of the next block opened in
+    /// this one: the numbers of the blocks from the function down to it, unique in the function.
+    /// Called just before that block opens: a loop, or the `만약` branch of an if
+    pub(super) fn generate_labels(&self, prefix: &str, first: &str) -> (String, String) {
+        let mut path = vec![(self.block_count.get() + 1).to_string()];
         let mut curscope = self;
         while let Some(parent) = curscope.parent {
-            match curscope.kind {
-                BlockKind::Loop(_) => counts.push("loop".to_string()),
-                BlockKind::Function(f) => counts.push(f.name.clone()),
-                BlockKind::Block => counts.push("B".to_string()),
-            }
-            counts.push(parent.block_count.to_string());
+            path.push(curscope.index.to_string());
             curscope = parent;
         }
-        counts.reverse();
-        let base_name = format!("loop_{}", counts.join("_"));
-        return (format!("{base_name}_start"), format!("{base_name}_end"));
+        path.reverse();
+        let base_name = format!("{prefix}_{}", path.join("_"));
+        return (format!("{base_name}_{first}"), format!("{base_name}_end"));
     }
 
-    pub(super) fn generate_if_labels(&self) -> (String, String) {
-        let mut counts = vec![self.block_count.to_string()];
-        let mut curscope = self;
-        while let Some(parent) = curscope.parent {
-            match curscope.kind {
-                BlockKind::Loop(_) => counts.push("loop".to_string()),
-                BlockKind::Function(f) => counts.push(f.name.clone()),
-                BlockKind::Block => counts.push("B".to_string()),
-            }
-            counts.push(parent.block_count.to_string());
-            curscope = parent;
-        }
-        counts.reverse();
-        let base_name = format!("condition_{}", counts.join("_"));
-        return (format!("{base_name}_otherwise"), format!("{base_name}_end"));
-    }
-
-    /// Adds `name` to this block, if no variable of this block has it
+    /// Adds `name` to this block, if no variable of this block or of the blocks around has it: a
+    /// name of a block already closed is free again
     pub(super) fn declare(
         &mut self,
         name: &str,
         variable: Variable,
         span: Span,
     ) -> Result<(), ConvertError> {
-        if self.variables.contains_key(name) {
+        if self.find_variable(name).is_some() {
             let kind = ConvertErrorKind::AlreadyDeclared(name.to_string());
             return Err(ConvertError::new(kind, span));
         }

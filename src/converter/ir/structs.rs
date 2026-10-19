@@ -1,3 +1,6 @@
+// The IR is built step by step and the codegen does not read it yet
+#![allow(dead_code)]
+
 use crate::parser::postparser::structs::{BinaryOp, Type, UnaryOp};
 
 pub struct Function {

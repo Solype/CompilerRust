@@ -43,20 +43,14 @@ impl<'a> Converter<'a> {
     ) -> Result<ir::structs::Function, ConvertError> {
         // `외부`: nothing to check
 
-        let Some(statements) = &func.body else {
-            let ir_func = ir::structs::Function::new(
-                func.name.clone(),
-                func.return_type.clone(),
-                func.variadic,
-            );
-            return Ok(ir_func);
-        };
-
         let mut ir_func = ir::structs::Function::new(
             func.mangled_name.clone(),
             func.return_type.clone(),
             func.variadic,
         );
+        let Some(statements) = &func.body else {
+            return Ok(ir_func);
+        };
 
         let mut scope = Scope::new(BlockKind::Function(func), None);
         for param in &func.params {

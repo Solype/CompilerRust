@@ -8,6 +8,8 @@ use super::ir;
 pub struct Converter<'a> {
     pub(super) program: &'a Program,
     pub(super) functions: BTreeMap<String, usize>,
+    /// The IR being built: its strings and floats are filled while the functions are converted
+    pub(super) ir: ir::structs::Program,
 }
 
 impl<'a> Converter<'a> {
@@ -15,11 +17,11 @@ impl<'a> Converter<'a> {
         Self {
             program,
             functions: BTreeMap::new(),
+            ir: ir::structs::Program::default(),
         }
     }
 
     pub fn convert(&mut self) -> Result<ir::structs::Program, ConvertError> {
-        let mut ir_prog = ir::structs::Program::default();
         // Get the global variables
         // Get the structures
         self.get_all_functions()?;
@@ -27,9 +29,9 @@ impl<'a> Converter<'a> {
         let program = self.program;
         for func in &program.functions {
             let fnc = self.convert_func(func)?;
-            ir_prog.funcs.push(fnc);
+            self.ir.funcs.push(fnc);
         }
         // for func in self.program.functions.iter() {}
-        Ok(ir_prog)
+        Ok(std::mem::take(&mut self.ir))
     }
 }

@@ -26,7 +26,7 @@ impl<'a> Converter<'a> {
     }
 
     fn convert_expr(
-        &self,
+        &mut self,
         expr: &Expr,
         scope: &Scope,
         ir_func: &mut ir::structs::Function,
@@ -82,6 +82,7 @@ impl<'a> Converter<'a> {
                 return Ok(ir::structs::Operand::Var(dest));
             }
             // Unary, Cast : même schéma ; Call : dest: Some(temporaire)
+            ExprKind::Str(str) => Ok(ir::structs::Operand::Str(self.ir.string_id(str))),
             _ => unimplemented!(),
         }
     }

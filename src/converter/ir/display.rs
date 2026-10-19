@@ -8,8 +8,9 @@ impl fmt::Display for Program {
         for (i, string) in self.strings.iter().enumerate() {
             writeln!(f, "s{i} = {string:?}")?;
         }
-        for (i, float) in self.floats.iter().enumerate() {
-            writeln!(f, "f{i} = {float}")?;
+        for (i, (float, short)) in self.floats.iter().enumerate() {
+            let size = if *short { "short float" } else { "float" };
+            writeln!(f, "f{i} = {float:?} ({size})")?;
         }
         for function in &self.funcs {
             writeln!(f)?;

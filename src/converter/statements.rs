@@ -1,8 +1,10 @@
+use crate::converter::expressions::Callee;
 use crate::converter::ir;
+use crate::converter::ir::structs::Instr::Cast;
 use crate::converter::scope::LoopLabels;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
-    Assign, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind, Type, While,
+    Assign, Declare, Expr, ExprKind, For, Function, If, Init, Statement, StatementKind, Type, While,
 };
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
@@ -160,15 +162,19 @@ impl<'a> Converter<'a> {
         assign: &'a Assign,
         span: Span,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        // check if the variable exists
         let Some(var) = scope.find_variable(&assign.target) else {
             let kind = ConvertErrorKind::UnknownVariable(assign.target.clone());
             return Err(ConvertError::new(kind, span));
         };
+        // check if the var is const
         if var.constant {
             let kind = ConvertErrorKind::AssignToConstant(assign.target.clone());
             return Err(ConvertError::new(kind, span));
         }
+
         let assign_value_ty = self.get_type(&assign.value, scope)?;
+
         if !fits(&assign.value, &assign_value_ty, &var.ty) {
             if let Some(err) = range_error(&assign.value, &assign_value_ty, &var.ty) {
                 return Err(err);
@@ -227,16 +233,30 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         call: &'a Expr,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        let mut instr: Vec<ir::structs::Instr> = vec![];
+
         match &call.kind {
             // Alone, a call may return nothing
             ExprKind::Call { verb, args } => {
-                self.resolve_call(verb, args, scope, call.span)?;
+                let res: Callee = self.resolve_call(verb, args, scope, call.span)?;
+                match res {
+                    Callee::Function(f) => {
+                        instr.push(ir::structs::Instr::Call {
+                            dest: None,
+                            symbol: f.mangled_name.clone(),
+                            args: vec![],
+                        });
+                    }
+                    Callee::Cast(ty) => {
+                        // instr.push(ir);
+                    }
+                }
             }
             _ => {
                 self.get_type(call, scope)?;
             }
         }
-        Ok(vec![])
+        Ok(instr)
     }
 
     /// `만약 … { … } 아니면 { … }`

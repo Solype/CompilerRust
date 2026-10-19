@@ -1,0 +1,10 @@
+// Converter : le corps redéclare le paramètre 가.
+
+정수를 반환하는 확인하다(정수 가) {
+    가는 2예요.
+    가를 반환해요.
+}
+
+정수를 반환하는 main() {
+    0을 반환해요.
+}

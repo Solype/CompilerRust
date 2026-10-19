@@ -1,0 +1,9 @@
+// Converter : 가 est redéclaré dans un 만약, alors que le 가 de main est encore visible.
+
+정수를 반환하는 main() {
+    가는 1이에요.
+    만약 가 == 1이면 {
+        가는 가예요.
+    }
+    가를 반환해요.
+}

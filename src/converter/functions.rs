@@ -40,7 +40,7 @@ impl<'a> Converter<'a> {
     pub(super) fn convert_func(
         &mut self,
         func: &'a Function,
-    ) -> Result<(ir::structs::Function), ConvertError> {
+    ) -> Result<ir::structs::Function, ConvertError> {
         // `외부`: nothing to check
 
         let Some(statements) = &func.body else {
@@ -67,10 +67,11 @@ impl<'a> Converter<'a> {
             let variable = Variable {
                 ty: param.ty.clone(),
                 constant: false,
+                var_id: ir_func.new_var(param.ty.clone()),
             };
             scope.variables.insert(param.name.clone(), variable);
         }
-        self.convert_block(statements, &scope)?;
+        ir_func.body = Some(self.convert_block(statements, &scope, &mut ir_func)?);
 
         if func.return_type.is_some() && !always_returns(statements) {
             let kind = ConvertErrorKind::MissingReturn(func.name.clone());

@@ -4,6 +4,7 @@ pub struct Function {
     pub symbol: String, // déjà manglé : "더하다$int$int", "printf", "main"
     pub params: Vec<VarId>,
     pub vars: Vec<Type>, // type de chaque VarId : params, variables, temporaires
+    pub labels: Vec<String>, // nom de chaque Label : "loop_0_1_start"
     pub return_type: Option<Type>,
     pub body: Option<Vec<Instr>>, // None pour un 외부
     pub variadic: bool,
@@ -16,10 +17,26 @@ impl Function {
             symbol,
             params: Vec::new(),
             vars: Vec::new(),
+            labels: Vec::new(),
             return_type,
             body: None,
             variadic,
         }
+    }
+
+    /// A new variable of type `ty`: its id is its index in `vars`, unique in the whole function
+    pub fn new_var(&mut self, ty: Type) -> VarId {
+        self.vars.push(ty);
+        VarId::new(self.vars.len() - 1)
+    }
+
+    /// The label `name`: its id is its index in `labels`, added the first time it is asked
+    pub fn label_id(&mut self, name: &str) -> Label {
+        if let Some(id) = self.labels.iter().position(|label| label == name) {
+            return Label::new(id);
+        }
+        self.labels.push(name.to_string());
+        Label::new(self.labels.len() - 1)
     }
 }
 
@@ -80,6 +97,8 @@ pub enum Instr {
         target: Label,
     },
     Return(Operand),
+    /// The source statement of the instructions after it, for the display; no code
+    Comment(String),
 }
 
 #[derive(Default)]

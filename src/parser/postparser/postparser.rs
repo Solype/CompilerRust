@@ -145,9 +145,11 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
     };
     let (name, name_span, return_type) = function_head(head)?;
     let (params, variadic) = parameters(params)?;
+    // `외부` and `main`: the libc symbols, their name as is for the linker
+    let is_libc = body.is_none() || name == "main";
     return Ok(Function {
         name: name.clone(),
-        mangled_name: mangle_name(name, &params, variadic, false),
+        mangled_name: mangle_name(name, &params, variadic, is_libc),
         span: name_span,
         return_type,
         params,

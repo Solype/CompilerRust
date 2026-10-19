@@ -11,9 +11,11 @@ Full compiler                  : ~60 %
     Lexer                          done (hand-written)
     Pre-parser                     done, except scopes and 받침 checks
     Parser (LR(1)) + AST           done for Proto.kr
-    Semantic analysis              ~85 % (checks done; typed IR for the
-                                   codegen, literal ranges, casts left)
-    Code generation AST -> IR      0 %
+    Semantic analysis              ~95 % (checks done, literal ranges
+                                   and casts included)
+    Code generation AST -> IR      ~20 % (IR structs, variable ids,
+                                   labels, Copy of Init / Assign; see
+                                   TODO_Frontend.md 2.6.7)
     CLI                            done (--tree, --demo)
 
 ==================================================

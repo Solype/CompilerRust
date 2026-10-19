@@ -401,8 +401,8 @@ retours, opérateurs), puis chemins.
 [X] Unaires : Neg sur nombre, BitNot sur entier, Not sur 논리
 [X] Condition d'If / While : 논리 (NotBool)
 [X] For : from, until et variable entiers, du même type (NotInteger)
-[ ] Littéral qui ne tient pas dans son type (짧은 = 32 bits, négatif dans
-    부호 없는)
+[X] Littéral qui ne tient pas dans son type (짧은 = 32 bits, négatif dans
+    부호 없는) : LiteralOutOfRange
 [X] Null seulement vers une Address
 [ ] Array de taille 0 ; affectation d'un tableau entier
 
@@ -418,19 +418,63 @@ retours, opérateurs), puis chemins.
 [ ] Tests unitaires du converter (aujourd'hui : samples de sample/erreurs/)
 
 --------------------------------------------------
-2.6.7 Sortie pour le codegen : IR typée
+2.6.7 Sortie pour le codegen : IR typée (src/converter/ir/)
 --------------------------------------------------
 
-Aujourd'hui convert() rend Result<(), ConvertError> : ce que le converter
-déduit est perdu. Le codegen en a besoin.
+convert() rend un ir::Program : code à trois adresses, une ir::Function par
+fonction (symbole, vars: Vec<Type>, labels, body: Vec<Instr>). L'IR est
+affichée après l'AST, chaque instruction source en // commentaire.
 
-[ ] convert() rend une IR typée : un arbre comme l'AST, mais résolu
-    (TFunction, TStatement, TExpr)
-[ ] Chaque expression porte son Type (taille 32 / 64 bits, signé ou non,
-    entier ou 소수 -> registres SSE), littéraux compris
-[ ] Chaque appel porte son symbole résolu (더하다$정수$정수, printf, main)
-[ ] Chaque variable devient un identifiant unique dans sa fonction (masquage
-    résolu) ; locals : Vec<Type> pour les cases de pile
+Fait :
+[X] Structures de l'IR (Function, VarId, Label, Operand, Instr, Program)
+[X] Symbole résolu de chaque fonction : 더하다$int$int ; 외부 et main gardent
+    leur nom (mangled_name == name)
+[X] resolve_call rend la fonction appelée ou le cast 바꾸다 (Callee)
+[X] Chaque variable a un VarId unique dans sa fonction (new_var) : params,
+    Declare, Init, variable du 세면서
+[X] Labels de boucle : generate_loop_label (block_count), label_id (nom ->
+    Label, ajouté la première fois)
+[X] Init / Assign d'un littéral ou d'une variable : Copy (operand)
+[X] Affichage de l'IR (ir/display.rs, Instr::Comment)
+
+Instructions IR manquantes :
+[ ] convert_expr (expressions.rs) : descendre une expression en
+    instructions, rendre (Operand, Type) ; temporaires par new_var
+    [ ] Unary, Binary
+    [ ] Call : dest temporaire, arguments convertis
+    [ ] Cast (바꾸다) : Instr::Cast
+    [ ] Str : chaîne ajoutée à Program.strings, Operand::Str(index)
+    [ ] SizeOf : Operand::Int(taille du type)
+    [ ] 그리고 / 또는 en court-circuit : JumpIfNot, jamais Binary And / Or
+[ ] convert_init / convert_assign : valeur composée (calcul, appel, chaîne,
+    sizeof) -> aucun Copy aujourd'hui, à brancher sur convert_expr
+[ ] convert_condition : rendre l'Operand de la condition, pas seulement
+    vérifier le type
+[ ] convert_if : JumpIfNot vers le else, instructions du then et du else
+    (rendues par convert_block puis jetées), Jump vers la fin, labels
+[ ] convert_while_loop : Label début, condition, JumpIfNot fin, corps (rendu
+    puis jeté), Jump début, Label fin
+[ ] convert_for_loop : Copy de from dans la variable, condition variable <=
+    until + JumpIfNot fin, incrément (Binary Add 1) ; Label début, Jump et
+    Label fin déjà émis
+[ ] convert_break : Jump(label_id(label_end)) ; il faut passer ir_func
+[ ] convert_continue : Jump vers le début (동안) ou vers l'incrément
+    (세면서, 3e label)
+[ ] convert_return : Instr::Return(operand)
+[ ] Fonction sans 반환하는 : Return implicite en fin de corps
+    (Return(Option<Operand>))
+[ ] convert_call : arguments de l'appel (args: vec![] aujourd'hui) ; bras
+    Callee::Cast vide
+[ ] convert_func : remplir ir_func.params
+[ ] convert() : remplir Program.strings et Program.floats
+
+Choix de l'IR à trancher :
+[ ] Type des opérandes dans Binary / Unary (signé ou non, 32 / 64 bits,
+    소수) : comparaisons, Div, Rem, Shr en dépendent, pas dest
+[ ] Operand::Float(f64) ou index dans Program.floats, pas les deux
+[ ] Pointeurs et tableaux : Load / Store / AddrOf
+[ ] Labels : String (generate_loop_label) et Label(usize) (label_id), un
+    seul des deux à terme
 
 ==================================================
 ÉTAPE 3 : PREMIÈRE TRANCHE, MAIN QUI REND 42

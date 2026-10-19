@@ -40,6 +40,7 @@ impl Function {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct VarId(pub usize);
 
 impl VarId {

@@ -7,6 +7,7 @@ use crate::parser::postparser::structs::{
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
 use super::converter::Converter;
+use super::expressions::operand;
 use super::scope::{BlockKind, Scope, Variable};
 use super::types::{fits, range_error, type_name};
 
@@ -108,8 +109,6 @@ impl<'a> Converter<'a> {
         span: Span,
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let inst: Vec<ir::structs::Instr> = vec![];
-
         scope.declare(
             &declare.name,
             Variable {
@@ -119,6 +118,7 @@ impl<'a> Converter<'a> {
             },
             span,
         )?;
+        let inst: Vec<ir::structs::Instr> = vec![];
         return Ok(inst);
     }
 
@@ -130,14 +130,26 @@ impl<'a> Converter<'a> {
         span: Span,
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let inst: Vec<ir::structs::Instr> = vec![];
         let ty = self.get_type(&init.value, scope)?;
+        // Before the declaration: in `가는 가이에요`, the value is the 가 of the blocks around
+        let oper = operand(&init.value, scope);
+        let var = ir_func.new_var(ty.clone());
+
         let variable = Variable {
-            var_id: ir_func.new_var(ty.clone()),
+            var_id: var,
             ty,
             constant: init.constant,
         };
         scope.declare(&init.name, variable, span)?;
+
+        let inst: Vec<ir::structs::Instr> = match oper {
+            Some(oper) => vec![ir::structs::Instr::Copy {
+                dest: var,
+                src: oper,
+            }],
+            None => vec![],
+        };
+
         return Ok(inst);
     }
 

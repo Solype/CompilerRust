@@ -109,11 +109,35 @@ pub enum Instr {
 pub struct Program {
     pub funcs: Vec<Function>,
     pub strings: Vec<String>,
-    pub floats: Vec<f64>,
+    pub floats: Vec<(f64, bool)>, // valeur et short : écrite sur 4 octets si 짧은 소수
 }
 
 impl Program {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// The string `value`: its id is its index in `strings`, added the first time it is asked
+    pub fn string_id(&mut self, value: &str) -> usize {
+        if let Some(id) = self.strings.iter().position(|string| string == value) {
+            return id;
+        }
+        self.strings.push(value.to_string());
+        self.strings.len() - 1
+    }
+
+    /// The float `value` on 4 bytes if `short`, on 8 otherwise: its id is its index in `floats`,
+    /// added the first time it is asked; compared by its bits, as f64 is not Eq
+    pub fn float_id(&mut self, value: f64, short: bool) -> usize {
+        let key = (value.to_bits(), short);
+        if let Some(id) = self
+            .floats
+            .iter()
+            .position(|(float, float_short)| (float.to_bits(), *float_short) == key)
+        {
+            return id;
+        }
+        self.floats.push((value, short));
+        self.floats.len() - 1
     }
 }

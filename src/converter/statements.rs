@@ -1,7 +1,7 @@
 use crate::converter::expressions::Callee;
-use crate::converter::ir;
 use crate::converter::ir::structs::Instr::Cast;
 use crate::converter::scope::LoopLabels;
+use crate::converter::{ir, scope};
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
     Assign, Declare, Expr, ExprKind, For, Function, If, Init, Statement, StatementKind, Type, While,
@@ -269,12 +269,18 @@ impl<'a> Converter<'a> {
         let _cond = self.convert_condition(&if_statement.condition, parent)?;
         // Each branch takes its own count: two loops in `만약` and `아니면` get distinct labels
         parent.block_count += 1;
-        self.convert_block(&if_statement.then, parent, ir_func)?;
+        let (otherwise_label, end_label) = parent.generate_if_labels();
+        let mut block_instr = self.convert_block(&if_statement.then, parent, ir_func)?;
         if let Some(otherwise_block) = &if_statement.otherwise {
             parent.block_count += 1;
-            self.convert_block(&otherwise_block, parent, ir_func)?;
+            block_instr.push(ir::structs::Instr::Label(
+                ir_func.label_id(&otherwise_label),
+            ));
+            let mut instr = self.convert_block(&otherwise_block, parent, ir_func)?;
+            block_instr.append(&mut instr);
         }
-        return Ok(vec![]);
+        block_instr.push(ir::structs::Instr::Label(ir_func.label_id(&end_label)));
+        return Ok(block_instr);
     }
 
     /// `그만해요`
@@ -282,10 +288,12 @@ impl<'a> Converter<'a> {
         &self,
         scope: &Scope,
         span: Span,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        // The end of the innermost loop: the same name gives the Label its loop places
         if let Some(loop_labels) = scope.in_loop() {
-            return Ok(vec![]);
-            // return Ok(vec![ir::structs::Instr::Jump(ir::structs::Label::)]);
+            let end = ir_func.label_id(&loop_labels.label_end);
+            return Ok(vec![ir::structs::Instr::Jump(end)]);
         }
         return Err(ConvertError::new(ConvertErrorKind::BreakOutOfLoop, span));
     }
@@ -340,7 +348,9 @@ impl<'a> Converter<'a> {
                     new_scope.block_count += 1;
                     self.convert_for_loop(&new_scope, for_loop, statement.span, ir_func)?
                 }
-                StatementKind::Break => self.convert_break(&new_scope, statement.span)?,
+                StatementKind::Break => {
+                    self.convert_break(&new_scope, statement.span, ir_func)?
+                }
                 StatementKind::Continue => self.convert_continue(&new_scope, statement.span)?,
             };
             instructions.append(&mut new_inst);

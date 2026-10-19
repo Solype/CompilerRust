@@ -87,17 +87,34 @@ impl<'p> Scope<'p> {
         let mut counts = vec![self.block_count.to_string()];
         let mut curscope = self;
         while let Some(parent) = curscope.parent {
-        	match curscope.kind {
-        		BlockKind::Loop(_) => counts.push("loop".to_string()),
-        		BlockKind::Function(f) => counts.push(f.name.clone()),
-        		BlockKind::Block => counts.push("B".to_string()),
-        	}
-        	counts.push(parent.block_count.to_string());
+            match curscope.kind {
+                BlockKind::Loop(_) => counts.push("loop".to_string()),
+                BlockKind::Function(f) => counts.push(f.name.clone()),
+                BlockKind::Block => counts.push("B".to_string()),
+            }
+            counts.push(parent.block_count.to_string());
             curscope = parent;
         }
         counts.reverse();
         let base_name = format!("loop_{}", counts.join("_"));
         return (format!("{base_name}_start"), format!("{base_name}_end"));
+    }
+
+    pub(super) fn generate_if_labels(&self) -> (String, String) {
+        let mut counts = vec![self.block_count.to_string()];
+        let mut curscope = self;
+        while let Some(parent) = curscope.parent {
+            match curscope.kind {
+                BlockKind::Loop(_) => counts.push("loop".to_string()),
+                BlockKind::Function(f) => counts.push(f.name.clone()),
+                BlockKind::Block => counts.push("B".to_string()),
+            }
+            counts.push(parent.block_count.to_string());
+            curscope = parent;
+        }
+        counts.reverse();
+        let base_name = format!("condition_{}", counts.join("_"));
+        return (format!("{base_name}_otherwise"), format!("{base_name}_end"));
     }
 
     /// Adds `name` to this block, if no variable of this block has it

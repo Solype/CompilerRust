@@ -58,11 +58,12 @@ fn main() -> std::io::Result<()> {
         process::exit(1);
     });
     print!("{ast}");
-    Converter::new(&ast).convert().unwrap_or_else(|err| {
+    let ir = Converter::new(&ast).convert().unwrap_or_else(|err| {
         let (line, col) = err.span.line_col(&source);
         eprintln!("{}:{line}:{col}: {err}", args.path);
         process::exit(1);
     });
+    print!("{ir}");
 
     Ok(())
 }

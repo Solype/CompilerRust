@@ -8,6 +8,22 @@ use super::converter::Converter;
 use super::scope::Scope;
 use super::types::{can_cast, fits, is_number, range_error, type_name};
 
+/// What a call runs: a function of the program, or `바꾸다` to the type of its `로` argument
+pub(super) enum Callee<'a> {
+    Function(&'a Function),
+    Cast(Type),
+}
+
+impl Callee<'_> {
+    /// The type of the value of the call; `None` for a function without `TYPE을 반환하는`
+    pub(super) fn return_type(&self) -> Option<Type> {
+        match self {
+            Callee::Function(func) => func.return_type.clone(),
+            Callee::Cast(ty) => Some(ty.clone()),
+        }
+    }
+}
+
 impl<'a> Converter<'a> {
     /// The type of `expr`, once its names and its calls are checked
     pub(super) fn get_type(&self, expr: &Expr, scope: &Scope) -> Result<Type, ConvertError> {
@@ -97,7 +113,8 @@ impl<'a> Converter<'a> {
                 }
             }
             ExprKind::Call { verb, args } => self
-                .get_call_type(verb, args, scope, expr.span)?
+                .resolve_call(verb, args, scope, expr.span)?
+                .return_type()
                 .ok_or_else(|| {
                     let kind = ConvertErrorKind::NoValue(verb.clone());
                     ConvertError::new(kind, expr.span)
@@ -105,25 +122,24 @@ impl<'a> Converter<'a> {
         }
     }
 
-    /// The return type of the function `verb` that takes `args`, once the arguments are checked;
-    /// `None` for a function without `TYPE을 반환하는`
-    pub(super) fn get_call_type(
+    /// The function `verb` that takes `args`, or the `바꾸다` cast, once the arguments are checked
+    pub(super) fn resolve_call(
         &self,
         verb: &str,
         args: &[Argument],
         scope: &Scope,
         span: Span,
-    ) -> Result<Option<Type>, ConvertError> {
+    ) -> Result<Callee<'a>, ConvertError> {
         let (types, values) = self.get_argument_types(args, scope)?;
         if let Some(ty) = cast_type(verb, args, &types, &values, span)? {
-            return Ok(Some(ty));
+            return Ok(Callee::Cast(ty));
         }
         if let Some(func) = self.find_exact_function(verb, &types, &values) {
-            return Ok(func.return_type.clone());
+            return Ok(Callee::Function(func));
         }
         let types_names = || types.iter().map(type_name).collect::<Vec<_>>().join(", ");
         match self.find_functions_by_literals(verb, &types, &values)[..] {
-            [func] => Ok(func.return_type.clone()),
+            [func] => Ok(Callee::Function(func)),
             [] => {
                 let kind = ConvertErrorKind::UnknownFunction {
                     verb: verb.to_string(),

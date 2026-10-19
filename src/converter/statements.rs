@@ -1,4 +1,5 @@
 use crate::converter::ir;
+use crate::converter::scope::LoopLabels;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
     Assign, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind, Type, While,
@@ -28,14 +29,23 @@ impl<'a> Converter<'a> {
         parent: &Scope,
         for_loop: &'a For,
         span: Span,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let mut scope = Scope::new(BlockKind::Loop(), Some(parent));
+        let (label_start, label_end) = parent.generate_loop_label();
+        let mut scope = Scope::new(
+            BlockKind::Loop(LoopLabels {
+                label_start: label_start.clone(),
+                label_end: label_end.clone(),
+            }),
+            Some(parent),
+        );
         let ty = match &for_loop.ty {
             // `정수 수를 …`: declared by the loop, in its own scope
             Some(ty) => {
                 let variable = Variable {
                     ty: ty.clone(),
                     constant: false,
+                    var_id: ir_func.new_var(ty.clone()),
                 };
                 scope.variables.insert(for_loop.variable.clone(), variable);
                 ty.clone()
@@ -65,17 +75,29 @@ impl<'a> Converter<'a> {
                 return Err(ConvertError::new(ConvertErrorKind::NotInteger, bound.span));
             }
         }
-        return self.convert_block(&for_loop.body, &scope);
+        let mut instr = self.convert_block(&for_loop.body, &scope, ir_func)?;
+        instr.insert(0, ir::structs::Instr::Label(ir_func.label_id(&label_start)));
+        instr.push(ir::structs::Instr::Jump(ir_func.label_id(&label_start)));
+        instr.push(ir::structs::Instr::Label(ir_func.label_id(&label_end)));
+        return Ok(instr);
     }
 
     fn convert_while_loop(
         &mut self,
         parent: &Scope,
         while_loop: &'a While,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let scope = Scope::new(BlockKind::Loop(), Some(parent));
+        let (label_start, label_end) = parent.generate_loop_label();
+        let scope = Scope::new(
+            BlockKind::Loop(LoopLabels {
+                label_start,
+                label_end,
+            }),
+            Some(parent),
+        );
         let _cond = self.convert_condition(&while_loop.condition, parent)?;
-        return self.convert_block(&while_loop.body, &scope);
+        return self.convert_block(&while_loop.body, &scope, ir_func);
     }
 
     /// `수는 정수예요.`: adds the variable to `scope`
@@ -84,13 +106,16 @@ impl<'a> Converter<'a> {
         scope: &mut Scope,
         declare: &'a Declare,
         span: Span,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let mut inst: Vec<ir::structs::Instr> = vec![];
+        let inst: Vec<ir::structs::Instr> = vec![];
+
         scope.declare(
             &declare.name,
             Variable {
                 ty: declare.ty.clone(),
                 constant: false,
+                var_id: ir_func.new_var(declare.ty.clone()),
             },
             span,
         )?;
@@ -103,10 +128,13 @@ impl<'a> Converter<'a> {
         scope: &mut Scope,
         init: &'a Init,
         span: Span,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let mut inst: Vec<ir::structs::Instr> = vec![];
+        let inst: Vec<ir::structs::Instr> = vec![];
+        let ty = self.get_type(&init.value, scope)?;
         let variable = Variable {
-            ty: self.get_type(&init.value, scope)?,
+            var_id: ir_func.new_var(ty.clone()),
+            ty,
             constant: init.constant,
         };
         scope.declare(&init.name, variable, span)?;
@@ -183,7 +211,7 @@ impl<'a> Converter<'a> {
         match &call.kind {
             // Alone, a call may return nothing
             ExprKind::Call { verb, args } => {
-                self.get_call_type(verb, args, scope, call.span)?;
+                self.resolve_call(verb, args, scope, call.span)?;
             }
             _ => {
                 self.get_type(call, scope)?;
@@ -195,13 +223,17 @@ impl<'a> Converter<'a> {
     /// `만약 … { … } 아니면 { … }`
     fn convert_if(
         &mut self,
-        parent: &Scope,
+        parent: &mut Scope,
         if_statement: &'a If,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
         let _cond = self.convert_condition(&if_statement.condition, parent)?;
-        self.convert_block(&if_statement.then, parent)?;
+        // Each branch takes its own count: two loops in `만약` and `아니면` get distinct labels
+        parent.block_count += 1;
+        self.convert_block(&if_statement.then, parent, ir_func)?;
         if let Some(otherwise_block) = &if_statement.otherwise {
-            self.convert_block(&otherwise_block, parent)?;
+            parent.block_count += 1;
+            self.convert_block(&otherwise_block, parent, ir_func)?;
         }
         return Ok(vec![]);
     }
@@ -212,8 +244,9 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         span: Span,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        if scope.in_loop() {
+        if let Some(loop_labels) = scope.in_loop() {
             return Ok(vec![]);
+            // return Ok(vec![ir::structs::Instr::Jump(ir::structs::Label::)]);
         }
         return Err(ConvertError::new(ConvertErrorKind::BreakOutOfLoop, span));
     }
@@ -224,29 +257,31 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         span: Span,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        if scope.in_loop() {
+        if scope.in_loop().is_some() {
             return Ok(vec![]);
         }
         return Err(ConvertError::new(ConvertErrorKind::ContinueOutOfLoop, span));
     }
 
     /// Checks `block` in its own scope, which starts with the variables of `scope` (the
-    /// parameters, the variable of a `세면서`)
+    /// parameters, the variable of a `세면서`); its variables get their id from `ir_func`
     pub(super) fn convert_block(
         &mut self,
         block: &'a [Statement],
         scope: &Scope,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
         let mut new_scope = Scope::new(BlockKind::Block, Some(scope));
         let mut instructions: Vec<ir::structs::Instr> = vec![];
 
         for statement in block {
+            instructions.push(ir::structs::Instr::Comment(source_line(statement)));
             let mut new_inst = match &statement.kind {
                 StatementKind::Declare(declare) => {
-                    self.convert_declare(&mut new_scope, declare, statement.span)?
+                    self.convert_declare(&mut new_scope, declare, statement.span, ir_func)?
                 }
                 StatementKind::Init(init) => {
-                    self.convert_init(&mut new_scope, init, statement.span)?
+                    self.convert_init(&mut new_scope, init, statement.span, ir_func)?
                 }
                 StatementKind::Assign(assign) => {
                     self.convert_assign(&new_scope, assign, statement.span)?
@@ -255,12 +290,16 @@ impl<'a> Converter<'a> {
                     self.convert_return(&new_scope, value, statement.span)?
                 }
                 StatementKind::Call(call) => self.convert_call(&new_scope, call)?,
-                StatementKind::If(if_statement) => self.convert_if(&new_scope, if_statement)?,
+                StatementKind::If(if_statement) => {
+                    self.convert_if(&mut new_scope, if_statement, ir_func)?
+                }
                 StatementKind::While(while_loop) => {
-                    self.convert_while_loop(&new_scope, while_loop)?
+                    new_scope.block_count += 1;
+                    self.convert_while_loop(&new_scope, while_loop, ir_func)?
                 }
                 StatementKind::For(for_loop) => {
-                    self.convert_for_loop(&new_scope, for_loop, statement.span)?
+                    new_scope.block_count += 1;
+                    self.convert_for_loop(&new_scope, for_loop, statement.span, ir_func)?
                 }
                 StatementKind::Break => self.convert_break(&new_scope, statement.span)?,
                 StatementKind::Continue => self.convert_continue(&new_scope, statement.span)?,
@@ -269,4 +308,33 @@ impl<'a> Converter<'a> {
         }
         Ok(instructions)
     }
+}
+
+/// The first line of `statement` as the AST shows it, without its blocks: the comment above
+/// its instructions
+fn source_line(statement: &Statement) -> String {
+    return match &statement.kind {
+        StatementKind::Declare(Declare { name, ty }) => format!("let {name}: {ty}"),
+        StatementKind::Init(Init {
+            name,
+            value,
+            constant,
+        }) => format!(
+            "{} {name} = {value}",
+            if *constant { "const" } else { "let" }
+        ),
+        StatementKind::Assign(Assign { target, value }) => format!("{target} = {value}"),
+        StatementKind::Return(value) => format!("return {value}"),
+        StatementKind::Call(call) => call.to_string(),
+        StatementKind::If(If { condition, .. }) => format!("if {condition}"),
+        StatementKind::While(While { condition, .. }) => format!("while {condition}"),
+        StatementKind::For(For {
+            variable,
+            from,
+            until,
+            ..
+        }) => format!("for {variable} in {from}..{until}"),
+        StatementKind::Break => "break".to_string(),
+        StatementKind::Continue => "continue".to_string(),
+    };
 }

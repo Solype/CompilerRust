@@ -37,6 +37,7 @@ through Claude Code).
 | Grammar and FIRST (October 5) | AI, on my `ParserProduction` struct |
 | LR(1) table, parser, tree, AST (October 9) | Shared: detail below |
 | Converter, the semantic analysis (`src/converter`, October 12 to 15) | Shared: detail below |
+| IR, the output of the converter (`src/converter/ir`, October 16 to 19) | Me; the AI helped complete the structs |
 
 ## The backend: written by me, completed with the AI
 
@@ -165,6 +166,11 @@ I chose the points and asked for them. On that day, the AI wrote most of the cod
 | Splitting `converter.rs` into `scope.rs`, `types.rs`, `expressions.rs`, `statements.rs` and `functions.rs` (`ebd3cc9`) | AI, at my request |
 | Error samples in `sample/erreurs/` | AI |
 | To-do lists, C equivalent of each type, explanation of the typed IR the codegen needs | AI, explanations only |
+
+## October 16 to 19: the IR (`src/converter/ir`)
+
+The converter now gives an IR, the three address code the codegen will turn into x86-64
+instructions. The AI helped me complete the IR structs; I wrote the rest by hand.
 
 ## How I used the AI
 

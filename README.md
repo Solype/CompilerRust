@@ -79,7 +79,7 @@ cargo build --release
 
 - `--tree` also prints the parse tree, before the AST.
 - An error in the source exits with code 1, an unreadable file with code 84.
-- Sample programs are in `sample/` (`01_retour.kr` to `10_pgcd.kr`), programs that must be
+- Sample programs are in `sample/` (`01_retour.kr` to `11_affectation.kr`), programs that must be
   refused in `sample/erreurs/`, and the reference program is `Proto.kr`.
 
 The demo calls an external `my_exit`, to provide at link time, for example with NASM:

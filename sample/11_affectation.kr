@@ -1,0 +1,12 @@
+/*
+ * 11_affectation.kr : initialisations et affectations de littéraux et de variables.
+ * main rend 7 : `echo $?` après l'exécution affiche 7.
+ */
+
+정수를 반환하는 main() {
+    가는 1이에요.
+    나는 2예요.
+    7을 가에 넣어요.
+    가를 나에 넣어요.
+    나를 반환해요.
+}

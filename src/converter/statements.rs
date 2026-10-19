@@ -180,7 +180,14 @@ impl<'a> Converter<'a> {
             };
             return Err(ConvertError::new(kind, span));
         }
-        Ok(vec![])
+        let inst: Vec<ir::structs::Instr> = match operand(&assign.value, scope) {
+            Some(oper) => vec![ir::structs::Instr::Copy {
+                dest: var.var_id,
+                src: oper,
+            }],
+            None => vec![],
+        };
+        return Ok(inst);
     }
 
     /// `… 반환해요.`

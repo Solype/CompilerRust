@@ -20,6 +20,56 @@ src/
 Le lexer est écrit à la main (l'ancien automate lexical_analisys/ est supprimé).
 
 ==================================================
+PRIORITÉ : LES PREMIERS BINAIRES
+==================================================
+
+Dans l'ordre : chaque jalon donne un binaire qui tourne. Détail des
+instructions IR manquantes en 2.6.7.
+
+Jalon 1 : sample/01_retour.kr, main rend 42 (./prog; echo $? -> 42)
+[ ] convert_return : Instr::Return(operand)
+[ ] src/codegen/ : ir::Function -> Vec<Instruction>
+    [ ] Prologue / épilogue : push rbp ; mov rbp, rsp ; sub rsp, taille
+        (8 octets par var, arrondi à 16) ... leave ; ret
+    [ ] Une case de pile par VarId : [rbp - 8 * (id + 1)]
+    [ ] Copy -> mov ; Return -> mov rax, opérande puis épilogue
+    [ ] Label -> LabelId (un Vec<LabelId> par fonction, indexé par
+        Label.0) ; Jump -> jmp
+[ ] Écrire le .o : ElfFile64, section .text, une fonction globale par
+    ir::Function (reprendre add_section / add_function de samples/demo.rs)
+[ ] main.rs : écrire le .o au lieu d'afficher seulement l'IR
+[ ] Lien : gcc fichier.o -o prog (la libc fournit _start, PIE par défaut)
+[ ] Script de test : compile, lie, lance chaque sample, compare le code de
+    sortie (et stdout) à l'attendu
+
+Jalon 2 : sample/02_bonjour.kr, printf
+[ ] convert_call : arguments convertis en opérandes
+[ ] Chaînes : Program.strings rempli, une section .rodata, Operand::Str
+    -> lea reg, [rip + chaîne]
+[ ] Appel System V : arguments dans rdi, rsi, rdx, rcx, r8, r9 ; pile
+    alignée sur 16 au call ; variadique : al = nombre d'arguments XMM ;
+    résultat dans rax -> dest
+[ ] Symbole externe (printf) : declare_non_defined_sym, relocation PLT32
+[ ] convert_func : remplir ir_func.params ; le prologue range rdi… dans
+    leurs cases
+
+Jalon 3 : samples 03 à 11, calculs et contrôle
+[ ] convert_expr : temporaires, Unary, Binary, Call avec dest, Cast ;
+    Init / Assign / Return / condition passent par lui
+[ ] Trancher le type des opérandes de Binary / Unary avant le codegen des
+    comparaisons, de Div / Rem et de Shr (signé ou non, 32 / 64 bits)
+[ ] convert_condition rend un Operand ; if : JumpIfNot vers otherwise / end,
+    Jump end après le then
+[ ] 동안 : labels, condition, sauts ; 세면서 : from, condition < until,
+    incrément, 3e label pour 넘어가요
+[ ] Return implicite des fonctions sans 반환하는
+[ ] 그리고 / 또는 en court-circuit
+[ ] 소수 : constantes en .rodata, registres XMM (06_types)
+
+Plus tard : pointeurs et tableaux (Load / Store / AddrOf), tests unitaires
+du converter.
+
+==================================================
 FAIT
 ==================================================
 
@@ -454,8 +504,8 @@ Instructions IR manquantes :
     (rendues par convert_block puis jetées), Jump vers la fin, labels
 [ ] convert_while_loop : Label début, condition, JumpIfNot fin, corps (rendu
     puis jeté), Jump début, Label fin
-[ ] convert_for_loop : Copy de from dans la variable, condition variable <=
-    until + JumpIfNot fin, incrément (Binary Add 1) ; Label début, Jump et
+[ ] convert_for_loop : Copy de from dans la variable, condition variable <
+    until (B exclu) + JumpIfNot fin, incrément (Binary Add 1) ; Label début, Jump et
     Label fin déjà émis
 [ ] convert_break : Jump(label_id(label_end)) ; il faut passer ir_func
 [ ] convert_continue : Jump vers le début (동안) ou vers l'incrément

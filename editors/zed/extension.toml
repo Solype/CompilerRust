@@ -8,5 +8,5 @@ authors = ["Solype"]
 # The grammar lives in this repository: rev must be a commit that contains editors/tree-sitter-kr
 [grammars.kr]
 repository = "file:///home/solype/delivery/current_days/CompilerRust"
-rev = "REV"
+rev = "49bc2596a13d99a08c24bbc91008ddc6c4c3e0bf"
 path = "editors/tree-sitter-kr"

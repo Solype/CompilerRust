@@ -1,0 +1,331 @@
+[
+  {
+    "type": "boolean",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "bracket",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "keyword",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "operator",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "punctuation",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "source_file",
+    "named": true,
+    "root": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "boolean",
+          "named": true
+        },
+        {
+          "type": "bracket",
+          "named": true
+        },
+        {
+          "type": "comment",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "keyword",
+          "named": true
+        },
+        {
+          "type": "number",
+          "named": true
+        },
+        {
+          "type": "operator",
+          "named": true
+        },
+        {
+          "type": "punctuation",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        },
+        {
+          "type": "syllable",
+          "named": true
+        },
+        {
+          "type": "type",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "string",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "escape",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "type",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "!=",
+    "named": false
+  },
+  {
+    "type": "\"",
+    "named": false
+  },
+  {
+    "type": "%",
+    "named": false
+  },
+  {
+    "type": "&",
+    "named": false
+  },
+  {
+    "type": "(",
+    "named": false
+  },
+  {
+    "type": ")",
+    "named": false
+  },
+  {
+    "type": "*",
+    "named": false
+  },
+  {
+    "type": "+",
+    "named": false
+  },
+  {
+    "type": ",",
+    "named": false
+  },
+  {
+    "type": "-",
+    "named": false
+  },
+  {
+    "type": ".",
+    "named": false
+  },
+  {
+    "type": "...",
+    "named": false
+  },
+  {
+    "type": "/",
+    "named": false
+  },
+  {
+    "type": "<",
+    "named": false
+  },
+  {
+    "type": "<<",
+    "named": false
+  },
+  {
+    "type": "<=",
+    "named": false
+  },
+  {
+    "type": "==",
+    "named": false
+  },
+  {
+    "type": ">",
+    "named": false
+  },
+  {
+    "type": ">=",
+    "named": false
+  },
+  {
+    "type": ">>",
+    "named": false
+  },
+  {
+    "type": "^",
+    "named": false
+  },
+  {
+    "type": "comment",
+    "named": true
+  },
+  {
+    "type": "escape",
+    "named": true
+  },
+  {
+    "type": "identifier",
+    "named": true
+  },
+  {
+    "type": "number",
+    "named": true
+  },
+  {
+    "type": "syllable",
+    "named": true
+  },
+  {
+    "type": "{",
+    "named": false
+  },
+  {
+    "type": "|",
+    "named": false
+  },
+  {
+    "type": "}",
+    "named": false
+  },
+  {
+    "type": "~",
+    "named": false
+  },
+  {
+    "type": "…",
+    "named": false
+  },
+  {
+    "type": "거짓",
+    "named": false
+  },
+  {
+    "type": "고정된",
+    "named": false
+  },
+  {
+    "type": "그리고",
+    "named": false
+  },
+  {
+    "type": "그만해요",
+    "named": false
+  },
+  {
+    "type": "넘어가요",
+    "named": false
+  },
+  {
+    "type": "논리",
+    "named": false
+  },
+  {
+    "type": "동안",
+    "named": false
+  },
+  {
+    "type": "또는",
+    "named": false
+  },
+  {
+    "type": "만약",
+    "named": false
+  },
+  {
+    "type": "문자",
+    "named": false
+  },
+  {
+    "type": "바이트",
+    "named": false
+  },
+  {
+    "type": "반환",
+    "named": false
+  },
+  {
+    "type": "반환하는",
+    "named": false
+  },
+  {
+    "type": "반환해요",
+    "named": false
+  },
+  {
+    "type": "받아",
+    "named": false
+  },
+  {
+    "type": "부호 없는",
+    "named": false
+  },
+  {
+    "type": "세면서",
+    "named": false
+  },
+  {
+    "type": "소수",
+    "named": false
+  },
+  {
+    "type": "아니면",
+    "named": false
+  },
+  {
+    "type": "아닌",
+    "named": false
+  },
+  {
+    "type": "외부",
+    "named": false
+  },
+  {
+    "type": "정수",
+    "named": false
+  },
+  {
+    "type": "주소",
+    "named": false
+  },
+  {
+    "type": "짧은",
+    "named": false
+  },
+  {
+    "type": "참",
+    "named": false
+  },
+  {
+    "type": "크기",
+    "named": false
+  }
+]

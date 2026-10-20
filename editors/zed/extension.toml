@@ -1,0 +1,12 @@
+id = "kr"
+name = "Kr"
+description = "Coloration des programmes .kr"
+version = "0.1.0"
+schema_version = 1
+authors = ["Solype"]
+
+# The grammar lives in this repository: rev must be a commit that contains editors/tree-sitter-kr
+[grammars.kr]
+repository = "file:///home/solype/delivery/current_days/CompilerRust"
+rev = "REV"
+path = "editors/tree-sitter-kr"

@@ -1,0 +1,11 @@
+(comment) @comment
+(string) @string
+(escape) @string.escape
+(number) @number
+(boolean) @boolean
+(type) @type
+(keyword) @keyword
+(identifier) @function
+(operator) @operator
+(punctuation) @punctuation.delimiter
+(bracket) @punctuation.bracket

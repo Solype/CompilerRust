@@ -43,7 +43,7 @@ impl Function {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct VarId(pub usize);
 
 impl VarId {
@@ -52,6 +52,7 @@ impl VarId {
     }
 }
 
+#[derive(Debug)]
 pub struct Label(pub usize);
 
 impl Label {
@@ -60,6 +61,7 @@ impl Label {
     }
 }
 
+#[derive(Debug)]
 pub enum Operand {
     Var(VarId),
     Int(i64),
@@ -69,6 +71,7 @@ pub enum Operand {
     Null,
 }
 
+#[derive(Debug)]
 pub enum Instr {
     Copy {
         dest: VarId,

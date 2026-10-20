@@ -1,3 +1,4 @@
+mod codegen;
 mod converter;
 mod elf;
 mod hangeul;
@@ -5,7 +6,7 @@ mod lexer;
 mod parser;
 mod samples;
 
-use std::fs;
+use std::fs::{self, File};
 use std::{env, process};
 
 use converter::converter::Converter;
@@ -64,6 +65,8 @@ fn main() -> std::io::Result<()> {
         process::exit(1);
     });
     print!("{ir}");
+    codegen::generation::generate(&ir).write(&mut File::create(OUTPUT)?)?;
+    println!("ELF written: {OUTPUT}");
 
     Ok(())
 }

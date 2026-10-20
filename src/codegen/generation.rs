@@ -1,42 +1,17 @@
 use crate::{
+    codegen::instructions::generate_return,
     converter::ir::structs::{Instr, Program},
     elf::{
         elfsym::{StBind, StType, StVis, make_st_info},
         file::ElfFile64,
-        instructions::{BinOp, CtrlOp, Instruction, register::RAX},
+        instructions::Instruction,
         shdr::{ElfShdr, SectionName, ShFlags, ShType},
     },
 };
 
-use crate::converter::ir::structs::Operand as IrOp;
-use crate::elf::instructions::Operand as ElfOper;
-
-fn convert_operand(op: &IrOp) -> ElfOper {
-    return match op {
-        IrOp::Int(n) => ElfOper::Imm(*n),
-        IrOp::Bool(b) => ElfOper::Imm(*b as i64),
-        IrOp::Null => ElfOper::Imm(0),
-        _ => unimplemented!(),
-    };
-}
-
 fn generate_instruction(instr: &Instr) -> Vec<Instruction> {
     return match instr {
-        Instr::Return(op) => {
-            // shortcut: no leave yet, add it with the prologue
-            vec![
-                Instruction::Binary {
-                    op: BinOp::Mov,
-                    dst: ElfOper::Reg(RAX),
-                    src: convert_operand(op),
-                    size: None,
-                },
-                Instruction::Ctrl {
-                    op: CtrlOp::Ret,
-                    target: ElfOper::NoOperand,
-                },
-            ]
-        }
+        Instr::Return(op) => generate_return(op),
         Instr::Comment(_) => vec![],
         _ => {
             println!("{:?}", instr);
@@ -55,6 +30,7 @@ pub fn generate(prog: &Program) -> ElfFile64 {
             continue; // 외부 : pas de corps
         };
         let mut bin_instr: Vec<Instruction> = vec![];
+
         for instr in body.iter() {
             let mut new_instr = generate_instruction(&instr);
             bin_instr.append(&mut new_instr);

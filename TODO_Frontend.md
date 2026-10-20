@@ -39,8 +39,9 @@ Jalon 1 : sample/01_retour.kr, main rend 42 (./prog; echo $? -> 42)
         Label.0) ; Jump -> jmp
 [X] Écrire le .o : ElfFile64, section .text, une fonction globale par
     ir::Function (add_section / add_function, comme samples/demo.rs)
-[X] main.rs : écrit le .o (output.elf) après l'IR
-[X] Lien : -x appelle gcc output.elf -o a.out (la libc fournit _start)
+[X] main.rs : écrit le .o après l'IR, fichier.kr -> fichier.o ; plusieurs
+    fichiers acceptés
+[X] Lien : -x appelle gcc sur tous les .o -> a.out (la libc fournit _start)
     ; 01_retour.kr : ./a.out; echo $? -> 42
 [ ] Script de test : compile, lie, lance chaque sample, compare le code de
     sortie (et stdout) à l'attendu
@@ -77,8 +78,8 @@ du converter.
 FAIT
 ==================================================
 
-[X] CLI : ./compiler fichier.kr lit le fichier (UTF-8), erreur + code 1 si
-    argument manquant ou fichier illisible
+[X] CLI : ./compiler fichier.kr... lit chaque fichier (UTF-8) ; toute erreur
+    (source, usage, fichier illisible, gcc) : message + code 1
 [X] Proto.kr : programme de référence, valeurs attendues en commentaire
 
 ==================================================

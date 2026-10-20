@@ -12,13 +12,14 @@ through Claude Code).
   converter.
 - **Exception**: the commits `fc1447c`, `efaad85` and `d1c847c` (October 9) were made by the AI,
   but without the `Co-Authored-By` line, at my request. Their content is detailed below. The
-  same goes for the commits of October 15 (`996c222` to `41000ea`).
+  same goes for the commits of October 15 (`996c222` to `41000ea`) and October 20 (`7c222ba` to
+  `6ef5d69`).
 - **Limits**:
   - the AI sessions of October 2 to 4 are no longer available: for that period, only the
     `Co-Authored-By` line counts;
   - the AI sessions of October 10 to 12 are no longer available either: see "To be confirmed";
-  - the commits of October 1 and 2 without that line (encoder tests, reports, REX/ModRM fixes)
-    were made with the AI: I state it myself, no record shows it;
+  - the commits of October 1 and 2 without that line (encoder tests, reports, encoding edge
+    cases) were made with the AI: I state it myself, no record shows it;
   - the commits of September 30 are still to be confirmed: see "To be confirmed".
 
 ## Overview
@@ -28,9 +29,8 @@ through Claude Code).
 | ELF backend and x86-64 encoder (`src/elf`), March to September | Me; once the complex functions were in place, the AI completed it instruction by instruction (opcodes) |
 | Every macro of the project (`elf_derive`, `rule!` and `term!` of the grammar) | AI |
 | Sample programs (`src/samples`), README | Me |
-| Encoder tests and REX/ModRM fixes (October 1 and 2) | AI |
-| Every unit test of the project | AI |
-| Relocation fixes, SSE instructions, ELF labels (October 2) | AI, at my request |
+| Every unit test of the project, and the encoding edge cases they revealed (October 1 and 2) | AI |
+| PLT32/32S relocations, SSE instructions, ELF labels (October 2) | AI, at my request |
 | Design of the Korean language, TODO, translation to English | AI and me |
 | Lexer, hangeul conjugation (October 3) | AI, at my request |
 | Pre-parser (October 4 and 5) | AI for 70-80 %, me for the rest |
@@ -38,6 +38,8 @@ through Claude Code).
 | LR(1) table, parser, tree, AST (October 9) | Shared: detail below |
 | Converter, the semantic analysis (`src/converter`, October 12 to 15) | Shared: detail below |
 | IR, the output of the converter (`src/converter/ir`, October 16 to 19) | Me; the AI helped complete the structs |
+| First code generation (`src/codegen`, October 20) | Me |
+| Command line: `-x`, several files, errors (October 20) | AI, at my request |
 
 ## The backend: written by me, completed with the AI
 
@@ -70,8 +72,8 @@ I wrote no test by hand: they were all written by the AI.
   `src/parser/preparser/pre_parser_tests.rs`, `src/parser/cfg/first_tests.rs`,
   `src/parser/cfg/parser_tests.rs` and `src/parser/postparser/postparser_tests.rs`.
 
-The backend fixes of October 1 and 2 (jumps, REX.B/REX.X, 64-bit immediates, ModRM r12/r13) were
-found thanks to these tests, and made with the AI.
+These tests revealed encoding edge cases (jumps, REX.B/REX.X, 64-bit immediates, ModRM r12/r13),
+handled with the AI on October 1 and 2.
 
 ## Made with the AI, October 2 to 5
 
@@ -108,9 +110,9 @@ On this part, I wrote some of the code myself, guided by the explanations of the
 | `Item`, numbering of the terminals (`get_terms`) | Me |
 | `TerminalKey` and its `Hash`, `ParsingEntry` | AI |
 | Errors on the `StartSymbol` rule (`get_first_rule`) | AI, at my request |
-| Closure loop (`closure`) | Me; the AI fixed my first version |
-| `get_new_items` | AI: signature and steps as comments; me: the body. I fixed the `point + 1` bug after an explanation |
-| `goto` | AI: signature and steps; me: the body. I fixed the filter after an explanation |
+| Closure loop (`closure`) | Me, debugged with the AI |
+| `get_new_items` | AI: signature and steps as comments; me: the body |
+| `goto` | AI: signature and steps; me: the body |
 | Loop over the states | AI, from my draft |
 | Filling the table (S, R, Goto, Accept) and detecting conflicts (`fill`) | AI, from my first `R` line |
 | Reorganizing `new()`, comments of `Item` and `First` | AI |
@@ -124,7 +126,7 @@ On this part, I wrote some of the code myself, guided by the explanations of the
 | `Parser` struct and `new` | Me |
 | Signature of `parse` and steps as comments, `rules` field | AI |
 | Loop of `parse` (shift, reduce, goto, accept, error) | Me |
-| `TreeNode` | Me; the AI fixed the enum (lifetime, `Vec` of children, rule number) |
+| `TreeNode` | Me; the AI adjusted the enum (lifetime, `Vec` of children, rule number) |
 | Building the tree in `parse`, `TreeNode::show` | AI |
 | Wiring into main, syntax error message, tests (`parser_tests.rs`) | AI |
 
@@ -172,6 +174,19 @@ I chose the points and asked for them. On that day, the AI wrote most of the cod
 The converter now gives an IR, the three address code the codegen will turn into x86-64
 instructions. The AI helped me complete the IR structs; I wrote the rest by hand.
 
+## October 20: the first code generation (`src/codegen`) and the command line
+
+`sample/01_retour.kr` is the first program compiled into a binary that runs.
+
+| Element | Who |
+|---|---|
+| `get_size_of`, `Operand::Float` as an index in `Program.floats`, the literal arms of `convert_expr` | Me |
+| The codegen: `generate`, one global function per IR function, `convert_operand`, `generate_return` | Me |
+| Small corrections in my code (the `SizeOf` arm, floats in `operand()`, `Return`, `link`) | AI |
+| Wiring the codegen into `main.rs`; the `-x` option; errors returned instead of `process::exit`; several files, each `file.kr` giving `file.o` | AI, at my request |
+| Review of my code, guidelines for the codegen (stack frame, operands, x86 constraints) | AI, explanations only |
+| README and TODO updates | AI |
+
 ## How I used the AI
 
 Over the whole project, the AI was mostly used to **explain**: how a format, an encoding or an
@@ -185,7 +200,7 @@ sections above; the rest of the exchanges were explanations.
 - **To review and fix**: checking my code, finding the bugs, running it on `Proto.kr`.
 - **To write directly**: the repetitive parts or the ones I delegated (all the tests, the grammar
   rules, the lexer, the pre-parser, the conversion to the AST, the converter checks of October
-  15).
+  15, the command line options of October 20).
 
 ## To be confirmed
 

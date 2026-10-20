@@ -15,6 +15,7 @@ target
 
 tests/*
 a.out
+*.o
 
 test*
 

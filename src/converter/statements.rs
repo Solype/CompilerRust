@@ -86,7 +86,7 @@ impl<'a> Converter<'a> {
             ExprKind::Bool(b) => Ok(ir::structs::Operand::Bool(*b)),
             ExprKind::Int(i) => Ok(ir::structs::Operand::Int(*i)),
             ExprKind::Float(f) => Ok(ir::structs::Operand::Float(self.ir.float_id(*f, false))),
-            ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(self.ir.get_size_of(ty))),
+            ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(ir::structs::get_size_of(ty))),
             _ => unimplemented!(),
         }
     }

@@ -12,8 +12,7 @@ through Claude Code).
   converter.
 - **Exception**: the commits `fc1447c`, `efaad85` and `d1c847c` (October 9) were made by the AI,
   but without the `Co-Authored-By` line, at my request. Their content is detailed below. The
-  same goes for the commits of October 15 (`996c222` to `41000ea`) and October 20 (`7c222ba` to
-  `6ef5d69`).
+  same goes for the commits of October 15 (`996c222` to `41000ea`) and October 20 (from `7c222ba`).
 - **Limits**:
   - the AI sessions of October 2 to 4 are no longer available: for that period, only the
     `Co-Authored-By` line counts;
@@ -40,6 +39,26 @@ through Claude Code).
 | IR, the output of the converter (`src/converter/ir`, October 16 to 19) | Me; the AI helped complete the structs |
 | First code generation (`src/codegen`, October 20) | Me |
 | Command line: `-x`, several files, errors (October 20) | AI, at my request |
+
+## Overall share (estimate, October 20)
+
+An estimate from the line count of each part (17,560 lines of Rust) and the sections of this
+document, not an exact measure.
+
+| Measure | Me | AI |
+|---|---|---|
+| The whole project, in lines | ~40 % | ~60 % |
+| Without the tests (~12,300 lines) | ~55 % | ~45 % |
+
+- **Mostly the AI**: the tests (5,275 lines, 30 % of the project), the lexer, the hangeul
+  conjugation, most of the pre-parser, the conversion to the AST, the macros.
+- **Mostly me**: the backend (`src/elf`, 5,302 lines: architecture, ModRM/SIB, ELF format), the
+  samples, the IR and the codegen.
+- **Shared**: the LR(1) table and parser (`src/parser/cfg`), the converter (`src/converter`).
+- **Uncertainty**: the share of the opcodes completed by the AI in `src/elf` is not counted
+  anywhere; it can move the line without the tests by about 10 points.
+- **In design**, the share is more clearly mine: the encoder, the ELF format, `ParserProduction`,
+  the loop of `parse`, the IR and the codegen.
 
 ## The backend: written by me, completed with the AI
 

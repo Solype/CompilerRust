@@ -1,5 +1,5 @@
 use crate::{
-    codegen::instructions::{func_epilogue, generate_return},
+    codegen::instructions::{func_epilogue, generate_call, generate_return},
     converter::ir::structs::{Function, Instr, Program, get_size_of},
     elf::{
         elfsym::{StBind, StType, StVis, make_st_info},
@@ -18,6 +18,7 @@ fn generate_instruction(instr: &Instr) -> Vec<Instruction> {
     return match instr {
         Instr::Return(op) => generate_return(op),
         Instr::Comment(_) => vec![],
+        Instr::Call { dest, symbol, args } => generate_call(dest, symbol, args),
         _ => {
             println!("{:?}", instr);
             unimplemented!()
@@ -50,7 +51,7 @@ fn func_prologue(func: &Function) -> Vec<Instruction> {
     ];
 }
 
-fn need_epilogue(bin_instr: &Vec<Instruction>) -> bool {
+fn need_epilogue(bin_instr: &[Instruction]) -> bool {
     return !bin_instr.last().is_some_and(|last| {
         matches!(
             last,
@@ -71,10 +72,10 @@ pub fn generate(prog: &Program) -> ElfFile64 {
         let Some(body) = &func.body else {
             continue; // 외부 : pas de corps
         };
-        let mut bin_instr: Vec<Instruction> = func_prologue(&func);
+        let mut bin_instr: Vec<Instruction> = func_prologue(func);
 
         for instr in body.iter() {
-            let mut new_instr = generate_instruction(&instr);
+            let mut new_instr = generate_instruction(instr);
             bin_instr.append(&mut new_instr);
         }
         if need_epilogue(&bin_instr) {

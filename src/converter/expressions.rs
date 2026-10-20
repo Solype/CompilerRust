@@ -5,7 +5,7 @@ use crate::parser::postparser::structs::{
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
 use super::converter::Converter;
-use super::ir::structs::Operand;
+use super::ir::structs::{Operand, Program};
 use super::scope::Scope;
 use super::types::{can_cast, fits, is_number, range_error, type_name};
 
@@ -317,13 +317,15 @@ fn binary_name(op: &BinaryOp) -> String {
 
 /// The operand of `expr` when it needs no instruction: a literal or a variable; `None` otherwise
 // shortcut: Str, SizeOf, Unary, Binary and Call give None, until convert_expr lowers them
-pub(super) fn operand(expr: &Expr, scope: &Scope) -> Option<Operand> {
+pub(super) fn operand(expr: &Expr, scope: &Scope, ir: &mut Program) -> Option<Operand> {
     return match &expr.kind {
         ExprKind::Int(value) => Some(Operand::Int(*value)),
-        ExprKind::Float(value) => Some(Operand::Float(*value)),
+        ExprKind::Float(value) => Some(Operand::Float(ir.float_id(*value, false))),
         ExprKind::Bool(value) => Some(Operand::Bool(*value)),
         ExprKind::Null => Some(Operand::Null),
-        ExprKind::Name(name) => scope.find_variable(name).map(|var| Operand::Var(var.var_id)),
+        ExprKind::Name(name) => scope
+            .find_variable(name)
+            .map(|var| Operand::Var(var.var_id)),
         _ => None,
     };
 }

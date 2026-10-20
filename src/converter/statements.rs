@@ -32,7 +32,7 @@ impl<'a> Converter<'a> {
         ir_func: &mut ir::structs::Function,
         instrs: &mut Vec<ir::structs::Instr>, // on pousse dedans : pas de Vec à concaténer
     ) -> Result<ir::structs::Operand, ConvertError> {
-        if let Some(leaf) = operand(expr, scope) {
+        if let Some(leaf) = operand(expr, scope, &mut self.ir) {
             return Ok(leaf);
         }
         let ty = self.get_type(expr, scope)?; // vérifs + type du résultat
@@ -83,6 +83,10 @@ impl<'a> Converter<'a> {
             }
             // Unary, Cast : même schéma ; Call : dest: Some(temporaire)
             ExprKind::Str(str) => Ok(ir::structs::Operand::Str(self.ir.string_id(str))),
+            ExprKind::Bool(b) => Ok(ir::structs::Operand::Bool(*b)),
+            ExprKind::Int(i) => Ok(ir::structs::Operand::Int(*i)),
+            ExprKind::Float(f) => Ok(ir::structs::Operand::Float(self.ir.float_id(*f, false))),
+            ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(self.ir.get_size_of(ty))),
             _ => unimplemented!(),
         }
     }
@@ -195,7 +199,7 @@ impl<'a> Converter<'a> {
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
         let ty = self.get_type(&init.value, scope)?;
         // Before the declaration: in `가는 가이에요`, 가 is not declared yet, declare refuses it
-        let oper = operand(&init.value, scope);
+        let oper = operand(&init.value, scope, &mut self.ir);
         let var = ir_func.new_var(ty.clone());
 
         let variable = Variable {
@@ -247,7 +251,7 @@ impl<'a> Converter<'a> {
             };
             return Err(ConvertError::new(kind, span));
         }
-        let inst: Vec<ir::structs::Instr> = match operand(&assign.value, scope) {
+        let inst: Vec<ir::structs::Instr> = match operand(&assign.value, scope, &mut self.ir) {
             Some(oper) => vec![ir::structs::Instr::Copy {
                 dest: var.var_id,
                 src: oper,

@@ -27,7 +27,7 @@ Dans l'ordre : chaque jalon donne un binaire qui tourne. Détail des
 instructions IR manquantes en 2.6.7.
 
 Jalon 1 : sample/01_retour.kr, main rend 42 (./prog; echo $? -> 42)
-[ ] convert_return : Instr::Return(operand)
+[X] convert_return : Instr::Return(operand)
 [ ] src/codegen/ : ir::Function -> Vec<Instruction>
     [ ] Prologue / épilogue : push rbp ; mov rbp, rsp ; sub rsp, taille
         (8 octets par var, arrondi à 16) ... leave ; ret
@@ -54,8 +54,9 @@ Jalon 2 : sample/02_bonjour.kr, printf
     leurs cases
 
 Jalon 3 : samples 03 à 11, calculs et contrôle
-[ ] convert_expr : temporaires, Unary, Binary, Call avec dest, Cast ;
-    Init / Assign / Return / condition passent par lui
+[X] convert_expr : temporaires, Unary, Binary, Call avec dest, Cast ;
+    Return passe par lui
+[ ] Init / Assign / condition passent par convert_expr
 [ ] Trancher le type des opérandes de Binary / Unary avant le codegen des
     comparaisons, de Div / Rem et de Shr (signé ou non, 32 / 64 bits)
 [ ] convert_condition rend un Operand ; if : JumpIfNot vers otherwise / end,
@@ -486,16 +487,24 @@ Fait :
     Label, ajouté la première fois)
 [X] Init / Assign d'un littéral ou d'une variable : Copy (operand)
 [X] Affichage de l'IR (ir/display.rs, Instr::Comment)
+[X] convert_expr (statements.rs) : descend une expression en instructions,
+    rend son Operand ; temporaires par new_var. Unary, Binary, Call (dest
+    temporaire, arguments convertis), Cast (바꾸다 : Instr::Cast), Str
+    (Program.strings, string_id), Float (Program.floats, float_id), SizeOf
+    (Operand::Int(get_size_of))
+[X] convert_return : Instr::Return(convert_expr)
+[X] Program.strings et Program.floats remplis pendant la conversion
+    (string_id / float_id, sans doublon)
+[X] Operand::Float(index dans Program.floats)
 
 Instructions IR manquantes :
-[ ] convert_expr (expressions.rs) : descendre une expression en
-    instructions, rendre (Operand, Type) ; temporaires par new_var
-    [ ] Unary, Binary
-    [ ] Call : dest temporaire, arguments convertis
-    [ ] Cast (바꾸다) : Instr::Cast
-    [ ] Str : chaîne ajoutée à Program.strings, Operand::Str(index)
-    [ ] SizeOf : Operand::Int(taille du type)
-    [ ] 그리고 / 또는 en court-circuit : JumpIfNot, jamais Binary And / Or
+[ ] convert_expr : 그리고 / 또는 en court-circuit, JumpIfNot, jamais
+    Binary And / Or
+[ ] convert_expr et operand() (expressions.rs) : les littéraux sont lus aux
+    deux endroits, n'en garder qu'un
+[ ] get_size_of : Bool, Null, Custom tombent dans unimplemented!()
+[ ] Littéral 소수 toujours rangé en 64 bits (float_id(_, false)), même pour
+    un 짧은 소수
 [ ] convert_init / convert_assign : valeur composée (calcul, appel, chaîne,
     sizeof) -> aucun Copy aujourd'hui, à brancher sur convert_expr
 [ ] convert_condition : rendre l'Operand de la condition, pas seulement
@@ -510,18 +519,15 @@ Instructions IR manquantes :
 [ ] convert_break : Jump(label_id(label_end)) ; il faut passer ir_func
 [ ] convert_continue : Jump vers le début (동안) ou vers l'incrément
     (세면서, 3e label)
-[ ] convert_return : Instr::Return(operand)
 [ ] Fonction sans 반환하는 : Return implicite en fin de corps
     (Return(Option<Operand>))
 [ ] convert_call : arguments de l'appel (args: vec![] aujourd'hui) ; bras
     Callee::Cast vide
 [ ] convert_func : remplir ir_func.params
-[ ] convert() : remplir Program.strings et Program.floats
 
 Choix de l'IR à trancher :
 [ ] Type des opérandes dans Binary / Unary (signé ou non, 32 / 64 bits,
     소수) : comparaisons, Div, Rem, Shr en dépendent, pas dest
-[ ] Operand::Float(f64) ou index dans Program.floats, pas les deux
 [ ] Pointeurs et tableaux : Load / Store / AddrOf
 [ ] Labels : String (generate_loop_label) et Label(usize) (label_id), un
     seul des deux à terme

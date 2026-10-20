@@ -14,7 +14,7 @@ src/
               cfg/ (grammaire, table LR(1), arbre de dérivation),
               postparser/ (arbre -> AST, types de l'AST dans structs.rs)
   converter/  analyse sémantique de l'AST, puis IR typée (étape 2.6)
-  codegen/    IR typée -> Vec<Instruction> (à faire)
+  codegen/    IR typée -> Vec<Instruction> (generation.rs, commencé)
   elf/        (existant)
 
 Le lexer est écrit à la main (l'ancien automate lexical_analisys/ est supprimé).
@@ -29,16 +29,19 @@ instructions IR manquantes en 2.6.7.
 Jalon 1 : sample/01_retour.kr, main rend 42 (./prog; echo $? -> 42)
 [X] convert_return : Instr::Return(operand)
 [ ] src/codegen/ : ir::Function -> Vec<Instruction>
+    [X] Return -> mov rax, opérande ; ret (convert_operand : Int, Bool, Null)
     [ ] Prologue / épilogue : push rbp ; mov rbp, rsp ; sub rsp, taille
-        (8 octets par var, arrondi à 16) ... leave ; ret
+        (8 octets par var, arrondi à 16) ... leave ; ret ; Return passe
+        par l'épilogue (shortcut: sans leave aujourd'hui)
     [ ] Une case de pile par VarId : [rbp - 8 * (id + 1)]
-    [ ] Copy -> mov ; Return -> mov rax, opérande puis épilogue
+    [ ] Copy -> mov (mémoire vers mémoire : par rax)
     [ ] Label -> LabelId (un Vec<LabelId> par fonction, indexé par
         Label.0) ; Jump -> jmp
-[ ] Écrire le .o : ElfFile64, section .text, une fonction globale par
-    ir::Function (reprendre add_section / add_function de samples/demo.rs)
-[ ] main.rs : écrire le .o au lieu d'afficher seulement l'IR
-[ ] Lien : gcc fichier.o -o prog (la libc fournit _start, PIE par défaut)
+[X] Écrire le .o : ElfFile64, section .text, une fonction globale par
+    ir::Function (add_section / add_function, comme samples/demo.rs)
+[X] main.rs : écrit le .o (output.elf) après l'IR
+[X] Lien : -x appelle gcc output.elf -o a.out (la libc fournit _start)
+    ; 01_retour.kr : ./a.out; echo $? -> 42
 [ ] Script de test : compile, lie, lance chaque sample, compare le code de
     sortie (et stdout) à l'attendu
 
@@ -571,10 +574,10 @@ tests/kr/42.kr :
         avec un Span ; option --tree pour l'arbre de dérivation
     [X] Particules, cas simple : mot-clé connu en tête (정수를 -> 정수 + 를),
         ou particule seule (를 après 42) -> pré-parser
-[ ] Codegen : mov rax, 42 ; ret
-[ ] Écrire un .o avec main global (réutiliser add_section / add_function)
+[X] Codegen : mov rax, 42 ; ret
+[X] Écrire un .o avec main global (réutiliser add_section / add_function)
 [X] Retirer les samples de main.rs : seulement avec --demo
-[ ] Lien : gcc fichier.o -o prog (la libc fournit _start)
+[X] Lien : gcc fichier.o -o prog (la libc fournit _start) : option -x
 [ ] Script de test : compile chaque tests/kr/*.kr, lance le binaire, compare
     code de sortie et stdout avec un .expected
 

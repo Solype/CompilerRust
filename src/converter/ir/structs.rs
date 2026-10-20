@@ -29,8 +29,9 @@ impl Function {
 
     /// A new variable of type `ty`: its id is its index in `vars`, unique in the whole function
     pub fn new_var(&mut self, ty: Type) -> VarId {
+        let var = VarId::new(self.vars.len(), get_size_of(&ty) as usize);
         self.vars.push(ty);
-        VarId::new(self.vars.len() - 1)
+        var
     }
 
     /// The label `name`: its id is its index in `labels`, added the first time it is asked
@@ -44,11 +45,11 @@ impl Function {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct VarId(pub usize);
+pub struct VarId(pub usize, pub usize);
 
 impl VarId {
-    pub fn new(id: usize) -> Self {
-        Self(id)
+    pub fn new(id: usize, size: usize) -> Self {
+        Self(id, size)
     }
 }
 

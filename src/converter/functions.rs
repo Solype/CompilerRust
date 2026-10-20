@@ -48,6 +48,7 @@ impl<'a> Converter<'a> {
             func.return_type.clone(),
             func.variadic,
         );
+
         let Some(statements) = &func.body else {
             return Ok(ir_func);
         };
@@ -63,6 +64,7 @@ impl<'a> Converter<'a> {
                 constant: false,
                 var_id: ir_func.new_var(param.ty.clone()),
             };
+            ir_func.params.push(variable.var_id.clone());
             scope.variables.insert(param.name.clone(), variable);
         }
         ir_func.body = Some(self.convert_block(statements, &scope, &mut ir_func)?);

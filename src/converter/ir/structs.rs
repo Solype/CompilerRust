@@ -63,7 +63,7 @@ impl Label {
 pub enum Operand {
     Var(VarId),
     Int(i64),
-    Float(f64),
+    Float(usize),
     Bool(bool),
     Str(usize),
     Null,
@@ -139,5 +139,19 @@ impl Program {
         }
         self.floats.push((value, short));
         self.floats.len() - 1
+    }
+
+    pub fn get_size_of(&self, value: &Type) -> i64 {
+        return match value {
+            Type::Int { short: true, .. } => 4,
+            Type::Int { short: false, .. } => 8,
+            Type::Float { short: true } => 4,
+            Type::Float { short: false } => 8,
+            Type::Address(_) => 8,
+            Type::Array(ty, nb) => self.get_size_of(ty.as_ref()) * (*nb as i64),
+            Type::Char => 1,
+            Type::Byte => 1,
+            _ => unimplemented!(),
+        };
     }
 }

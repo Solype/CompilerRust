@@ -17,8 +17,8 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
   constants, loops. Each error is printed as `file:line:col: message`.
 - **Back-end, done apart from the code generation**: the x86-64 encoder and the ELF writer
   (sections, symbols, relocations) work, but nothing turns the AST into instructions yet.
-  Compiling a `.kr` file stops after the checks: it prints the AST as pseudo-code and writes no
-  binary.
+  Compiling a `.kr` file stops after the checks: it prints the AST as pseudo-code, then the IR,
+  and writes no binary.
 - The only ELF written today is the demo (`--demo`): the encoder test programs hardcoded in
   `src/samples/`.
 
@@ -44,9 +44,9 @@ flowchart TD
     RULES["RULES (grammar)"] -->|"ParsingTable::new"| PAR
     PAR -->|"TreeNode (parse tree)"| POST["convert_to_ast_tree<br/>src/parser/postparser"]
     POST -->|"Program (AST)"| CONV["Converter::convert<br/>semantic checks, src/converter"]
-    CONV -->|"Result#lt;(), ConvertError#gt;"| STOP["end of the run today:<br/>no code generated yet"]
+    CONV -->|"ir::Program (typed IR)"| STOP["end of the run today:<br/>the IR is printed, no code generated yet"]
 
-    CONV -.->|"typed IR (to do)"| GEN["codegen (to do)"]
+    CONV -.->|"ir::Program"| GEN["codegen (to do)"]
     GEN -.->|"Vec#lt;Instruction#gt;"| ELF["x86-64 encoder + ElfFile64<br/>src/elf"]
     DEMO["--demo<br/>src/samples"] -->|"Vec#lt;Instruction#gt;"| ELF
     ELF -->|"output.elf (relocatable .o)"| LD["ld / gcc"]

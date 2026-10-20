@@ -15,12 +15,11 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
   parser and the AST read every program of `sample/` and `Proto.kr`.
 - **Semantic analysis (`src/converter`), mostly done**: scopes, types, overloads, returns,
   constants, loops. Each error is printed as `file:line:col: message`.
-- **Back-end, done apart from the code generation**: the x86-64 encoder and the ELF writer
-  (sections, symbols, relocations) work, but nothing turns the AST into instructions yet.
-  Compiling a `.kr` file stops after the checks: it prints the AST as pseudo-code, then the IR,
-  and writes no binary.
-- The only ELF written today is the demo (`--demo`): the encoder test programs hardcoded in
-  `src/samples/`.
+- **Back-end**: the x86-64 encoder and the ELF writer (sections, symbols, relocations) work.
+- **Code generation (`src/codegen`), started**: each `file.kr` gives a `file.o`, linked with
+  `gcc` by `-x`. Only `return` of a constant is generated today: `sample/01_retour.kr` runs and
+  exits with 42.
+- The demo (`--demo`) writes the encoder test programs hardcoded in `src/samples/`.
 
 ## How it works
 1. The source is cut into tokens (`src/lexer`), then the pre-parser splits the particles and
@@ -28,7 +27,7 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
 2. The LR(1) parser builds the parse tree from the grammar (`src/parser/cfg`), turned into an AST
    (`src/parser/postparser`).
 3. The converter checks the AST: names, types, calls, returns (`src/converter`).
-4. *(to do)* The code generation turns the checked program into `Instruction` enum variants.
+4. *(started)* The code generation turns the IR into `Instruction` enum variants (`src/codegen`).
 5. The instructions are encoded into machine code and written into an ELF object file
    (`src/elf`), linked with standard tools (`ld`, `gcc`) into a runnable binary.
 
@@ -44,13 +43,11 @@ flowchart TD
     RULES["RULES (grammar)"] -->|"ParsingTable::new"| PAR
     PAR -->|"TreeNode (parse tree)"| POST["convert_to_ast_tree<br/>src/parser/postparser"]
     POST -->|"Program (AST)"| CONV["Converter::convert<br/>semantic checks, src/converter"]
-    CONV -->|"ir::Program (typed IR)"| STOP["end of the run today:<br/>the IR is printed, no code generated yet"]
-
-    CONV -.->|"ir::Program"| GEN["codegen (to do)"]
-    GEN -.->|"Vec#lt;Instruction#gt;"| ELF["x86-64 encoder + ElfFile64<br/>src/elf"]
+    CONV -->|"ir::Program (typed IR)"| GEN["generate, started: Return only<br/>src/codegen"]
+    GEN -->|"Vec#lt;Instruction#gt;"| ELF["x86-64 encoder + ElfFile64<br/>src/elf"]
     DEMO["--demo<br/>src/samples"] -->|"Vec#lt;Instruction#gt;"| ELF
-    ELF -->|"output.elf (relocatable .o)"| LD["ld / gcc"]
-    LD --> BIN["executable"]
+    ELF -->|"file.o (output.elf for --demo)"| LD["gcc (-x) / ld"]
+    LD --> BIN["executable (a.out)"]
 
     LEX -->|"LexError"| ERR["stderr: file:line:col: message<br/>exit code 1"]
     PRE -->|"PreParseError"| ERR
@@ -73,12 +70,14 @@ flowchart TD
 ## Usage
 ```bash
 cargo build --release
-./target/release/compiler [--tree] <file.kr>   # check a program, print its AST
-./target/release/compiler --demo               # write the demo ELF: output.elf
+./target/release/compiler [--tree] [-x] <file.kr>...   # each file.kr gives file.o
+./target/release/compiler --demo                       # write the demo ELF: output.elf
 ```
 
+- Each `file.kr` is compiled to `file.o`, next to the source; its AST and IR are printed.
+- `-x` links all the `.o` with `gcc` into `a.out`.
 - `--tree` also prints the parse tree, before the AST.
-- An error in the source exits with code 1, an unreadable file with code 84.
+- Any error (source, unreadable file, usage, `gcc`) exits with code 1.
 - Sample programs are in `sample/` (`01_retour.kr` to `11_affectation.kr`), programs that must be
   refused in `sample/erreurs/`, and the reference program is `Proto.kr`.
 
@@ -110,7 +109,7 @@ Tests: `cargo test`.
 - [ ] Semantic analysis: finish the checks (literal ranges, casts, `외부` parameters), then
   produce a typed IR for the code generation
 - [ ] Replace hardcoded instruction enums with dynamic instruction generation (code generation)
-- [ ] Write the program to an ELF object file and link it with the libc (`gcc file.o`)
+- [x] Write the program to an ELF object file and link it with the libc (`-x`, `gcc file.o`)
 - [ ] Expand instruction set coverage
 
 ## Context

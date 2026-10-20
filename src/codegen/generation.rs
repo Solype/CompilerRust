@@ -1,13 +1,18 @@
 use crate::{
-    codegen::instructions::generate_return,
-    converter::ir::structs::{Instr, Program},
+    codegen::instructions::{func_epilogue, generate_return},
+    converter::ir::structs::{Function, Instr, Program, get_size_of},
     elf::{
         elfsym::{StBind, StType, StVis, make_st_info},
         file::ElfFile64,
-        instructions::Instruction,
+        instructions::{
+            BinOp, CtrlOp, Instruction, StackOp,
+            register::{RBP, RSP},
+        },
         shdr::{ElfShdr, SectionName, ShFlags, ShType},
     },
 };
+
+use crate::elf::instructions::Operand as ElfOper;
 
 fn generate_instruction(instr: &Instr) -> Vec<Instruction> {
     return match instr {
@@ -20,6 +25,43 @@ fn generate_instruction(instr: &Instr) -> Vec<Instruction> {
     };
 }
 
+fn func_prologue(func: &Function) -> Vec<Instruction> {
+    let sum: i64 = func.vars.iter().map(get_size_of).sum();
+    let frame = (sum + 15) & !15;
+
+    return vec![
+        Instruction::Stack {
+            op: StackOp::Push,
+            value: ElfOper::Reg(RBP),
+            size: None,
+        },
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: ElfOper::Reg(RBP),
+            src: ElfOper::Reg(RSP),
+            size: None,
+        },
+        Instruction::Binary {
+            op: BinOp::Sub,
+            dst: ElfOper::Reg(RSP),
+            src: ElfOper::Imm(frame),
+            size: None,
+        },
+    ];
+}
+
+fn need_epilogue(bin_instr: &Vec<Instruction>) -> bool {
+    return !bin_instr.last().is_some_and(|last| {
+        matches!(
+            last,
+            Instruction::Ctrl {
+                op: CtrlOp::Ret,
+                target: ElfOper::NoOperand,
+            }
+        )
+    });
+}
+
 pub fn generate(prog: &Program) -> ElfFile64 {
     let mut elf_file = ElfFile64::default();
     let text = add_section(&mut elf_file, SectionName::Text, ShFlags::ExecInstr, 16);
@@ -29,11 +71,14 @@ pub fn generate(prog: &Program) -> ElfFile64 {
         let Some(body) = &func.body else {
             continue; // 외부 : pas de corps
         };
-        let mut bin_instr: Vec<Instruction> = vec![];
+        let mut bin_instr: Vec<Instruction> = func_prologue(&func);
 
         for instr in body.iter() {
             let mut new_instr = generate_instruction(&instr);
             bin_instr.append(&mut new_instr);
+        }
+        if need_epilogue(&bin_instr) {
+            bin_instr.append(&mut func_epilogue());
         }
         add_function(&mut elf_file, text, &func.symbol, bin_instr);
     }

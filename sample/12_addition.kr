@@ -1,0 +1,12 @@
+/*
+ * 12_addition.kr : un appel avec deux arguments.
+ * main rend 20 + 22 : `echo $?` après l'exécution affiche 42.
+ */
+
+정수를 반환하는 더하다(정수 가, 정수 나) {
+    (가 + 나)를 반환해요.
+}
+
+정수를 반환하는 main() {
+    20과 22를 더해서 반환해요.
+}

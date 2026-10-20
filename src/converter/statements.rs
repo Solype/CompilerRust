@@ -310,15 +310,16 @@ impl<'a> Converter<'a> {
                 let res: Callee = self.resolve_call(verb, args, scope, call.span)?;
                 match res {
                     Callee::Function(f) => {
+                        if !args.is_empty() {
+                            unimplemented!() // arguments of the call not converted yet
+                        }
                         instr.push(ir::structs::Instr::Call {
                             dest: None,
                             symbol: f.mangled_name.clone(),
                             args: vec![],
                         });
                     }
-                    Callee::Cast(_) => {
-                        // instr.push(ir);
-                    }
+                    Callee::Cast(_) => unimplemented!(),
                 }
             }
             _ => {

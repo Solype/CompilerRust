@@ -214,7 +214,7 @@ impl<'a> Converter<'a> {
                 dest: var,
                 src: oper,
             }],
-            None => vec![],
+            None => unimplemented!(),
         };
 
         return Ok(inst);
@@ -256,7 +256,7 @@ impl<'a> Converter<'a> {
                 dest: var.var_id,
                 src: oper,
             }],
-            None => vec![],
+            None => unimplemented!(),
         };
         return Ok(inst);
     }

@@ -23,66 +23,92 @@ Le lexer est écrit à la main (l'ancien automate lexical_analisys/ est supprim�
 PRIORITÉ : LES PREMIERS BINAIRES
 ==================================================
 
-Dans l'ordre : chaque jalon donne un binaire qui tourne. Détail des
-instructions IR manquantes en 2.6.7.
+Dans l'ordre : chaque étape donne un sample de plus qui tourne. Un commit
+par étape. Détail des instructions IR manquantes en 2.6.7.
 
-Jalon 1 : sample/01_retour.kr, main rend 42 (./prog; echo $? -> 42)
+Tests : ./run_samples.sh [fichier.kr...] compile, lie et lance chaque
+sample/NN_*.kr ; il compare le code de sortie à « `echo $?` après
+l'exécution affiche N » de l'en-tête (0 sans lui) et stdout à
+sample/NN_*.out s'il existe. Chaque sample/erreurs/*.kr doit être refusé
+avec le code 1 (pas une panique).
+
+Fait : 01_retour.kr et 12_addition.kr rendent 42
 [X] convert_return : Instr::Return(operand)
-[ ] src/codegen/ : ir::Function -> Vec<Instruction>
-    [X] Return -> mov rax, opérande puis épilogue (convert_operand : Int,
-        Bool, Null, Var)
-    [X] Prologue / épilogue : push rbp ; mov rbp, rsp ; sub rsp, somme des
-        tailles arrondie à 16 ... mov rsp, rbp ; pop rbp ; ret ; épilogue
-        ajouté en fin de corps s'il ne finit pas par ret
-    [X] Une case de pile par VarId, à son offset exact : [rbp - (tailles
-        des variables jusqu'à elle)] (var_offsets)
-    [X] Binary Add par rax : mov rax, left ; add rax, right ; mov [dest], rax
-    [ ] Les autres opérateurs de Binary, Unary
-    [ ] Largeur des mov selon VarId.1 (aujourd'hui 8 octets : faux pour
-        짧은 et 문자)
-    [ ] Copy -> mov (mémoire vers mémoire : par rax)
-    [ ] Label -> LabelId (un Vec<LabelId> par fonction, indexé par
-        Label.0) ; Jump -> jmp
-[X] Écrire le .o : ElfFile64, section .text, une fonction globale par
-    ir::Function (add_section / add_function, comme samples/demo.rs)
-[X] main.rs : écrit le .o après l'IR, fichier.kr -> fichier.o ; plusieurs
-    fichiers acceptés
-[X] Lien : -x appelle gcc sur tous les .o -> a.out (la libc fournit _start)
-    ; 01_retour.kr : ./a.out; echo $? -> 42
-[ ] Script de test : compile, lie, lance chaque sample, compare le code de
-    sortie (et stdout) à l'attendu
-[X] sample/12_addition.kr : appel à deux arguments, ./a.out; echo $? -> 42
-
-Jalon 2 : sample/02_bonjour.kr, printf
-[ ] convert_call : arguments convertis en opérandes (unimplemented!()
-    aujourd'hui si l'appel seul a des arguments)
-[ ] Chaînes : Program.strings rempli, une section .rodata, Operand::Str
-    -> lea reg, [rip + chaîne]
+[X] convert_expr : temporaires, Unary, Binary, Call avec dest, Cast ;
+    Return passe par lui
+[X] Return -> mov rax, opérande puis épilogue (convert_operand : Int,
+    Bool, Null, Var)
+[X] Prologue / épilogue : push rbp ; mov rbp, rsp ; sub rsp, somme des
+    tailles arrondie à 16 ... mov rsp, rbp ; pop rbp ; ret ; épilogue
+    ajouté en fin de corps s'il ne finit pas par ret
+[X] Return implicite des fonctions sans 반환하는 : épilogue ajouté par le codegen
+[X] Une case de pile par VarId, à son offset exact : [rbp - (tailles
+    des variables jusqu'à elle)] (var_offsets)
+[X] Binary Add par rax : mov rax, left ; add rax, right ; mov [dest], rax
 [X] Appel System V : arguments entiers dans rdi, rsi, rdx, rcx, r8, r9
     (generate_call) ; pile alignée sur 16 au call ; al = nombre d'arguments
     XMM ; résultat dans rax -> dest
-[ ] Appel : 7e argument entier et plus sur la pile, arguments 소수 en XMM
 [X] Symbole externe (printf) : un call vers un Sym donne une relocation
     PLT32, un symbole jamais défini devient global undefined (pas besoin de
     declare_non_defined_sym)
 [X] convert_func : remplit ir_func.params ; le prologue range rdi… dans
     leurs cases
+[X] Écrire le .o : ElfFile64, section .text, une fonction globale par
+    ir::Function (add_section / add_function, comme samples/demo.rs)
+[X] main.rs : écrit le .o après l'IR, fichier.kr -> fichier.o ; plusieurs
+    fichiers acceptés
+[X] Lien : -x appelle gcc sur tous les .o -> a.out (la libc fournit _start)
+[X] Script de test : run_samples.sh
 
-Jalon 3 : samples 03 à 11, calculs et contrôle
-[X] convert_expr : temporaires, Unary, Binary, Call avec dest, Cast ;
-    Return passe par lui
-[ ] Init / Assign / condition passent par convert_expr
-[ ] Trancher le type des opérandes de Binary / Unary avant le codegen des
-    comparaisons, de Div / Rem et de Shr (signé ou non, 32 / 64 bits)
+Étape 1 : Copy, puis sample/11_affectation.kr rend 7
+[X] Codegen : bras Instr::Copy dans generate_instruction ; mov rax, src ;
+    mov [dest], rax (pas de mov mémoire vers mémoire en x86)
+[ ] convert_init / convert_assign passent par convert_expr : plus de
+    None => unimplemented!() (statements.rs, panique de 03, 09, 10)
+[X] get_size_of : pas de bras Type::Bool, unimplemented!() (panique de 06
+    et de erreurs/moins_logique.kr, qui doit rendre le code 1)
+
+Étape 2 : les opérateurs qui ne dépendent pas du signe
+[ ] generate_binary : Sub, BitAnd, BitOr, BitXor (comme Add), Mul par
+    imul rax, src (ComplexBinOp::Imul), Shl
+[ ] Unary : Neg, BitNot (neg / not sur rax)
+
+Étape 3 (jalon 2) : sample/02_bonjour.kr, printf
+[ ] convert_call : arguments convertis par convert_expr, comme le bras Call
+    de convert_expr (unimplemented!() aujourd'hui si l'appel seul a des
+    arguments : panique de 02, 04, 05, 07, 08 et de
+    erreurs/valeur_sans_type.kr)
+[ ] Chaînes : une section .rodata, un symbole local par Program.strings[i]
+    (fini par 0) ; Operand::Str -> lea reg, [rip + chaîne], relocation PC32
+[ ] Vérifier : stdout égal à sample/02_bonjour.out, code 0
+
+Étape 4 : trancher le type des opérandes de Binary / Unary
+[ ] Signé ou non, 32 / 64 bits (voir « Choix de l'IR à trancher » en
+    2.6.7) : dans Instr::Binary, ou lu dans vars[left]
+[ ] Comparaisons : cmp rax, right ; setcc al ; movzx rax, al
+[ ] Div / Rem : cqo ; idiv r (quotient rax, reste rdx ; le diviseur dans un
+    registre, pas un immédiat)
+[ ] Shr : sar ou shr selon le signe
+
+Étape 5 : contrôle, samples 04, 05, 08, 09, 10
+[ ] Codegen : Label -> LabelId (un Vec<LabelId> par fonction, indexé par
+    Label.0) ; Jump -> jmp ; JumpIfNot -> cmp cond, 0 ; je
 [ ] convert_condition rend un Operand ; if : JumpIfNot vers otherwise / end,
     Jump end après le then
 [ ] 동안 : labels, condition, sauts ; 세면서 : from, condition < until,
     incrément, 3e label pour 넘어가요
-[X] Return implicite des fonctions sans 반환하는 : épilogue ajouté par le codegen
 [ ] 그리고 / 또는 en court-circuit
-[ ] 소수 : constantes en .rodata, registres XMM (06_types)
 
-Plus tard : pointeurs et tableaux (Load / Store / AddrOf), tests unitaires
+Étape 6 : largeur des mov selon VarId.1
+[ ] Aujourd'hui 8 octets : faux pour 짧은 et 문자 ; size: Some(..) dans les
+    mov de convert_operand, Copy, Binary (retire le shortcut de
+    generate_binary)
+
+Étape 7 : 소수, sample/06_types.kr
+[ ] Constantes en .rodata, registres XMM, float_parameter, compteur al
+
+Plus tard : 7e argument entier et plus sur la pile, 03_chaines,
+07_phrases, pointeurs et tableaux (Load / Store / AddrOf), tests unitaires
 du converter.
 
 ==================================================

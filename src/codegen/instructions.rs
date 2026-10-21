@@ -110,6 +110,26 @@ pub fn generate_binary(
 }
 
 pub fn generate_call(
+pub fn generate_copy(dest: &VarId, src: &IrOp, offsets: &[i32]) -> Vec<Instruction> {
+    let ope = convert_operand(src, offsets);
+    let var = convert_operand(&IrOp::Var(*dest), offsets);
+    // x86 has no memory to memory mov: the value goes through rax
+    return vec![
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: ElfOper::Reg(RAX),
+            src: ope,
+            size: None,
+        },
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: var,
+            src: ElfOper::Reg(RAX),
+            size: None,
+        },
+    ];
+}
+
     dest: &Option<VarId>,
     symbol: &str,
     args: &[IrOp],

@@ -109,7 +109,6 @@ pub fn generate_binary(
     return instrs;
 }
 
-pub fn generate_call(
 pub fn generate_copy(dest: &VarId, src: &IrOp, offsets: &[i32]) -> Vec<Instruction> {
     let ope = convert_operand(src, offsets);
     let var = convert_operand(&IrOp::Var(*dest), offsets);
@@ -130,6 +129,7 @@ pub fn generate_copy(dest: &VarId, src: &IrOp, offsets: &[i32]) -> Vec<Instructi
     ];
 }
 
+pub fn generate_call(
     dest: &Option<VarId>,
     symbol: &str,
     args: &[IrOp],

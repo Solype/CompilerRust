@@ -210,6 +210,17 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Review of my code, guidelines for the codegen (stack frame, operands, x86 constraints, System V calling convention, later optimizations) | AI, explanations only |
 | README and TODO updates | AI |
 
+## October 21: `Copy`, and a script that runs the samples
+
+| Element | Who |
+|---|---|
+| `generate_copy` started, its arm in `generate_instruction`; `Type::Bool` in `get_size_of` | Me |
+| End of `generate_copy` (the value through `rax`) | AI, at my request |
+| `run_samples.sh` (compile, link, run each sample, compare the exit code and stdout; the error samples must give code 1), `sample/02_bonjour.out` | AI, at my request |
+| `convert_expr` split into `convert_binary`, `convert_unary`, `convert_call_value` and `convert_args` | AI, at my request |
+| Plan of the next steps, in `TODO_Frontend.md` | AI |
+| README and TODO updates | AI |
+
 ## How I used the AI
 
 Over the whole project, the AI was mostly used to **explain**: how a format, an encoding or an

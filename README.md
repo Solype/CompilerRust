@@ -17,8 +17,12 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
   constants, loops. Each error is printed as `file:line:col: message`.
 - **Back-end**: the x86-64 encoder and the ELF writer (sections, symbols, relocations) work.
 - **Code generation (`src/codegen`), started**: each `file.kr` gives a `file.o`, linked with
-  `gcc` by `-x`. Generated today: the stack frame, `return`, `+`, and calls with integer
-  arguments (System V). `sample/01_retour.kr` and `sample/12_addition.kr` run and exit with 42.
+  `gcc` by `-x`. Generated today: the stack frame, `return`, `+`, copies, and calls with
+  integer arguments (System V). `sample/01_retour.kr` and `sample/12_addition.kr` run and exit
+  with 42.
+- **Tests of the samples**: `./run_samples.sh [file.kr...]` compiles, links and runs each
+  `sample/*.kr`, compares its exit code (and its stdout with `sample/*.out`) with the expected
+  one, and checks that each `sample/erreurs/*.kr` is refused with code 1.
 - The demo (`--demo`) writes the encoder test programs hardcoded in `src/samples/`.
 
 ## How it works

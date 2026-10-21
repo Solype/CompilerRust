@@ -18,7 +18,8 @@ Full compiler                  : ~60 %
                                    convert_expr, Return, strings and
                                    floats tables; see TODO_Frontend.md
                                    2.6.7)
-    Code generation IR -> x86-64   started (Return of a constant)
+    Code generation IR -> x86-64   started (stack frame, Return, Add,
+                                   calls with integer arguments)
     CLI                            done (--tree, --demo, -x, several
                                    files: file.kr -> file.o)
 

@@ -29,11 +29,17 @@ instructions IR manquantes en 2.6.7.
 Jalon 1 : sample/01_retour.kr, main rend 42 (./prog; echo $? -> 42)
 [X] convert_return : Instr::Return(operand)
 [ ] src/codegen/ : ir::Function -> Vec<Instruction>
-    [X] Return -> mov rax, opérande ; ret (convert_operand : Int, Bool, Null)
-    [ ] Prologue / épilogue : push rbp ; mov rbp, rsp ; sub rsp, taille
-        (8 octets par var, arrondi à 16) ... leave ; ret ; Return passe
-        par l'épilogue (shortcut: sans leave aujourd'hui)
-    [ ] Une case de pile par VarId : [rbp - 8 * (id + 1)]
+    [X] Return -> mov rax, opérande puis épilogue (convert_operand : Int,
+        Bool, Null, Var)
+    [X] Prologue / épilogue : push rbp ; mov rbp, rsp ; sub rsp, somme des
+        tailles arrondie à 16 ... mov rsp, rbp ; pop rbp ; ret ; épilogue
+        ajouté en fin de corps s'il ne finit pas par ret
+    [X] Une case de pile par VarId, à son offset exact : [rbp - (tailles
+        des variables jusqu'à elle)] (var_offsets)
+    [X] Binary Add par rax : mov rax, left ; add rax, right ; mov [dest], rax
+    [ ] Les autres opérateurs de Binary, Unary
+    [ ] Largeur des mov selon VarId.1 (aujourd'hui 8 octets : faux pour
+        짧은 et 문자)
     [ ] Copy -> mov (mémoire vers mémoire : par rax)
     [ ] Label -> LabelId (un Vec<LabelId> par fonction, indexé par
         Label.0) ; Jump -> jmp
@@ -45,16 +51,21 @@ Jalon 1 : sample/01_retour.kr, main rend 42 (./prog; echo $? -> 42)
     ; 01_retour.kr : ./a.out; echo $? -> 42
 [ ] Script de test : compile, lie, lance chaque sample, compare le code de
     sortie (et stdout) à l'attendu
+[X] sample/12_addition.kr : appel à deux arguments, ./a.out; echo $? -> 42
 
 Jalon 2 : sample/02_bonjour.kr, printf
-[ ] convert_call : arguments convertis en opérandes
+[ ] convert_call : arguments convertis en opérandes (unimplemented!()
+    aujourd'hui si l'appel seul a des arguments)
 [ ] Chaînes : Program.strings rempli, une section .rodata, Operand::Str
     -> lea reg, [rip + chaîne]
-[ ] Appel System V : arguments dans rdi, rsi, rdx, rcx, r8, r9 ; pile
-    alignée sur 16 au call ; variadique : al = nombre d'arguments XMM ;
-    résultat dans rax -> dest
-[ ] Symbole externe (printf) : declare_non_defined_sym, relocation PLT32
-[ ] convert_func : remplir ir_func.params ; le prologue range rdi… dans
+[X] Appel System V : arguments entiers dans rdi, rsi, rdx, rcx, r8, r9
+    (generate_call) ; pile alignée sur 16 au call ; al = nombre d'arguments
+    XMM ; résultat dans rax -> dest
+[ ] Appel : 7e argument entier et plus sur la pile, arguments 소수 en XMM
+[X] Symbole externe (printf) : un call vers un Sym donne une relocation
+    PLT32, un symbole jamais défini devient global undefined (pas besoin de
+    declare_non_defined_sym)
+[X] convert_func : remplit ir_func.params ; le prologue range rdi… dans
     leurs cases
 
 Jalon 3 : samples 03 à 11, calculs et contrôle
@@ -67,7 +78,7 @@ Jalon 3 : samples 03 à 11, calculs et contrôle
     Jump end après le then
 [ ] 동안 : labels, condition, sauts ; 세면서 : from, condition < until,
     incrément, 3e label pour 넘어가요
-[ ] Return implicite des fonctions sans 반환하는
+[X] Return implicite des fonctions sans 반환하는 : épilogue ajouté par le codegen
 [ ] 그리고 / 또는 en court-circuit
 [ ] 소수 : constantes en .rodata, registres XMM (06_types)
 
@@ -523,11 +534,8 @@ Instructions IR manquantes :
 [ ] convert_break : Jump(label_id(label_end)) ; il faut passer ir_func
 [ ] convert_continue : Jump vers le début (동안) ou vers l'incrément
     (세면서, 3e label)
-[ ] Fonction sans 반환하는 : Return implicite en fin de corps
-    (Return(Option<Operand>))
-[ ] convert_call : arguments de l'appel (args: vec![] aujourd'hui) ; bras
-    Callee::Cast vide
-[ ] convert_func : remplir ir_func.params
+[ ] convert_call : arguments de l'appel (unimplemented!() aujourd'hui) ;
+    bras Callee::Cast (unimplemented!())
 
 Choix de l'IR à trancher :
 [ ] Type des opérandes dans Binary / Unary (signé ou non, 32 / 64 bits,

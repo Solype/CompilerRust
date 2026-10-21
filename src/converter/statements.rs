@@ -3,7 +3,8 @@ use crate::converter::ir;
 use crate::converter::scope::LoopLabels;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
-    Argument, Assign, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind, Type, While,
+    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind,
+    Type, UnaryOp, While,
 };
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
@@ -25,6 +26,7 @@ impl<'a> Converter<'a> {
         }
     }
 
+    /// The operand of `expr`; the instructions that compute it are pushed into `instrs`
     fn convert_expr(
         &mut self,
         expr: &Expr,
@@ -38,57 +40,108 @@ impl<'a> Converter<'a> {
         let ty = self.get_type(expr, scope)?; // vérifs + type du résultat
         match &expr.kind {
             ExprKind::Binary { op, left, right } => {
-                let left = self.convert_expr(left, scope, ir_func, instrs)?;
-                let right = self.convert_expr(right, scope, ir_func, instrs)?;
-                let dest = ir_func.new_var(ty);
-                instrs.push(ir::structs::Instr::Binary {
-                    dest,
-                    op: *op,
-                    left,
-                    right,
-                });
-                Ok(ir::structs::Operand::Var(dest))
+                self.convert_binary(*op, left, right, ty, scope, ir_func, instrs)
             }
             ExprKind::Unary { op, operand } => {
-                let src = self.convert_expr(operand, scope, ir_func, instrs)?;
-                let dest = ir_func.new_var(ty);
-                instrs.push(ir::structs::Instr::Unary { dest, op: *op, src });
-                Ok(ir::structs::Operand::Var(dest))
+                self.convert_unary(*op, operand, ty, scope, ir_func, instrs)
             }
             ExprKind::Call { verb, args } => {
-                let callee = self.resolve_call(verb, args, scope, expr.span)?;
-                let mut operands = Vec::new();
-                for arg in args {
-                    match arg {
-                        Argument::Value { value, .. } | Argument::Previous(value) => {
-                            operands.push(self.convert_expr(value, scope, ir_func, instrs)?);
-                        }
-                        Argument::ToType(_) => {}
-                    }
-                }
-                let dest = ir_func.new_var(ty);
-                match callee {
-                    Callee::Function(func) => instrs.push(ir::structs::Instr::Call {
-                        dest: Some(dest),
-                        symbol: func.mangled_name.clone(),
-                        args: operands,
-                    }),
-                    // 바꾸다 : une seule valeur, le cast lit les deux types dans vars
-                    Callee::Cast(_) => instrs.push(ir::structs::Instr::Cast {
-                        dest,
-                        src: operands.remove(0),
-                    }),
-                }
-                return Ok(ir::structs::Operand::Var(dest));
+                self.convert_call_value(verb, args, expr.span, ty, scope, ir_func, instrs)
             }
-            // Unary, Cast : même schéma ; Call : dest: Some(temporaire)
             ExprKind::Str(str) => Ok(ir::structs::Operand::Str(self.ir.string_id(str))),
-            ExprKind::Bool(b) => Ok(ir::structs::Operand::Bool(*b)),
-            ExprKind::Int(i) => Ok(ir::structs::Operand::Int(*i)),
-            ExprKind::Float(f) => Ok(ir::structs::Operand::Float(self.ir.float_id(*f, false))),
             ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(ir::structs::get_size_of(ty))),
             _ => unimplemented!(),
         }
+    }
+
+    /// `left op right` into a new variable of type `ty`
+    #[allow(clippy::too_many_arguments)]
+    fn convert_binary(
+        &mut self,
+        op: BinaryOp,
+        left: &Expr,
+        right: &Expr,
+        ty: Type,
+        scope: &Scope,
+        ir_func: &mut ir::structs::Function,
+        instrs: &mut Vec<ir::structs::Instr>,
+    ) -> Result<ir::structs::Operand, ConvertError> {
+        let left = self.convert_expr(left, scope, ir_func, instrs)?;
+        let right = self.convert_expr(right, scope, ir_func, instrs)?;
+        let dest = ir_func.new_var(ty);
+        instrs.push(ir::structs::Instr::Binary {
+            dest,
+            op,
+            left,
+            right,
+        });
+        return Ok(ir::structs::Operand::Var(dest));
+    }
+
+    /// `op operand` into a new variable of type `ty`
+    fn convert_unary(
+        &mut self,
+        op: UnaryOp,
+        operand: &Expr,
+        ty: Type,
+        scope: &Scope,
+        ir_func: &mut ir::structs::Function,
+        instrs: &mut Vec<ir::structs::Instr>,
+    ) -> Result<ir::structs::Operand, ConvertError> {
+        let src = self.convert_expr(operand, scope, ir_func, instrs)?;
+        let dest = ir_func.new_var(ty);
+        instrs.push(ir::structs::Instr::Unary { dest, op, src });
+        return Ok(ir::structs::Operand::Var(dest));
+    }
+
+    /// A call whose result is used: a Call, or a Cast for 바꾸다, into a new variable of type `ty`
+    #[allow(clippy::too_many_arguments)]
+    fn convert_call_value(
+        &mut self,
+        verb: &str,
+        args: &[Argument],
+        span: Span,
+        ty: Type,
+        scope: &Scope,
+        ir_func: &mut ir::structs::Function,
+        instrs: &mut Vec<ir::structs::Instr>,
+    ) -> Result<ir::structs::Operand, ConvertError> {
+        let callee = self.resolve_call(verb, args, scope, span)?;
+        let mut operands = self.convert_args(args, scope, ir_func, instrs)?;
+        let dest = ir_func.new_var(ty);
+        match callee {
+            Callee::Function(func) => instrs.push(ir::structs::Instr::Call {
+                dest: Some(dest),
+                symbol: func.mangled_name.clone(),
+                args: operands,
+            }),
+            // 바꾸다 : une seule valeur, le cast lit les deux types dans vars
+            Callee::Cast(_) => instrs.push(ir::structs::Instr::Cast {
+                dest,
+                src: operands.remove(0),
+            }),
+        }
+        return Ok(ir::structs::Operand::Var(dest));
+    }
+
+    /// The operands of the values given to a call; `정수로` (the target type) gives none
+    fn convert_args(
+        &mut self,
+        args: &[Argument],
+        scope: &Scope,
+        ir_func: &mut ir::structs::Function,
+        instrs: &mut Vec<ir::structs::Instr>,
+    ) -> Result<Vec<ir::structs::Operand>, ConvertError> {
+        let mut operands = Vec::new();
+        for arg in args {
+            match arg {
+                Argument::Value { value, .. } | Argument::Previous(value) => {
+                    operands.push(self.convert_expr(value, scope, ir_func, instrs)?);
+                }
+                Argument::ToType(_) => {}
+            }
+        }
+        return Ok(operands);
     }
 
     /// `수를 1부터 끝까지 세면서 { … }`: the variable and the bounds are the same 정수 type

@@ -195,15 +195,19 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 
 ## October 20: the first code generation (`src/codegen`) and the command line
 
-`sample/01_retour.kr` is the first program compiled into a binary that runs.
+`sample/01_retour.kr` is the first program compiled into a binary that runs, then
+`sample/12_addition.kr`, a call with two arguments.
 
 | Element | Who |
 |---|---|
 | `get_size_of`, `Operand::Float` as an index in `Program.floats`, the literal arms of `convert_expr` | Me |
 | The codegen: `generate`, one global function per IR function, `convert_operand`, `generate_return` | Me |
-| Small corrections in my code (the `SizeOf` arm, floats in `operand()`, `Return`, `link`) | AI |
+| Prologue and epilogue, `generate_call` (argument counters, `al`), first version of `generate_binary`, the size in `VarId`, filling the IR params | Me |
+| Small corrections in my code (the `SizeOf` arm, floats in `operand()`, `Return`, `link`, `generate_binary` through `rax`) | AI |
+| `normal_param` (System V registers), exact offset of each variable (`var_offsets`), storing the call result and the parameters | AI, at my request |
 | Wiring the codegen into `main.rs`; the `-x` option; errors returned instead of `process::exit`; several files, each `file.kr` giving `file.o` | AI, at my request |
-| Review of my code, guidelines for the codegen (stack frame, operands, x86 constraints) | AI, explanations only |
+| `get_size_of` as a free function, `unimplemented!()` instead of silent cases in the converter, warnings and style fixes, `sample/12_addition.kr` | AI, at my request |
+| Review of my code, guidelines for the codegen (stack frame, operands, x86 constraints, System V calling convention, later optimizations) | AI, explanations only |
 | README and TODO updates | AI |
 
 ## How I used the AI

@@ -17,8 +17,8 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
   constants, loops. Each error is printed as `file:line:col: message`.
 - **Back-end**: the x86-64 encoder and the ELF writer (sections, symbols, relocations) work.
 - **Code generation (`src/codegen`), started**: each `file.kr` gives a `file.o`, linked with
-  `gcc` by `-x`. Only `return` of a constant is generated today: `sample/01_retour.kr` runs and
-  exits with 42.
+  `gcc` by `-x`. Generated today: the stack frame, `return`, `+`, and calls with integer
+  arguments (System V). `sample/01_retour.kr` and `sample/12_addition.kr` run and exit with 42.
 - The demo (`--demo`) writes the encoder test programs hardcoded in `src/samples/`.
 
 ## How it works
@@ -43,7 +43,7 @@ flowchart TD
     RULES["RULES (grammar)"] -->|"ParsingTable::new"| PAR
     PAR -->|"TreeNode (parse tree)"| POST["convert_to_ast_tree<br/>src/parser/postparser"]
     POST -->|"Program (AST)"| CONV["Converter::convert<br/>semantic checks, src/converter"]
-    CONV -->|"ir::Program (typed IR)"| GEN["generate, started: Return only<br/>src/codegen"]
+    CONV -->|"ir::Program (typed IR)"| GEN["generate, started: Return, Add, Call<br/>src/codegen"]
     GEN -->|"Vec#lt;Instruction#gt;"| ELF["x86-64 encoder + ElfFile64<br/>src/elf"]
     DEMO["--demo<br/>src/samples"] -->|"Vec#lt;Instruction#gt;"| ELF
     ELF -->|"file.o (output.elf for --demo)"| LD["gcc (-x) / ld"]

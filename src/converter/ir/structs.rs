@@ -157,6 +157,7 @@ pub fn get_size_of(value: &Type) -> i64 {
         Type::Array(ty, nb) => get_size_of(ty.as_ref()) * (*nb as i64),
         Type::Char => 1,
         Type::Byte => 1,
+        Type::Bool => 1,
         _ => unimplemented!(),
     };
 }

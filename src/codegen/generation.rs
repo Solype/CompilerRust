@@ -1,6 +1,7 @@
 use crate::{
     codegen::instructions::{
-        PARAM_REGS, convert_operand, func_epilogue, generate_binary, generate_call, generate_return,
+        PARAM_REGS, convert_operand, func_epilogue, generate_binary, generate_call, generate_copy,
+        generate_return,
     },
     converter::ir::structs::{Function, Instr, Program, get_size_of},
     elf::{
@@ -28,6 +29,7 @@ fn generate_instruction(instr: &Instr, offsets: &[i32]) -> Vec<Instruction> {
             left,
             right,
         } => generate_binary(dest, op, left, right, offsets),
+        Instr::Copy { dest, src } => generate_copy(dest, src, offsets),
         _ => {
             println!("{:?}", instr);
             unimplemented!()

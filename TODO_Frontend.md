@@ -63,7 +63,7 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 Étape 1 : Copy, puis sample/11_affectation.kr rend 7
 [X] Codegen : bras Instr::Copy dans generate_instruction ; mov rax, src ;
     mov [dest], rax (pas de mov mémoire vers mémoire en x86)
-[ ] convert_init / convert_assign passent par convert_expr : plus de
+[X] convert_init / convert_assign passent par convert_expr : plus de
     None => unimplemented!() (statements.rs, panique de 03, 09, 10)
 [X] get_size_of : pas de bras Type::Bool, unimplemented!() (panique de 06
     et de erreurs/moins_logique.kr, qui doit rendre le code 1)

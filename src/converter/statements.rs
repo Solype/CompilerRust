@@ -251,8 +251,9 @@ impl<'a> Converter<'a> {
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
         let ty = self.get_type(&init.value, scope)?;
-        // Before the declaration: in `가는 가이에요`, 가 is not declared yet, declare refuses it
-        let oper = operand(&init.value, scope, &mut self.ir);
+        let mut instrs: Vec<ir::structs::Instr> = vec![];
+        let src = self.convert_expr(&init.value, scope, ir_func, &mut instrs)?;
+
         let var = ir_func.new_var(ty.clone());
 
         let variable = Variable {
@@ -261,16 +262,8 @@ impl<'a> Converter<'a> {
             constant: init.constant,
         };
         scope.declare(&init.name, variable, span)?;
-
-        let inst: Vec<ir::structs::Instr> = match oper {
-            Some(oper) => vec![ir::structs::Instr::Copy {
-                dest: var,
-                src: oper,
-            }],
-            None => unimplemented!(),
-        };
-
-        return Ok(inst);
+        instrs.push(ir::structs::Instr::Copy { dest: var, src });
+        return Ok(instrs);
     }
 
     /// `… 결과에 넣어요.`
@@ -279,6 +272,7 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         assign: &'a Assign,
         span: Span,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
         // check if the variable exists
         let Some(var) = scope.find_variable(&assign.target) else {
@@ -291,6 +285,8 @@ impl<'a> Converter<'a> {
             return Err(ConvertError::new(kind, span));
         }
 
+        let mut instrs: Vec<ir::structs::Instr> = vec![];
+        let src = self.convert_expr(&assign.value, scope, ir_func, &mut instrs)?;
         let assign_value_ty = self.get_type(&assign.value, scope)?;
 
         if !fits(&assign.value, &assign_value_ty, &var.ty) {
@@ -304,14 +300,11 @@ impl<'a> Converter<'a> {
             };
             return Err(ConvertError::new(kind, span));
         }
-        let inst: Vec<ir::structs::Instr> = match operand(&assign.value, scope, &mut self.ir) {
-            Some(oper) => vec![ir::structs::Instr::Copy {
-                dest: var.var_id,
-                src: oper,
-            }],
-            None => unimplemented!(),
-        };
-        return Ok(inst);
+        instrs.push(ir::structs::Instr::Copy {
+            dest: var.var_id,
+            src,
+        });
+        return Ok(instrs);
     }
 
     /// `… 반환해요.`
@@ -455,7 +448,7 @@ impl<'a> Converter<'a> {
                     self.convert_init(&mut new_scope, init, statement.span, ir_func)?
                 }
                 StatementKind::Assign(assign) => {
-                    self.convert_assign(&new_scope, assign, statement.span)?
+                    self.convert_assign(&new_scope, assign, statement.span, ir_func)?
                 }
                 StatementKind::Return(value) => {
                     self.convert_return(&new_scope, value, statement.span, ir_func)?

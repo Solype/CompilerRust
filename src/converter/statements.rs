@@ -1,6 +1,7 @@
 use crate::converter::expressions::Callee;
 use crate::converter::ir;
 use crate::converter::scope::LoopLabels;
+use crate::elf::instructions::Operand;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
     Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind,
@@ -347,8 +348,9 @@ impl<'a> Converter<'a> {
         &mut self,
         scope: &Scope,
         call: &'a Expr,
+        ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let mut instr: Vec<ir::structs::Instr> = vec![];
+        let mut instrs: Vec<ir::structs::Instr> = vec![];
 
         match &call.kind {
             // Alone, a call may return nothing
@@ -356,14 +358,12 @@ impl<'a> Converter<'a> {
                 let res: Callee = self.resolve_call(verb, args, scope, call.span)?;
                 match res {
                     Callee::Function(f) => {
-                        if !args.is_empty() {
-                            unimplemented!() // arguments of the call not converted yet
-                        }
-                        instr.push(ir::structs::Instr::Call {
+                        let op = ir::structs::Instr::Call {
                             dest: None,
                             symbol: f.mangled_name.clone(),
-                            args: vec![],
-                        });
+                            args: self.convert_args(args, scope, ir_func, &mut instrs)?,
+                        };
+                        instrs.push(op);
                     }
                     Callee::Cast(_) => unimplemented!(),
                 }
@@ -372,7 +372,7 @@ impl<'a> Converter<'a> {
                 self.get_type(call, scope)?;
             }
         }
-        Ok(instr)
+        Ok(instrs)
     }
 
     /// `만약 … { … } 아니면 { … }`
@@ -453,7 +453,7 @@ impl<'a> Converter<'a> {
                 StatementKind::Return(value) => {
                     self.convert_return(&new_scope, value, statement.span, ir_func)?
                 }
-                StatementKind::Call(call) => self.convert_call(&new_scope, call)?,
+                StatementKind::Call(call) => self.convert_call(&new_scope, call, ir_func)?,
                 StatementKind::If(if_statement) => {
                     self.convert_if(&new_scope, if_statement, ir_func)?
                 }

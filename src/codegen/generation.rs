@@ -22,18 +22,18 @@ use crate::{
 use crate::converter::ir::structs::Operand as IrOp;
 use crate::elf::instructions::Operand as ElfOper;
 
-fn generate_instruction(instr: &Instr, offsets: &[i32]) -> Vec<Instruction> {
+fn generate_instruction(instr: &Instr, ctx: &Context) -> Vec<Instruction> {
     return match instr {
-        Instr::Return(op) => generate_return(op, offsets),
+        Instr::Return(op) => generate_return(op, ctx),
         Instr::Comment(_) => vec![],
-        Instr::Call { dest, symbol, args } => generate_call(dest, symbol, args, offsets),
+        Instr::Call { dest, symbol, args } => generate_call(dest, symbol, args, ctx),
         Instr::Binary {
             dest,
             op,
             left,
             right,
-        } => generate_binary(dest, op, left, right, offsets),
-        Instr::Copy { dest, src } => generate_copy(dest, src, offsets),
+        } => generate_binary(dest, op, left, right, ctx),
+        Instr::Copy { dest, src } => generate_copy(dest, src, ctx),
         _ => {
             println!("{:?}", instr);
             unimplemented!()
@@ -53,7 +53,7 @@ fn var_offsets(func: &Function) -> Vec<i32> {
         .collect();
 }
 
-fn func_prologue(func: &Function, offsets: &[i32]) -> Vec<Instruction> {
+fn func_prologue(func: &Function, ctx: &Context) -> Vec<Instruction> {
     let sum: i64 = func.vars.iter().map(get_size_of).sum();
     let frame = (sum + 15) & !15;
 
@@ -81,7 +81,7 @@ fn func_prologue(func: &Function, offsets: &[i32]) -> Vec<Instruction> {
     for (var, reg) in func.params.iter().zip(PARAM_REGS) {
         prologue.push(Instruction::Binary {
             op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(*var), offsets),
+            dst: convert_operand(&IrOp::Var(*var), ctx),
             src: ElfOper::Reg(reg),
             size: var_size(var),
         });
@@ -101,20 +101,34 @@ fn need_epilogue(bin_instr: &[Instruction]) -> bool {
     });
 }
 
+/// What the code of a function needs to know besides its instructions
+pub struct Context<'a> {
+    /// The offset under rbp of each variable, see var_offsets
+    pub offsets: Vec<i32>,
+    /// The symbol of each string of the program: Operand::Str(id) is strings[id]
+    pub strings: &'a [String],
+}
+
 pub fn generate(prog: &Program) -> ElfFile64 {
     let mut elf_file = ElfFile64::default();
     let text = add_section(&mut elf_file, SectionName::Text, ShFlags::ExecInstr, 16);
     let _data = add_section(&mut elf_file, SectionName::Data, ShFlags::Write, 4);
+    let strings: Vec<String> = (0..prog.strings.len())
+        .map(|id| format!(".str.{id}"))
+        .collect();
 
     for func in &prog.funcs {
         let Some(body) = &func.body else {
             continue; // 외부 : pas de corps
         };
-        let offsets = var_offsets(func);
-        let mut bin_instr: Vec<Instruction> = func_prologue(func, &offsets);
+        let ctx = Context {
+            offsets: var_offsets(func),
+            strings: &strings,
+        };
+        let mut bin_instr: Vec<Instruction> = func_prologue(func, &ctx);
 
         for instr in body.iter() {
-            let mut new_instr = generate_instruction(instr, &offsets);
+            let mut new_instr = generate_instruction(instr, &ctx);
             bin_instr.append(&mut new_instr);
         }
         if need_epilogue(&bin_instr) {

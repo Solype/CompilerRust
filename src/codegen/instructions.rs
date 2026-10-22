@@ -1,3 +1,4 @@
+use crate::codegen::utils::var_size;
 use crate::elf::instructions::Operand::Sym;
 use crate::elf::instructions::register::{R8, R9, RBP, RCX, RDI, RDX, RSI, RSP, Register};
 use crate::elf::instructions::{BinOp, CtrlOp, Instruction, register::RAX};
@@ -73,42 +74,6 @@ pub fn normal_param(op: &IrOp, i: &mut i32, offsets: &[i32]) -> Instruction {
     };
 }
 
-pub fn generate_binary(
-    dest: &VarId,
-    op: &BinaryOp,
-    left: &IrOp,
-    right: &IrOp,
-    offsets: &[i32],
-) -> Vec<Instruction> {
-    // x86 has no memory to memory operation: the computation goes through rax
-    // shortcut: 8-byte operands only, use dest.1 for the size once 짧은 types reach the codegen
-    let bin_op = match op {
-        BinaryOp::Add => BinOp::Add,
-        _ => unimplemented!(),
-    };
-    let instrs: Vec<Instruction> = vec![
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RAX),
-            src: convert_operand(left, offsets),
-            size: None,
-        },
-        Instruction::Binary {
-            op: bin_op,
-            dst: ElfOper::Reg(RAX),
-            src: convert_operand(right, offsets),
-            size: None,
-        },
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(*dest), offsets),
-            src: ElfOper::Reg(RAX),
-            size: None,
-        },
-    ];
-    return instrs;
-}
-
 pub fn generate_copy(dest: &VarId, src: &IrOp, offsets: &[i32]) -> Vec<Instruction> {
     let ope = convert_operand(src, offsets);
     let var = convert_operand(&IrOp::Var(*dest), offsets);
@@ -118,13 +83,13 @@ pub fn generate_copy(dest: &VarId, src: &IrOp, offsets: &[i32]) -> Vec<Instructi
             op: BinOp::Mov,
             dst: ElfOper::Reg(RAX),
             src: ope,
-            size: None,
+            size: var_size(dest),
         },
         Instruction::Binary {
             op: BinOp::Mov,
             dst: var,
             src: ElfOper::Reg(RAX),
-            size: None,
+            size: var_size(dest),
         },
     ];
 }
@@ -162,7 +127,7 @@ pub fn generate_call(
             op: BinOp::Mov,
             dst: convert_operand(&IrOp::Var(*var), offsets),
             src: ElfOper::Reg(RAX),
-            size: None,
+            size: var_size(var),
         });
     }
     return instr;

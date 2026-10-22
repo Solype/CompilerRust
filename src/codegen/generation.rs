@@ -1,7 +1,11 @@
 use crate::{
-    codegen::instructions::{
-        PARAM_REGS, convert_operand, func_epilogue, generate_binary, generate_call, generate_copy,
-        generate_return,
+    codegen::{
+        arithmetic::generate_binary,
+        instructions::{
+            PARAM_REGS, convert_operand, func_epilogue, generate_call, generate_copy,
+            generate_return,
+        },
+        utils::var_size,
     },
     converter::ir::structs::{Function, Instr, Program, get_size_of},
     elf::{
@@ -79,7 +83,7 @@ fn func_prologue(func: &Function, offsets: &[i32]) -> Vec<Instruction> {
             op: BinOp::Mov,
             dst: convert_operand(&IrOp::Var(*var), offsets),
             src: ElfOper::Reg(reg),
-            size: None,
+            size: var_size(var),
         });
     }
     return prologue;

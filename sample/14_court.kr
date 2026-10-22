@@ -1,0 +1,25 @@
+/*
+ * 14_court.kr : des 짧은 정수 (4 octets) côte à côte sur la pile.
+ * Une écriture de 8 octets dans une case déborde sur la voisine : 가 ou 나 passerait à 0,
+ * et le prologue de 빼다 écraserait le rbp sauvegardé (segfault).
+ * La division en 32 bits étend eax par cdq : avec cqo, -20 / 6 ne donne pas -3.
+ * 5 + 7 + 12 + 22 - 3 = 43 : `echo $?` après l'exécution affiche 43.
+ */
+
+// les paramètres sont rangés dans des cases de 4 octets par le prologue
+짧은 정수를 반환하는 빼다(짧은 정수 가, 짧은 정수 나) {
+    (가 - 나)를 반환해요.
+}
+
+짧은 정수를 반환하는 main() {
+    가는 짧은 정수예요.
+    나는 짧은 정수예요.
+    가에 5를 넣어요.            // Copy : sans la taille, 나 écraserait 가
+    나에 7을 넣어요.
+    다는 (가 + 나)예요.         // Binary : sans la taille, le résultat écraserait 나
+    라는 짧은 정수예요.
+    라에 -20을 넣어요.
+    마는 짧은 정수예요.
+    30과 8을 빼서 마에 넣어요.   // 22
+    ((((가 + 나) + 다) + 마) + (라 / 6))을 반환해요.   // (라 / 6) = -3
+}

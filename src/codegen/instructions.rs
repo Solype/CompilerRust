@@ -1,5 +1,5 @@
 use super::generation::Context;
-use crate::codegen::utils::var_size;
+use crate::codegen::utils::{load_operand, var_size};
 use crate::elf::instructions::Operand::Sym;
 use crate::elf::instructions::register::{R8, R9, RBP, RCX, RDI, RDX, RSI, RSP, Register};
 use crate::elf::instructions::{BinOp, CtrlOp, Instruction, register::RAX};
@@ -20,6 +20,7 @@ pub fn convert_operand(op: &IrOp, ctx: &Context) -> ElfOper {
     };
 }
 
+/// `mov rsp, rbp ; pop rbp ; ret`: undoes the prologue and returns
 pub fn func_epilogue() -> Vec<Instruction> {
     vec![
         Instruction::Binary {
@@ -40,20 +41,14 @@ pub fn func_epilogue() -> Vec<Instruction> {
     ]
 }
 
+/// `mov rax, op` then the epilogue: the value comes back in rax (System V)
 pub fn generate_return(op: &IrOp, ctx: &Context) -> Vec<Instruction> {
     let mut epi = func_epilogue();
-    epi.insert(
-        0,
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RAX),
-            src: convert_operand(op, ctx),
-            size: None,
-        },
-    );
+    epi.insert(0, load_operand(RAX, op, ctx, None));
     return epi;
 }
 
+/// The float argument of rank `i_f` into xmm`i_f`; not done yet, panics
 pub fn float_parameter(_op: &IrOp, _i_f: &mut i32) -> Instruction {
     unimplemented!();
 }
@@ -68,25 +63,15 @@ pub fn normal_param(op: &IrOp, i: &mut i32, ctx: &Context) -> Instruction {
         unimplemented!()
     };
     *i += 1;
-    return Instruction::Binary {
-        op: BinOp::Mov,
-        dst: ElfOper::Reg(*reg),
-        src: convert_operand(op, ctx),
-        size: None,
-    };
+    return load_operand(*reg, op, ctx, None);
 }
 
+/// `dest = src`, sized by `dest`: `mov rax, src ; mov [dest], rax`
 pub fn generate_copy(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction> {
-    let ope = convert_operand(src, ctx);
     let var = convert_operand(&IrOp::Var(*dest), ctx);
     // x86 has no memory to memory mov: the value goes through rax
     return vec![
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RAX),
-            src: ope,
-            size: var_size(dest),
-        },
+        load_operand(RAX, src, ctx, var_size(dest)),
         Instruction::Binary {
             op: BinOp::Mov,
             dst: var,
@@ -96,6 +81,8 @@ pub fn generate_copy(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction
     ];
 }
 
+/// `call symbol` (System V): the arguments in rdi, rsi, rdx, rcx, r8, r9, al = the number of
+/// float arguments (read by variadic functions such as printf), then `mov [dest], rax` if kept
 pub fn generate_call(
     dest: &Option<VarId>,
     symbol: &str,

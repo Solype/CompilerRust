@@ -1,6 +1,6 @@
 use super::generation::Context;
 use super::instructions::convert_operand;
-use crate::codegen::utils::var_size;
+use crate::codegen::utils::{load_operand, var_size};
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
 use crate::elf::instructions::register::{RAX, RCX};
 use crate::elf::instructions::{
@@ -8,6 +8,8 @@ use crate::elf::instructions::{
 };
 use crate::parser::postparser::structs::BinaryOp;
 
+/// `dest = left op right` for an op that takes its source as it is (add, sub, and, or, xor):
+/// `mov rax, left ; op rax, right ; mov [dest], rax`
 fn simple_operation(
     dest: &VarId,
     left: &IrOp,
@@ -16,12 +18,7 @@ fn simple_operation(
     bin_op: BinOp,
 ) -> Vec<Instruction> {
     let instrs: Vec<Instruction> = vec![
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RAX),
-            src: convert_operand(left, ctx),
-            size: var_size(dest),
-        },
+        load_operand(RAX, left, ctx, var_size(dest)),
         Instruction::Binary {
             op: bin_op,
             dst: ElfOper::Reg(RAX),
@@ -38,20 +35,12 @@ fn simple_operation(
     return instrs;
 }
 
+/// `dest = left / right`, signed: `mov rax, left ; mov rcx, right ; cqo (cdq on 4 bytes) ;
+/// idiv rcx ; mov [dest], rax`. idiv divides rdx:rax: quotient in rax, remainder in rdx
 fn division(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec<Instruction> {
     return vec![
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RAX),
-            src: convert_operand(left, ctx),
-            size: var_size(dest),
-        },
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RCX),
-            src: convert_operand(right, ctx),
-            size: var_size(dest),
-        },
+        load_operand(RAX, left, ctx, var_size(dest)),
+        load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::Unary {
             op: if dest.1 == 4 {
                 UnaryOp::Cdq
@@ -77,20 +66,13 @@ fn division(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec<Instr
     ];
 }
 
+/// `dest = left * right`: `mov rax, left ; mov rcx, right ; imul rax, rcx ; mov [dest], rax`.
+/// right goes through rcx, as `imul r, r/m` takes no immediate; the low bits are the same signed
+/// or not
 fn multiplication(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec<Instruction> {
     return vec![
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RAX),
-            src: convert_operand(left, ctx),
-            size: var_size(dest),
-        },
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RCX),
-            src: convert_operand(right, ctx),
-            size: var_size(dest),
-        },
+        load_operand(RAX, left, ctx, var_size(dest)),
+        load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::ComplexBinary {
             op: ComplexBinOp::Imul,
             dst: ElfOper::Reg(RAX),
@@ -116,18 +98,8 @@ fn shift(
     shift_op: ShiftOp,
 ) -> Vec<Instruction> {
     return vec![
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RAX),
-            src: convert_operand(left, ctx),
-            size: var_size(dest),
-        },
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: ElfOper::Reg(RCX),
-            src: convert_operand(right, ctx),
-            size: var_size(dest),
-        },
+        load_operand(RAX, left, ctx, var_size(dest)),
+        load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::Shift {
             op: shift_op,
             dst: ElfOper::Reg(RAX),
@@ -143,6 +115,8 @@ fn shift(
     ];
 }
 
+/// The instructions of `dest = left op right`, sized by `dest`; panics on an op not done yet
+/// (%, comparisons, 그리고, 또는)
 pub fn generate_binary(
     dest: &VarId,
     op: &BinaryOp,

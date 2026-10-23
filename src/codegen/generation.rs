@@ -22,6 +22,8 @@ use crate::{
 use crate::converter::ir::structs::Operand as IrOp;
 use crate::elf::instructions::Operand as ElfOper;
 
+/// The x86 instructions of one IR instruction; panics on one not done yet (Unary, Cast, Label,
+/// Jump, JumpIfNot)
 fn generate_instruction(instr: &Instr, ctx: &Context) -> Vec<Instruction> {
     return match instr {
         Instr::Return(op) => generate_return(op, ctx),
@@ -53,6 +55,8 @@ fn var_offsets(func: &Function) -> Vec<i32> {
         .collect();
 }
 
+/// `push rbp ; mov rbp, rsp ; sub rsp, frame`, the frame being the sizes of the variables rounded
+/// up to 16; then each parameter goes from its register into its case
 fn func_prologue(func: &Function, ctx: &Context) -> Vec<Instruction> {
     let sum: i64 = func.vars.iter().map(get_size_of).sum();
     let frame = (sum + 15) & !15;
@@ -89,6 +93,7 @@ fn func_prologue(func: &Function, ctx: &Context) -> Vec<Instruction> {
     return prologue;
 }
 
+/// True unless the code already ends with `ret`: a function without 반환하는 falls off its end
 fn need_epilogue(bin_instr: &[Instruction]) -> bool {
     return !bin_instr.last().is_some_and(|last| {
         matches!(
@@ -109,13 +114,30 @@ pub struct Context<'a> {
     pub strings: &'a [String],
 }
 
+/// The object file of `prog`: each string in .rodata as a local symbol `.str.N`, each function
+/// with a body in .text as a global symbol; an 외부 function becomes an undefined symbol
 pub fn generate(prog: &Program) -> ElfFile64 {
     let mut elf_file = ElfFile64::default();
     let text = add_section(&mut elf_file, SectionName::Text, ShFlags::ExecInstr, 16);
     let _data = add_section(&mut elf_file, SectionName::Data, ShFlags::Write, 4);
+    let rodata = add_section(&mut elf_file, SectionName::Rodata, ShFlags::NoFlag, 1);
     let strings: Vec<String> = (0..prog.strings.len())
         .map(|id| format!(".str.{id}"))
         .collect();
+
+    // each string ends with 0, as C expects it
+    for (name, string) in strings.iter().zip(&prog.strings) {
+        let mut bytes = string.as_bytes().to_vec();
+        bytes.push(0);
+        elf_file.add_symbol_to_section_raw(
+            rodata,
+            name.clone(),
+            &bytes,
+            make_st_info(StBind::Local, StType::Object),
+            StVis::Default as u8,
+            1,
+        );
+    }
 
     for func in &prog.funcs {
         let Some(body) = &func.body else {

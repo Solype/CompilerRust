@@ -1,7 +1,6 @@
 use crate::converter::expressions::Callee;
 use crate::converter::ir;
 use crate::converter::scope::LoopLabels;
-use crate::elf::instructions::Operand;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
     Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind,

@@ -221,6 +221,32 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Plan of the next steps, in `TODO_Frontend.md` | AI |
 | README and TODO updates | AI |
 
+## October 22: the operators, `짧은 정수` on the stack, calls with arguments
+
+| Element | Who |
+|---|---|
+| `convert_init` and `convert_assign` through `convert_expr` | Me |
+| The `ir_func` parameter of `convert_assign` | AI, at my request |
+| `generate_binary` moved into `arithmetic.rs`, `simple_operation` (Sub, And, Or, Xor) | Me |
+| `multiplication` and `division` from the instructions the AI gave me (`imul`, `cqo` / `idiv`) | Me, from AI code |
+| `shift` (`shl` / `sar` through `cl`), missing imports | AI, at my request |
+| `var_size` and the size of the `mov` in Copy, Binary, the call result, the prologue; `cdq` on 4 bytes | Me |
+| `sample/13_operateurs.kr`, `sample/14_court.kr`, which found the `cqo` and prologue bugs | AI, at my request |
+| `convert_call` converting the arguments of a call alone | Me |
+| `Context` passed instead of the offsets | AI, at my request |
+| Review of my code, explanations (x86 division, `mov` versus `lea` for a string, an address operand in the IR) | AI, explanations only |
+
+## October 23: strings in `.rodata`
+
+| Element | Who |
+|---|---|
+| `load_operand` (a string through `lea`), from code the AI gave me | Me, from AI code |
+| The imports of `utils.rs`, every `mov` that loads an operand replaced by `load_operand` | AI, at my request |
+| The strings in `.rodata` in `generate`: started | Me |
+| End of the `.rodata` strings (one local symbol `.str.N` per string, ended by 0) | AI, at my request |
+| Doc comments of the codegen functions | AI, at my request |
+| README and TODO updates | AI |
+
 ## How I used the AI
 
 Over the whole project, the AI was mostly used to **explain**: how a format, an encoding or an

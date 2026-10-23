@@ -14,7 +14,9 @@ src/
               cfg/ (grammaire, table LR(1), arbre de dérivation),
               postparser/ (arbre -> AST, types de l'AST dans structs.rs)
   converter/  analyse sémantique de l'AST, puis IR typée (étape 2.6)
-  codegen/    IR typée -> Vec<Instruction> (generation.rs, commencé)
+  codegen/    IR typée -> Vec<Instruction> : generation.rs (generate,
+              Context, prologue), instructions.rs (Copy, Call, Return),
+              arithmetic.rs (Binary), utils.rs (var_size, load_operand)
   elf/        (existant)
 
 Le lexer est écrit à la main (l'ancien automate lexical_analisys/ est supprimé).
@@ -68,27 +70,29 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 [X] get_size_of : pas de bras Type::Bool, unimplemented!() (panique de 06
     et de erreurs/moins_logique.kr, qui doit rendre le code 1)
 
-Étape 2 : les opérateurs qui ne dépendent pas du signe
-[ ] generate_binary : Sub, BitAnd, BitOr, BitXor (comme Add), Mul par
-    imul rax, src (ComplexBinOp::Imul), Shl
+Étape 2 : les opérateurs qui ne dépendent pas du signe, sample/13_operateurs.kr
+[X] generate_binary (arithmetic.rs) : Sub, BitAnd, BitOr, BitXor (comme
+    Add), Mul par mov rcx, right ; imul rax, rcx, Shl par mov rcx, right ;
+    shl rax, cl. Div (cqo / cdq ; idiv rcx) et Shr (sar) faits en signé
 [ ] Unary : Neg, BitNot (neg / not sur rax)
 
 Étape 3 (jalon 2) : sample/02_bonjour.kr, printf
-[ ] convert_call : arguments convertis par convert_expr, comme le bras Call
-    de convert_expr (unimplemented!() aujourd'hui si l'appel seul a des
-    arguments : panique de 02, 04, 05, 07, 08 et de
-    erreurs/valeur_sans_type.kr)
-[ ] Chaînes : une section .rodata, un symbole local par Program.strings[i]
-    (fini par 0) ; Operand::Str -> lea reg, [rip + chaîne], relocation PC32
-[ ] Vérifier : stdout égal à sample/02_bonjour.out, code 0
+[X] convert_call : arguments convertis par convert_args, comme
+    convert_call_value (dest: None : le résultat est ignoré)
+[X] Chaînes : une section .rodata, un symbole local .str.N par
+    Program.strings[N] (fini par 0) ; Operand::Str -> lea reg, [rip + .str.N]
+    (load_operand, utils.rs), relocation PC32
+[X] Context (generation.rs) passé à la place des offsets : offsets des
+    variables, symboles des chaînes ; plus tard ceux des 소수
+[X] Vérifier : stdout égal à sample/02_bonjour.out, code 0 (02 et 03 passent)
 
 Étape 4 : trancher le type des opérandes de Binary / Unary
 [ ] Signé ou non, 32 / 64 bits (voir « Choix de l'IR à trancher » en
     2.6.7) : dans Instr::Binary, ou lu dans vars[left]
 [ ] Comparaisons : cmp rax, right ; setcc al ; movzx rax, al
-[ ] Div / Rem : cqo ; idiv r (quotient rax, reste rdx ; le diviseur dans un
-    registre, pas un immédiat)
-[ ] Shr : sar ou shr selon le signe
+[ ] Div / Rem : idiv (signé, fait pour Div) ou xor edx, edx ; div (양수) ;
+    Rem lit rdx (quotient rax, reste rdx ; diviseur dans rcx)
+[ ] Shr : sar (fait, shortcut dans generate_binary) ou shr selon le signe
 
 Étape 5 : contrôle, samples 04, 05, 08, 09, 10
 [ ] Codegen : Label -> LabelId (un Vec<LabelId> par fonction, indexé par
@@ -99,16 +103,18 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
     incrément, 3e label pour 넘어가요
 [ ] 그리고 / 또는 en court-circuit
 
-Étape 6 : largeur des mov selon VarId.1
-[ ] Aujourd'hui 8 octets : faux pour 짧은 et 문자 ; size: Some(..) dans les
-    mov de convert_operand, Copy, Binary (retire le shortcut de
-    generate_binary)
+Étape 6 : largeur des mov selon VarId.1, sample/14_court.kr
+[X] var_size(dest) dans Copy, Binary, le résultat d'un Call et le
+    rangement des paramètres du prologue ; cdq au lieu de cqo sur 4 octets
+[ ] Retirer le commentaire shortcut « 8-byte operands only » de
+    generate_binary, devenu faux
+[ ] Lectures encore sur 8 octets : generate_return et normal_param ;
+    movsx / movzx pour un argument de 1 ou 2 octets passé à une fonction C
 
 Étape 7 : 소수, sample/06_types.kr
 [ ] Constantes en .rodata, registres XMM, float_parameter, compteur al
 
-Plus tard : 7e argument entier et plus sur la pile, 03_chaines,
-07_phrases, pointeurs et tableaux (Load / Store / AddrOf), tests unitaires
+Plus tard : 7e argument entier et plus sur la pile, 07_phrases, pointeurs et tableaux (Load / Store / AddrOf), tests unitaires
 du converter.
 
 ==================================================
@@ -546,8 +552,8 @@ Instructions IR manquantes :
 [ ] get_size_of : Bool, Null, Custom tombent dans unimplemented!()
 [ ] Littéral 소수 toujours rangé en 64 bits (float_id(_, false)), même pour
     un 짧은 소수
-[ ] convert_init / convert_assign : valeur composée (calcul, appel, chaîne,
-    sizeof) -> aucun Copy aujourd'hui, à brancher sur convert_expr
+[X] convert_init / convert_assign : valeur composée (calcul, appel, chaîne,
+    sizeof) par convert_expr, puis Copy
 [ ] convert_condition : rendre l'Operand de la condition, pas seulement
     vérifier le type
 [ ] convert_if : JumpIfNot vers le else, instructions du then et du else
@@ -560,8 +566,8 @@ Instructions IR manquantes :
 [ ] convert_break : Jump(label_id(label_end)) ; il faut passer ir_func
 [ ] convert_continue : Jump vers le début (동안) ou vers l'incrément
     (세면서, 3e label)
-[ ] convert_call : arguments de l'appel (unimplemented!() aujourd'hui) ;
-    bras Callee::Cast (unimplemented!())
+[X] convert_call : arguments de l'appel par convert_args
+[ ] convert_call : bras Callee::Cast (unimplemented!()), 바꾸다 en phrase seule
 
 Choix de l'IR à trancher :
 [ ] Type des opérandes dans Binary / Unary (signé ou non, 32 / 64 bits,

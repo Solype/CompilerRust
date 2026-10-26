@@ -1,6 +1,6 @@
 use crate::{
     codegen::{
-        arithmetic::generate_binary,
+        arithmetic::{generate_binary, generate_unary},
         instructions::{
             PARAM_REGS, convert_operand, func_epilogue, generate_call, generate_copy,
             generate_return,
@@ -35,6 +35,7 @@ fn generate_instruction(instr: &Instr, ctx: &Context) -> Vec<Instruction> {
             left,
             right,
         } => generate_binary(dest, op, left, right, ctx),
+        Instr::Unary { dest, op, src } => generate_unary(dest, op, src, ctx),
         Instr::Copy { dest, src } => generate_copy(dest, src, ctx),
         _ => {
             println!("{:?}", instr);

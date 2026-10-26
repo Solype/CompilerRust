@@ -4,9 +4,9 @@ use crate::codegen::utils::{load_operand, var_size};
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
 use crate::elf::instructions::register::{RAX, RCX};
 use crate::elf::instructions::{
-    BinOp, ComplexBinOp, Instruction, Operand as ElfOper, ShiftOp, UnaryOp,
+    BinOp, ComplexBinOp, Instruction, Operand as ElfOper, ShiftOp, UnaryOp as ElfUnOp,
 };
-use crate::parser::postparser::structs::BinaryOp;
+use crate::parser::postparser::structs::{BinaryOp, UnaryOp};
 
 /// `dest = left op right` for an op that takes its source as it is (add, sub, and, or, xor):
 /// `mov rax, left ; op rax, right ; mov [dest], rax`
@@ -43,9 +43,9 @@ fn division(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec<Instr
         load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::Unary {
             op: if dest.1 == 4 {
-                UnaryOp::Cdq
+                ElfUnOp::Cdq
             } else {
-                UnaryOp::Cqo
+                ElfUnOp::Cqo
             },
             dst: ElfOper::NoOperand,
             size: var_size(dest),
@@ -139,4 +139,37 @@ pub fn generate_binary(
         BinaryOp::Shr => shift(dest, left, right, ctx, ShiftOp::Sar),
         _ => unimplemented!(),
     };
+}
+
+/// `dest = op src`: `mov rax, src ; neg rax` (-x), `not rax` (~x) or `xor al, 1` (logical not:
+/// a 논리 is 0 or 1, ~ would give 0xFE / 0xFF), then `mov [dest], rax`
+pub fn generate_unary(dest: &VarId, op: &UnaryOp, src: &IrOp, ctx: &Context) -> Vec<Instruction> {
+    let operation = match op {
+        UnaryOp::Neg => Instruction::Unary {
+            op: ElfUnOp::Neg,
+            dst: ElfOper::Reg(RAX),
+            size: var_size(dest),
+        },
+        UnaryOp::BitNot => Instruction::Unary {
+            op: ElfUnOp::Not,
+            dst: ElfOper::Reg(RAX),
+            size: var_size(dest),
+        },
+        UnaryOp::Not => Instruction::Binary {
+            op: BinOp::Xor,
+            dst: ElfOper::Reg(RAX),
+            src: ElfOper::Imm(1),
+            size: var_size(dest),
+        },
+    };
+    return vec![
+        load_operand(RAX, src, ctx, var_size(dest)),
+        operation,
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: convert_operand(&IrOp::Var(*dest), ctx),
+            src: ElfOper::Reg(RAX),
+            size: var_size(dest),
+        },
+    ];
 }

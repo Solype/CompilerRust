@@ -1,11 +1,14 @@
 use super::generation::Context;
 use crate::codegen::utils::{load_operand, var_size};
 use crate::elf::instructions::Operand::Sym;
-use crate::elf::instructions::register::{R8, R9, RBP, RCX, RDI, RDX, RSI, RSP, Register};
+use crate::elf::instructions::register::{
+    R8, R9, RBP, RCX, RDI, RDX, RSI, RSP, Register, XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7,
+};
 use crate::elf::instructions::{BinOp, CtrlOp, Instruction, register::RAX};
 
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
 use crate::elf::instructions::{MemAddress, Operand as ElfOper, StackOp};
+use crate::parser::postparser::structs::Type;
 
 /// `ctx.offsets`: the offset under rbp of each variable, see var_offsets
 pub fn convert_operand(op: &IrOp, ctx: &Context) -> ElfOper {
@@ -48,13 +51,23 @@ pub fn func_epilogue() -> Vec<Instruction> {
 /// `mov rax, op` then the epilogue: the value comes back in rax (System V)
 pub fn generate_return(op: &IrOp, ctx: &Context) -> Vec<Instruction> {
     let mut epi = func_epilogue();
-    epi.insert(0, load_operand(RAX, op, ctx, None));
+    if matches!(ctx.return_type, Some(Type::Float { .. })) {
+        epi.insert(0, load_operand(XMM0, op, ctx, None));
+    } else {
+        epi.insert(0, load_operand(RAX, op, ctx, None));
+    }
     return epi;
 }
 
+pub const PARAM_FREGS: [Register; 8] = [XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7];
+
 /// The float argument of rank `i_f` into xmm`i_f`; not done yet, panics
-pub fn float_parameter(_op: &IrOp, _i_f: &mut i32) -> Instruction {
-    unimplemented!();
+pub fn float_parameter(op: &IrOp, i_f: &mut i32, ctx: &Context) -> Instruction {
+    let Some(reg) = PARAM_FREGS.get(*i_f as usize) else {
+        unimplemented!()
+    };
+    *i_f += 1;
+    return load_operand(*reg, op, ctx, None);
 }
 
 /// Registers of the integer arguments, in order (System V)
@@ -99,7 +112,8 @@ pub fn generate_call(
 
     for arg in args {
         let new_instr = match arg {
-            IrOp::Float(_) => float_parameter(arg, &mut i_f),
+            IrOp::Float(_) => float_parameter(arg, &mut i_f, ctx),
+            IrOp::Var(VarId { is_float: true, .. }) => float_parameter(arg, &mut i_f, ctx),
             _ => normal_param(arg, &mut i, ctx),
         };
         instr.push(new_instr);

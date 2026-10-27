@@ -71,7 +71,7 @@ impl fmt::Display for Operand {
             Operand::Int(value) => write!(f, "{value}"),
             Operand::Float(value) => write!(f, "{value:?}"),
             Operand::Bool(value) => write!(f, "{value}"),
-            Operand::Str(index) => write!(f, "s{index}"),
+            Operand::Address(index) => write!(f, "s{index}"),
             Operand::Null => write!(f, "null"),
         };
     }

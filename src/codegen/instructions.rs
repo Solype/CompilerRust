@@ -11,11 +11,15 @@ use crate::elf::instructions::{MemAddress, Operand as ElfOper, StackOp};
 pub fn convert_operand(op: &IrOp, ctx: &Context) -> ElfOper {
     return match op {
         IrOp::Var(var) => {
-            ElfOper::MemoryAddress(MemAddress::new().base(RBP).disp(-ctx.offsets[var.0]))
+            ElfOper::MemoryAddress(MemAddress::new().base(RBP).disp(-ctx.offsets[var.id]))
         }
         IrOp::Int(n) => ElfOper::Imm(*n),
         IrOp::Bool(b) => ElfOper::Imm(*b as i64),
         IrOp::Null => ElfOper::Imm(0),
+        // a float has no immediate form: it is read from its constant in .rodata
+        IrOp::Float(f) => {
+            ElfOper::MemoryAddress(MemAddress::symbol(&ctx.float_names[*f]).rip_relative())
+        }
         _ => unimplemented!(),
     };
 }

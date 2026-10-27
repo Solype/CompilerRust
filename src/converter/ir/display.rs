@@ -53,7 +53,7 @@ impl fmt::Display for Function {
 
 impl fmt::Display for VarId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "v{}", self.0)
+        write!(f, "v{}", self.id)
     }
 }
 
@@ -69,7 +69,7 @@ impl fmt::Display for Operand {
         return match self {
             Operand::Var(var) => write!(f, "{var}"),
             Operand::Int(value) => write!(f, "{value}"),
-            Operand::Float(value) => write!(f, "{value:?}"),
+            Operand::Float(value) => write!(f, "f{value:?}"),
             Operand::Bool(value) => write!(f, "{value}"),
             Operand::DataAddress(index) => write!(f, "s{index}"),
             Operand::Address(var) => write!(f, "&{var}"),

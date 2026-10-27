@@ -15,7 +15,11 @@ use crate::{
             BinOp, CtrlOp, Instruction, StackOp,
             register::{RBP, RSP},
         },
-        shdr::{ElfShdr, SectionName, ShFlags, ShType},
+        shdr::{
+            ElfShdr,
+            SectionName::{self, Rodata},
+            ShFlags, ShType,
+        },
     },
 };
 
@@ -117,15 +121,15 @@ pub struct Context<'a> {
     pub float_names: &'a [String],
 }
 
-/// The object file of `prog`: each string in .rodata as a local symbol `.str.N`, each function
+/// The object file ostrf `prog`: each string in .rodata as a local symbol `.str.N`, each function
 /// with a body in .text as a global symbol; an 외부 function becomes an undefined symbol
 pub fn generate(prog: &Program) -> ElfFile64 {
     let mut elf_file = ElfFile64::default();
     let text = add_section(&mut elf_file, SectionName::Text, ShFlags::ExecInstr, 16);
     let _data = add_section(&mut elf_file, SectionName::Data, ShFlags::Write, 4);
     let rodata = add_section(&mut elf_file, SectionName::Rodata, ShFlags::NoFlag, 1);
-    let mut data_names: Vec<String> = (0..prog.strings.len())
-        .map(|id| format!(".str.{id}"))
+    let data_names: Vec<String> = (0..prog.strings.len())
+        .map(|id| format!(".dt.{id}"))
         .collect();
     let float_names: Vec<String> = (0..prog.floats.len())
         .map(|id| format!(".float.{id}"))
@@ -135,14 +139,11 @@ pub fn generate(prog: &Program) -> ElfFile64 {
     for (name, string) in data_names.iter().zip(&prog.strings) {
         let mut bytes = string.as_bytes().to_vec();
         bytes.push(0);
-        elf_file.add_symbol_to_section_raw(
-            rodata,
-            name.clone(),
-            &bytes,
-            make_st_info(StBind::Local, StType::Object),
-            StVis::Default as u8,
-            1,
-        );
+        add_data_to_roddata(&mut elf_file, rodata, name, &bytes, 1);
+    }
+    for (name, float) in float_names.iter().zip(&prog.floats) {
+        let bytes = &float.0.to_le_bytes().to_vec();
+        add_data_to_roddata(&mut elf_file, rodata, name, bytes, 8);
     }
 
     for func in &prog.funcs {
@@ -166,6 +167,23 @@ pub fn generate(prog: &Program) -> ElfFile64 {
         add_function(&mut elf_file, text, &func.symbol, bin_instr);
     }
     return elf_file;
+}
+
+fn add_data_to_roddata(
+    elf_file: &mut ElfFile64,
+    rodata: usize,
+    name: &String,
+    bytes: &Vec<u8>,
+    align: usize,
+) {
+    elf_file.add_symbol_to_section_raw(
+        rodata,
+        name.clone(),
+        &bytes,
+        make_st_info(StBind::Local, StType::Object),
+        StVis::Default as u8,
+        align,
+    );
 }
 
 /// Adds an allocated PROGBITS section, with one extra flag (Write, ExecInstr, ...)

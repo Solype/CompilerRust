@@ -2,7 +2,7 @@ use super::generation::Context;
 use super::instructions::convert_operand;
 use crate::codegen::utils::{load_operand, var_size};
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
-use crate::elf::instructions::register::{RAX, RCX};
+use crate::elf::instructions::register::{RAX, RCX, RDX, Register, XMM0};
 use crate::elf::instructions::{
     BinOp, ComplexBinOp, Instruction, Operand as ElfOper, ShiftOp, UnaryOp as ElfUnOp,
 };
@@ -35,14 +35,47 @@ fn simple_operation(
     return instrs;
 }
 
-/// `dest = left / right`, signed: `mov rax, left ; mov rcx, right ; cqo (cdq on 4 bytes) ;
-/// idiv rcx ; mov [dest], rax`. idiv divides rdx:rax: quotient in rax, remainder in rdx
-fn division(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec<Instruction> {
+/// `dest = left op right` on 소수 (addsd, subsd, mulsd, divsd; the ss forms on 4 bytes):
+/// `movsd xmm0, left ; op xmm0, right ; movsd [dest], xmm0`
+fn float_operation(
+    dest: &VarId,
+    left: &IrOp,
+    right: &IrOp,
+    ctx: &Context,
+    bin_op: BinOp,
+) -> Vec<Instruction> {
+    return vec![
+        load_operand(XMM0, left, ctx, var_size(dest)),
+        Instruction::Binary {
+            op: bin_op,
+            dst: ElfOper::Reg(XMM0),
+            src: convert_operand(right, ctx),
+            size: var_size(dest),
+        },
+        Instruction::Binary {
+            op: BinOp::StoreF,
+            dst: convert_operand(&IrOp::Var(*dest), ctx),
+            src: ElfOper::Reg(XMM0),
+            size: var_size(dest),
+        },
+    ];
+}
+
+/// `dest = left / right` (result rax) or `left % right` (result rdx), signed: `mov rax, left ;
+/// mov rcx, right ; cqo (cdq on 4 bytes) ; idiv rcx ; mov [dest], result`. idiv divides rdx:rax:
+/// quotient in rax, remainder in rdx
+fn division(
+    dest: &VarId,
+    left: &IrOp,
+    right: &IrOp,
+    ctx: &Context,
+    result: Register,
+) -> Vec<Instruction> {
     return vec![
         load_operand(RAX, left, ctx, var_size(dest)),
         load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::Unary {
-            op: if dest.1 == 4 {
+            op: if dest.size == 4 {
                 ElfUnOp::Cdq
             } else {
                 ElfUnOp::Cqo
@@ -60,7 +93,7 @@ fn division(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec<Instr
         Instruction::Binary {
             op: BinOp::Mov,
             dst: convert_operand(&IrOp::Var(*dest), ctx),
-            src: ElfOper::Reg(RAX),
+            src: ElfOper::Reg(result),
             size: var_size(dest),
         },
     ];
@@ -116,7 +149,7 @@ fn shift(
 }
 
 /// The instructions of `dest = left op right`, sized by `dest`; panics on an op not done yet
-/// (%, comparisons, 그리고, 또는)
+/// (comparisons, 그리고, 또는)
 pub fn generate_binary(
     dest: &VarId,
     op: &BinaryOp,
@@ -124,8 +157,17 @@ pub fn generate_binary(
     right: &IrOp,
     ctx: &Context,
 ) -> Vec<Instruction> {
+    // the converter only lets + - * / reach a 소수
+    if dest.is_float {
+        return match op {
+            BinaryOp::Add => float_operation(dest, left, right, ctx, BinOp::AddF),
+            BinaryOp::Sub => float_operation(dest, left, right, ctx, BinOp::SubF),
+            BinaryOp::Mul => float_operation(dest, left, right, ctx, BinOp::MulF),
+            BinaryOp::Div => float_operation(dest, left, right, ctx, BinOp::DivF),
+            _ => unimplemented!(),
+        };
+    }
     // x86 has no memory to memory operation: the computation goes through rax
-    // shortcut: 8-byte operands only, use dest.1 for the size once 짧은 types reach the codegen
     return match op {
         BinaryOp::Add => simple_operation(dest, left, right, ctx, BinOp::Add),
         BinaryOp::Sub => simple_operation(dest, left, right, ctx, BinOp::Sub),
@@ -133,7 +175,8 @@ pub fn generate_binary(
         BinaryOp::BitXor => simple_operation(dest, left, right, ctx, BinOp::Xor),
         BinaryOp::BitAnd => simple_operation(dest, left, right, ctx, BinOp::And),
         BinaryOp::Mul => multiplication(dest, left, right, ctx),
-        BinaryOp::Div => division(dest, left, right, ctx),
+        BinaryOp::Div => division(dest, left, right, ctx, RAX),
+        BinaryOp::Rem => division(dest, left, right, ctx, RDX),
         BinaryOp::Shl => shift(dest, left, right, ctx, ShiftOp::Shl),
         // shortcut: arithmetic shift as for a signed value, Shr for 양수 once Binary carries the sign
         BinaryOp::Shr => shift(dest, left, right, ctx, ShiftOp::Sar),
@@ -142,34 +185,49 @@ pub fn generate_binary(
 }
 
 /// `dest = op src`: `mov rax, src ; neg rax` (-x), `not rax` (~x) or `xor al, 1` (logical not:
-/// a 논리 is 0 or 1, ~ would give 0xFE / 0xFF), then `mov [dest], rax`
+/// a 논리 is 0 or 1, ~ would give 0xFE / 0xFF), then `mov [dest], rax`. -x of a 소수 flips its
+/// sign bit: `mov rcx, 0x8000000000000000 ; xor rax, rcx`
 pub fn generate_unary(dest: &VarId, op: &UnaryOp, src: &IrOp, ctx: &Context) -> Vec<Instruction> {
     let operation = match op {
-        UnaryOp::Neg => Instruction::Unary {
+        // not xorpd: its mask in memory would have to be 16 bytes, 16-byte aligned
+        UnaryOp::Neg if dest.is_float => vec![
+            Instruction::Binary {
+                op: BinOp::Mov,
+                dst: ElfOper::Reg(RCX),
+                src: ElfOper::Imm(if dest.size == 4 { i32::MIN as i64 } else { i64::MIN }),
+                size: var_size(dest),
+            },
+            Instruction::Binary {
+                op: BinOp::Xor,
+                dst: ElfOper::Reg(RAX),
+                src: ElfOper::Reg(RCX),
+                size: var_size(dest),
+            },
+        ],
+        UnaryOp::Neg => vec![Instruction::Unary {
             op: ElfUnOp::Neg,
             dst: ElfOper::Reg(RAX),
             size: var_size(dest),
-        },
-        UnaryOp::BitNot => Instruction::Unary {
+        }],
+        UnaryOp::BitNot => vec![Instruction::Unary {
             op: ElfUnOp::Not,
             dst: ElfOper::Reg(RAX),
             size: var_size(dest),
-        },
-        UnaryOp::Not => Instruction::Binary {
+        }],
+        UnaryOp::Not => vec![Instruction::Binary {
             op: BinOp::Xor,
             dst: ElfOper::Reg(RAX),
             src: ElfOper::Imm(1),
             size: var_size(dest),
-        },
+        }],
     };
-    return vec![
-        load_operand(RAX, src, ctx, var_size(dest)),
-        operation,
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(*dest), ctx),
-            src: ElfOper::Reg(RAX),
-            size: var_size(dest),
-        },
-    ];
+    let mut instrs = vec![load_operand(RAX, src, ctx, var_size(dest))];
+    instrs.extend(operation);
+    instrs.push(Instruction::Binary {
+        op: BinOp::Mov,
+        dst: convert_operand(&IrOp::Var(*dest), ctx),
+        src: ElfOper::Reg(RAX),
+        size: var_size(dest),
+    });
+    return instrs;
 }

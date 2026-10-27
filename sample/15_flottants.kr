@@ -1,0 +1,40 @@
+/*
+ * 15_flottants.kr : les 소수 (double, 8 octets) et 짧은 소수 (float, 4 octets).
+ * Les constantes sont dans .rodata (.float.N) : un flottant ne s'écrit pas en immédiat.
+ * Le calcul passe par les registres xmm, les paramètres et le retour par xmm0,
+ * et printf reçoit al = nombre d'arguments flottants.
+ * 바 = ((1.5 + 2.25) - 0.75) * 4.5 / 0.5 = 27, 사 = -27, 자 = 2.5 en double :
+ * 27 + 2 = 29 : `echo $?` après l'exécution affiche 29.
+ */
+
+외부 정수를 반환하는 printf(문자 주소 형식, …)
+
+소수를 반환하는 곱하다(소수 가, 소수 나) {
+    (가 * 나)를 반환해요.
+}
+
+정수를 반환하는 main() {
+    가는 1.5예요.
+    나는 2.25예요.
+    다는 (가 + 나)예요.             // 3.75
+    라는 (다 - 0.75)예요.           // 3.0
+    마는 소수예요.
+    라와 4.5를 곱해서 마에 넣어요.   // 13.5, paramètres et retour dans xmm0 / xmm1
+    바는 (마 / 0.5)예요.            // 27.0
+    사는 (-바)예요.                 // -27.0
+    "%f %f\n"과 바와 사를 printf해요.
+
+    // 짧은 소수 : 4 octets ; printf veut un double, d'où la conversion
+    아는 짧은 소수예요.
+    아에 2.5를 넣어요.
+    자는 소수예요.
+    아를 소수로 바꿔서 자에 넣어요.
+    "%f\n"과 자를 printf해요.
+
+    // retour à l'entier : cvttsd2si tronque vers 0
+    차는 정수예요.
+    바를 정수로 바꿔서 차에 넣어요.   // 27
+    카는 정수예요.
+    자를 정수로 바꿔서 카에 넣어요.   // 2
+    (차 + 카)를 반환해요.
+}

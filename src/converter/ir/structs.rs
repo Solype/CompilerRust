@@ -29,7 +29,11 @@ impl Function {
 
     /// A new variable of type `ty`: its id is its index in `vars`, unique in the whole function
     pub fn new_var(&mut self, ty: Type) -> VarId {
-        let var = VarId::new(self.vars.len(), get_size_of(&ty) as usize);
+        let var = VarId::new(
+            self.vars.len(),
+            get_size_of(&ty) as usize,
+            matches!(ty, Type::Float { .. }),
+        );
         self.vars.push(ty);
         var
     }
@@ -44,12 +48,20 @@ impl Function {
     }
 }
 
+/// A variable of a function, with what the codegen needs to know of its type
 #[derive(Clone, Copy, Debug)]
-pub struct VarId(pub usize, pub usize);
+pub struct VarId {
+    /// Its index in `Function::vars`
+    pub id: usize,
+    /// Its size in bytes: 4 for a 짧은 type, 8 for a 정수, a 소수 or an address, 1 for a 논리
+    pub size: usize,
+    /// True for a 소수: its computations go through the xmm registers
+    pub is_float: bool,
+}
 
 impl VarId {
-    pub fn new(id: usize, size: usize) -> Self {
-        Self(id, size)
+    pub fn new(id: usize, size: usize, is_float: bool) -> Self {
+        Self { id, size, is_float }
     }
 }
 

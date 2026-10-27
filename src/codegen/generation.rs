@@ -112,7 +112,9 @@ pub struct Context<'a> {
     /// The offset under rbp of each variable, see var_offsets
     pub offsets: Vec<i32>,
     /// The symbol of each string of the program: Operand::Str(id) is strings[id]
-    pub data_sym: &'a [String],
+    pub data_names: &'a [String],
+
+    pub float_names: &'a [String],
 }
 
 /// The object file of `prog`: each string in .rodata as a local symbol `.str.N`, each function
@@ -124,6 +126,9 @@ pub fn generate(prog: &Program) -> ElfFile64 {
     let rodata = add_section(&mut elf_file, SectionName::Rodata, ShFlags::NoFlag, 1);
     let mut data_names: Vec<String> = (0..prog.strings.len())
         .map(|id| format!(".str.{id}"))
+        .collect();
+    let float_names: Vec<String> = (0..prog.floats.len())
+        .map(|id| format!(".float.{id}"))
         .collect();
 
     // each string ends with 0, as C expects it
@@ -146,7 +151,8 @@ pub fn generate(prog: &Program) -> ElfFile64 {
         };
         let ctx = Context {
             offsets: var_offsets(func),
-            data_sym: &data_names,
+            data_names: &data_names,
+            float_names: &float_names,
         };
         let mut bin_instr: Vec<Instruction> = func_prologue(func, &ctx);
 

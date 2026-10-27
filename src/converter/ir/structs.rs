@@ -68,7 +68,8 @@ pub enum Operand {
     Int(i64),
     Float(usize),
     Bool(bool),
-    Address(usize),
+    Address(VarId),
+    DataAddress(usize),
     Null,
 }
 

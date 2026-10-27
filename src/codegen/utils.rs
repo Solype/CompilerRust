@@ -2,7 +2,7 @@ use super::{generation::Context, instructions::convert_operand};
 use crate::{
     converter::ir::structs::{Operand as IrOp, VarId},
     elf::instructions::{
-        BinOp, Instruction, MemAddress, Operand as ElfOper, Size, register::Register,
+        register::Register, BinOp, Instruction, MemAddress, Operand as ElfOper, Size,
     },
 };
 
@@ -15,9 +15,9 @@ pub fn var_size(var: &VarId) -> Option<Size> {
 /// `reg = op`: a string is an address, computed by lea, not a value read by mov
 pub fn load_operand(reg: Register, op: &IrOp, ctx: &Context, size: Option<Size>) -> Instruction {
     return match op {
-        IrOp::Address(id) => Instruction::Lea {
+        IrOp::DataAddress(id) => Instruction::Lea {
             dst: reg,
-            src: ElfOper::MemoryAddress(MemAddress::symbol(&ctx.data_sym[*id]).rip_relative()),
+            src: ElfOper::MemoryAddress(MemAddress::symbol(&ctx.data_names[*id]).rip_relative()),
             size: None,
         },
         _ => Instruction::Binary {

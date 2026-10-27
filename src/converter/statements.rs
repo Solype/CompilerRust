@@ -48,7 +48,7 @@ impl<'a> Converter<'a> {
             ExprKind::Call { verb, args } => {
                 self.convert_call_value(verb, args, expr.span, ty, scope, ir_func, instrs)
             }
-            ExprKind::Str(str) => Ok(ir::structs::Operand::Str(self.ir.string_id(str))),
+            ExprKind::Str(str) => Ok(ir::structs::Operand::Address(self.ir.string_id(str))),
             ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(ir::structs::get_size_of(ty))),
             _ => unimplemented!(),
         }

@@ -68,7 +68,7 @@ pub enum Operand {
     Int(i64),
     Float(usize),
     Bool(bool),
-    Str(usize),
+    Address(usize),
     Null,
 }
 

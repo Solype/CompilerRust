@@ -2,7 +2,7 @@ use crate::{
     codegen::{
         arithmetic::{generate_binary, generate_unary},
         instructions::{
-            PARAM_REGS, convert_operand, func_epilogue, generate_call, generate_copy,
+            PARAM_FREGS, PARAM_REGS, convert_operand, func_epilogue, generate_call, generate_copy,
             generate_return,
         },
         utils::var_size,
@@ -17,10 +17,11 @@ use crate::{
         },
         shdr::{
             ElfShdr,
-            SectionName::{self, Rodata},
+            SectionName::{self},
             ShFlags, ShType,
         },
     },
+    parser::postparser::structs::Type,
 };
 
 use crate::converter::ir::structs::Operand as IrOp;
@@ -87,9 +88,17 @@ fn func_prologue(func: &Function, ctx: &Context) -> Vec<Instruction> {
     ];
     // each parameter, given in its register, goes into its case
     // shortcut: no 7th integer parameter (it comes on the stack), add it for more than 6
-    for (var, reg) in func.params.iter().zip(PARAM_REGS) {
+    for (var, reg) in func.params.iter().filter(|p| !p.is_float).zip(PARAM_REGS) {
         prologue.push(Instruction::Binary {
             op: BinOp::Mov,
+            dst: convert_operand(&IrOp::Var(*var), ctx),
+            src: ElfOper::Reg(reg),
+            size: var_size(var),
+        });
+    }
+    for (var, reg) in func.params.iter().filter(|p| p.is_float).zip(PARAM_FREGS) {
+        prologue.push(Instruction::Binary {
+            op: BinOp::MovF,
             dst: convert_operand(&IrOp::Var(*var), ctx),
             src: ElfOper::Reg(reg),
             size: var_size(var),
@@ -113,6 +122,8 @@ fn need_epilogue(bin_instr: &[Instruction]) -> bool {
 
 /// What the code of a function needs to know besides its instructions
 pub struct Context<'a> {
+    ///
+    pub return_type: Option<Type>,
     /// The offset under rbp of each variable, see var_offsets
     pub offsets: Vec<i32>,
     /// The symbol of each string of the program: Operand::Str(id) is strings[id]
@@ -154,6 +165,7 @@ pub fn generate(prog: &Program) -> ElfFile64 {
             offsets: var_offsets(func),
             data_names: &data_names,
             float_names: &float_names,
+            return_type: func.return_type.clone(),
         };
         let mut bin_instr: Vec<Instruction> = func_prologue(func, &ctx);
 

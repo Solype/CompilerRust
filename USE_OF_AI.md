@@ -247,6 +247,35 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Doc comments of the codegen functions | AI, at my request |
 | README and TODO updates | AI |
 
+## October 26 and 27: unary operators, `소수` arithmetic and float arguments
+
+| Element | Who |
+|---|---|
+| `generate_unary`: started | Me |
+| End of `generate_unary` (the store of the result, `xor al, 1` for the logical not) | AI, at my request |
+| `Operand::Str` renamed `Address`, then split into `Address(VarId)` and `DataAddress` | Me |
+| Float constants in `.rodata`, `float_names` in `Context` | Me |
+| `sample/15_flottants.kr` | AI, at my request |
+| `+ - * /` on `소수`, `-x` of a `소수`, integer `%`, `VarId` with named fields | AI, at my request |
+| Float arguments in `xmm`, float parameters stored by the prologue, return in `xmm0` | Me |
+| The `Type` import and the `Type` compile errors in that code | AI, at my request |
+| Review of my code (a symbol defined twice, `movapd` versus `movsd`, a float variable passed in an integer register) | AI, explanations only |
+
+## October 28: `바꾸다`, `짧은 소수` and comparisons
+
+| Element | Who |
+|---|---|
+| `VarId` carries its `Type`, `Type::size` and `Type::is_float` replace `get_size_of` | Me |
+| Every use adapted to the new `VarId` and `Type::size` | AI, at my request |
+| `Operand::Int` / `Float` carry their size, `짧은 소수` constants written on 4 bytes | Me |
+| `generate_cast` (`cvtss2sd`, `cvtsi2sd`, `cvttsd2si`, `movsxd`, `movzx`) | AI, at my request, after my start |
+| The result of a float call read from `xmm0` | Me |
+| `fit_operand` / `fit_args`: a literal takes the size of its expected type | AI, at my request |
+| `common_type`, the sides of a comparison fitted to it | Me, from AI code |
+| The type of the result of a comparison (`ty`, not the type of its sides) | AI |
+| Explanations (the cast table, the comparison problem) and a review of the architecture | AI, explanations only |
+| README and TODO updates | AI |
+
 ## How I used the AI
 
 Over the whole project, the AI was mostly used to **explain**: how a format, an encoding or an

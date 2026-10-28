@@ -72,7 +72,8 @@ impl Label {
 pub enum Operand {
     Var(VarId),
     Int(i64, bool),
-    Float(usize, bool),
+    /// Its index in `Program.floats`, which holds its size
+    Float(usize),
     Bool(bool),
     Address(VarId),
     DataAddress(usize),

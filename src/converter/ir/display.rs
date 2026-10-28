@@ -71,9 +71,7 @@ impl fmt::Display for Operand {
             Operand::Int(value, short) => {
                 write!(f, "{value}{}", short.then(|| 's').unwrap_or('l'))
             }
-            Operand::Float(value, short) => {
-                write!(f, "f{value:?}{}", short.then(|| 's').unwrap_or('l'))
-            }
+            Operand::Float(index) => write!(f, "f{index}"),
             Operand::Bool(value) => write!(f, "{value}"),
             Operand::DataAddress(index) => write!(f, "s{index}"),
             Operand::Address(var) => write!(f, "&{var}"),

@@ -17,10 +17,12 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
   constants, loops. Each error is printed as `file:line:col: message`.
 - **Back-end**: the x86-64 encoder and the ELF writer (sections, symbols, relocations) work.
 - **Code generation (`src/codegen`), started**: each `file.kr` gives a `file.o`, linked with
-  `gcc` by `-x`. Generated today: the stack frame, `return`, copies, `+ - * / & | ^ << >>`,
-  calls with integer and string arguments (System V, so `printf` works), strings in `.rodata`,
+  `gcc` by `-x`. Generated today: the stack frame, `return`, copies, `+ - * / % & | ^ << >>`,
+  `-x`, `~x`, `!x`, calls with integer, string and float arguments (System V, so `printf`
+  works), strings and float constants in `.rodata`, `소수` and `짧은 소수` (SSE: `addsd`,
+  `addss`, …, arguments and result in `xmm`), `바꾸다` (`cvtsi2sd`, `cvttsd2si`, `movsxd`, …),
   and `mov` sized by the variable (4-byte `짧은 정수`). `sample/01_retour.kr`, `02_bonjour.kr`,
-  `03_chaines.kr` and `11` to `14` run; conditions and loops are not generated yet.
+  `03_chaines.kr` and `11` to `15` run; comparisons, conditions and loops are not generated yet.
 - **Tests of the samples**: `./run_samples.sh [file.kr...]` compiles, links and runs each
   `sample/*.kr`, compares its exit code (and its stdout with `sample/*.out`) with the expected
   one, and checks that each `sample/erreurs/*.kr` is refused with code 1.
@@ -48,7 +50,7 @@ flowchart TD
     RULES["RULES (grammar)"] -->|"ParsingTable::new"| PAR
     PAR -->|"TreeNode (parse tree)"| POST["convert_to_ast_tree<br/>src/parser/postparser"]
     POST -->|"Program (AST)"| CONV["Converter::convert<br/>semantic checks, src/converter"]
-    CONV -->|"ir::Program (typed IR)"| GEN["generate, started: Return, Copy, Binary, Call, strings<br/>src/codegen"]
+    CONV -->|"ir::Program (typed IR)"| GEN["generate, started: Return, Copy, Unary, Binary, Cast, Call, strings, floats<br/>src/codegen"]
     GEN -->|"Vec#lt;Instruction#gt;"| ELF["x86-64 encoder + ElfFile64<br/>src/elf"]
     DEMO["--demo<br/>src/samples"] -->|"Vec#lt;Instruction#gt;"| ELF
     ELF -->|"file.o (output.elf for --demo)"| LD["gcc (-x) / ld"]
@@ -83,7 +85,7 @@ cargo build --release
 - `-x` links all the `.o` with `gcc` into `a.out`.
 - `--tree` also prints the parse tree, before the AST.
 - Any error (source, unreadable file, usage, `gcc`) exits with code 1.
-- Sample programs are in `sample/` (`01_retour.kr` to `14_court.kr`), programs that must be
+- Sample programs are in `sample/` (`01_retour.kr` to `15_flottants.kr`), programs that must be
   refused in `sample/erreurs/`, and the reference program is `Proto.kr`.
 
 The demo calls an external `my_exit`, to provide at link time, for example with NASM:

@@ -139,8 +139,10 @@ pub struct Context<'a> {
     pub offsets: Vec<i32>,
     /// The symbol of each string of the program: Operand::Str(id) is strings[id]
     pub data_names: &'a [String],
-
+    /// The symbol of each float constant: Operand::Float(id) is float_names[id]
     pub float_names: &'a [String],
+    /// Each float constant and whether it is a 짧은 소수 (4 bytes): its only size
+    pub floats: &'a [(f64, bool)],
 }
 
 /// The object file ostrf `prog`: each string in .rodata as a local symbol `.str.N`, each function
@@ -180,6 +182,7 @@ pub fn generate(prog: &Program) -> ElfFile64 {
             offsets: var_offsets(func),
             data_names: &data_names,
             float_names: &float_names,
+            floats: &prog.floats,
             return_type: func.return_type.clone(),
         };
         let mut bin_instr: Vec<Instruction> = func_prologue(func, &ctx);

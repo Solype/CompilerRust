@@ -15,8 +15,9 @@ src/
               postparser/ (arbre -> AST, types de l'AST dans structs.rs)
   converter/  analyse sémantique de l'AST, puis IR typée (étape 2.6)
   codegen/    IR typée -> Vec<Instruction> : generation.rs (generate,
-              Context, prologue), instructions.rs (Copy, Call, Return),
-              arithmetic.rs (Binary), utils.rs (var_size, load_operand)
+              Context, prologue), instructions.rs (Copy, Call, Return,
+              Cast), arithmetic.rs (Binary, Unary), utils.rs (var_size,
+              load_operand)
   elf/        (existant)
 
 Le lexer est écrit à la main (l'ancien automate lexical_analisys/ est supprimé).
@@ -74,7 +75,8 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 [X] generate_binary (arithmetic.rs) : Sub, BitAnd, BitOr, BitXor (comme
     Add), Mul par mov rcx, right ; imul rax, rcx, Shl par mov rcx, right ;
     shl rax, cl. Div (cqo / cdq ; idiv rcx) et Shr (sar) faits en signé
-[ ] Unary : Neg, BitNot (neg / not sur rax)
+[X] Unary (generate_unary) : neg / not sur rax, xor al, 1 pour le 논리
+    ; -x d'un 소수 inverse le bit de signe (movabs rcx, masque ; xor)
 
 Étape 3 (jalon 2) : sample/02_bonjour.kr, printf
 [X] convert_call : arguments convertis par convert_args, comme
@@ -89,9 +91,12 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 Étape 4 : trancher le type des opérandes de Binary / Unary
 [ ] Signé ou non, 32 / 64 bits (voir « Choix de l'IR à trancher » en
     2.6.7) : dans Instr::Binary, ou lu dans vars[left]
-[ ] Comparaisons : cmp rax, right ; setcc al ; movzx rax, al
-[ ] Div / Rem : idiv (signé, fait pour Div) ou xor edx, edx ; div (양수) ;
-    Rem lit rdx (quotient rax, reste rdx ; diviseur dans rcx)
+[ ] Comparaisons : cmp rax, right ; setcc al ; movzx rax, al ; pour un
+    소수 ucomisd / ucomiss puis setb / seta (CF, ZF : flags non signés).
+    Fait côté converter : les deux côtés ont le type commun (common_type,
+    fit_operand), le résultat est un 논리
+[ ] Div / Rem : idiv (signé, fait pour Div et Rem, Rem lit rdx) ou
+    xor edx, edx ; div (양수)
 [ ] Shr : sar (fait, shortcut dans generate_binary) ou shr selon le signe
 
 Étape 5 : contrôle, samples 04, 05, 08, 09, 10
@@ -106,13 +111,26 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 Étape 6 : largeur des mov selon VarId.1, sample/14_court.kr
 [X] var_size(dest) dans Copy, Binary, le résultat d'un Call et le
     rangement des paramètres du prologue ; cdq au lieu de cqo sur 4 octets
-[ ] Retirer le commentaire shortcut « 8-byte operands only » de
+[X] Retirer le commentaire shortcut « 8-byte operands only » de
     generate_binary, devenu faux
 [ ] Lectures encore sur 8 octets : generate_return et normal_param ;
     movsx / movzx pour un argument de 1 ou 2 octets passé à une fonction C
 
-Étape 7 : 소수, sample/06_types.kr
-[ ] Constantes en .rodata, registres XMM, float_parameter, compteur al
+Étape 7 : 소수, sample/15_flottants.kr
+[X] Constantes en .rodata (.float.N, f32 sur 4 octets pour un 짧은 소수) ;
+    convert_operand les lit en rip-relatif ; load_operand charge un xmm par
+    movsd / movss (LoadF, pas MovF : movapd lit 16 octets alignés)
+[X] + - * / (float_operation : addsd / addss…, rangés par StoreF)
+[X] Arguments dans xmm0-xmm7 (float_parameter), al = nombre de 소수 ;
+    paramètres rangés depuis xmm par le prologue ; retour et résultat
+    d'un appel dans xmm0
+[X] Cast (generate_cast) : cvtss2sd / cvtsd2ss, cvtsi2sd, cvttsd2si
+    (tronque comme le C), movsxd / movzx ; sinon une copie
+[X] Littéral à la taille attendue : fit_operand (affectation, retour,
+    opérandes d'un Binary, arguments ; 짧은 소수 promu en 소수 après les
+    paramètres d'un variadique), Cast pour un 소수 calculé de l'autre taille
+[ ] Cast vers 1 octet (논리, 바이트) : var_size fait Size::from(1), panique
+[ ] sample/06_types.kr : Type::size panique sur Null / Custom
 
 Plus tard : 7e argument entier et plus sur la pile, 07_phrases, pointeurs et tableaux (Load / Store / AddrOf), tests unitaires
 du converter.
@@ -549,9 +567,8 @@ Instructions IR manquantes :
     Binary And / Or
 [ ] convert_expr et operand() (expressions.rs) : les littéraux sont lus aux
     deux endroits, n'en garder qu'un
-[ ] get_size_of : Bool, Null, Custom tombent dans unimplemented!()
-[ ] Littéral 소수 toujours rangé en 64 bits (float_id(_, false)), même pour
-    un 짧은 소수
+[ ] Type::size (ex get_size_of) : Null, Custom tombent dans unimplemented!()
+[X] Littéral 소수 rangé à la taille attendue (fit_operand)
 [X] convert_init / convert_assign : valeur composée (calcul, appel, chaîne,
     sizeof) par convert_expr, puis Copy
 [ ] convert_condition : rendre l'Operand de la condition, pas seulement
@@ -571,7 +588,13 @@ Instructions IR manquantes :
 
 Choix de l'IR à trancher :
 [ ] Type des opérandes dans Binary / Unary (signé ou non, 32 / 64 bits,
-    소수) : comparaisons, Div, Rem, Shr en dépendent, pas dest
+    소수) : comparaisons, Div, Rem, Shr en dépendent, pas dest. Aujourd'hui
+    VarId porte le Type de l'AST (cloné partout, pas Copy) ; piste : un
+    IrType Copy (Int { size, signed }, Float { size }, Ptr)
+[ ] Taille d'une constante en double : Operand::Int / Float (_, short) et
+    Program.floats[id].1, une seule source à terme
+[ ] Une seule passe dans le converter : convert_expr(expr, expected)
+    -> (Operand, Type), à la place de get_type + convert_expr + fit_operand
 [ ] Pointeurs et tableaux : Load / Store / AddrOf
 [ ] Labels : String (generate_loop_label) et Label(usize) (label_id), un
     seul des deux à terme

@@ -26,6 +26,25 @@ impl Callee<'_> {
 }
 
 impl<'a> Converter<'a> {
+    /// The type both sides of `left op right` take: a literal takes the type of the other side
+    /// (`작은 + 1` is a 짧은 정수); `None` when neither fits the other
+    pub(super) fn common_type(
+        &self,
+        left: &Expr,
+        right: &Expr,
+        scope: &Scope,
+    ) -> Result<Option<Type>, ConvertError> {
+        let left_ty = self.get_type(left, scope)?;
+        let right_ty = self.get_type(right, scope)?;
+        return Ok(if fits(right, &right_ty, &left_ty) {
+            Some(left_ty)
+        } else if fits(left, &left_ty, &right_ty) {
+            Some(right_ty)
+        } else {
+            None
+        });
+    }
+
     /// The type of `expr`, once its names and its calls are checked
     pub(super) fn get_type(&self, expr: &Expr, scope: &Scope) -> Result<Type, ConvertError> {
         match &expr.kind {

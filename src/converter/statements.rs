@@ -3,8 +3,8 @@ use crate::converter::ir;
 use crate::converter::scope::LoopLabels;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
-    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Statement, StatementKind,
-    Type, UnaryOp, While,
+    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Statement,
+    StatementKind, Type, UnaryOp, While,
 };
 
 use super::convert_error::{ConvertError, ConvertErrorKind};
@@ -116,11 +116,13 @@ impl<'a> Converter<'a> {
         ir_func: &mut ir::structs::Function,
         instrs: &mut Vec<ir::structs::Instr>,
     ) -> Result<ir::structs::Operand, ConvertError> {
+        let operand_ty = self.common_type(left, right, scope)?.unwrap_or(ty.clone());
+
         let left = self.convert_expr(left, scope, ir_func, instrs)?;
         let right = self.convert_expr(right, scope, ir_func, instrs)?;
-        // a literal beside a 짧은 value takes its size; nothing changes when ty is a 논리
-        let left = self.fit_operand(left, &ty, ir_func, instrs);
-        let right = self.fit_operand(right, &ty, ir_func, instrs);
+        // a literal beside a 짧은 value takes its size; a comparison fits its sides to each other
+        let left = self.fit_operand(left, &operand_ty, ir_func, instrs);
+        let right = self.fit_operand(right, &operand_ty, ir_func, instrs);
         let dest = ir_func.new_var(ty);
         instrs.push(ir::structs::Instr::Binary {
             dest: dest.clone(),

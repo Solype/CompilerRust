@@ -4,7 +4,8 @@ use crate::codegen::utils::{load_operand, var_size};
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
 use crate::elf::instructions::register::{RAX, RCX, RDX, Register, XMM0};
 use crate::elf::instructions::{
-    BinOp, ComplexBinOp, Instruction, Operand as ElfOper, ShiftOp, UnaryOp as ElfUnOp,
+    BinOp, ComplexBinOp, ConditionCode, Instruction, Operand as ElfOper, ShiftOp,
+    UnaryOp as ElfUnOp,
 };
 use crate::parser::postparser::structs::{BinaryOp, UnaryOp};
 
@@ -148,8 +149,19 @@ fn shift(
     ];
 }
 
-/// The instructions of `dest = left op right`, sized by `dest`; panics on an op not done yet
-/// (comparisons, 그리고, 또는)
+/// `dest = left cc right`, dest a 논리 (0 or 1): `cmp` then `setcc`; on 소수 `ucomisd` /
+/// `ucomiss`, which sets the unsigned flags: `cc` (signed) becomes B, BE, A, AE
+fn comparison(
+    dest: &VarId,
+    left: &IrOp,
+    right: &IrOp,
+    ctx: &Context,
+    cc: ConditionCode,
+) -> Vec<Instruction> {
+    todo!()
+}
+
+/// The instructions of `dest = left op right`, sized by `dest`
 pub fn generate_binary(
     dest: &VarId,
     op: &BinaryOp,
@@ -180,7 +192,15 @@ pub fn generate_binary(
         BinaryOp::Shl => shift(dest, left, right, ctx, ShiftOp::Shl),
         // shortcut: arithmetic shift as for a signed value, Shr for 양수 once Binary carries the sign
         BinaryOp::Shr => shift(dest, left, right, ctx, ShiftOp::Sar),
-        _ => unimplemented!(),
+        // shortcut: both sides already computed, no short-circuit; jumps once 그리고 / 또는 have them
+        BinaryOp::And => simple_operation(dest, left, right, ctx, BinOp::And),
+        BinaryOp::Or => simple_operation(dest, left, right, ctx, BinOp::Or),
+        BinaryOp::Eq => comparison(dest, left, right, ctx, ConditionCode::E),
+        BinaryOp::NotEq => comparison(dest, left, right, ctx, ConditionCode::NE),
+        BinaryOp::Lt => comparison(dest, left, right, ctx, ConditionCode::L),
+        BinaryOp::Le => comparison(dest, left, right, ctx, ConditionCode::LE),
+        BinaryOp::Gt => comparison(dest, left, right, ctx, ConditionCode::G),
+        BinaryOp::Ge => comparison(dest, left, right, ctx, ConditionCode::GE),
     };
 }
 
@@ -194,7 +214,11 @@ pub fn generate_unary(dest: &VarId, op: &UnaryOp, src: &IrOp, ctx: &Context) -> 
             Instruction::Binary {
                 op: BinOp::Mov,
                 dst: ElfOper::Reg(RCX),
-                src: ElfOper::Imm(if dest.ty.size() == 4 { i32::MIN as i64 } else { i64::MIN }),
+                src: ElfOper::Imm(if dest.ty.size() == 4 {
+                    i32::MIN as i64
+                } else {
+                    i64::MIN
+                }),
                 size: var_size(dest),
             },
             Instruction::Binary {

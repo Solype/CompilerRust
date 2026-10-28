@@ -78,6 +78,8 @@ pub enum Size {
 impl From<usize> for Size {
     fn from(value: usize) -> Self {
         match value {
+            1 => Size::U8,
+            2 => Size::U16,
             4 => Size::U32,
             8 => Size::U64,
             _ => panic!("invalid scale value {}", value),

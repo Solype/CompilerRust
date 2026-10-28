@@ -21,8 +21,9 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
   `-x`, `~x`, `!x`, calls with integer, string and float arguments (System V, so `printf`
   works), strings and float constants in `.rodata`, `소수` and `짧은 소수` (SSE: `addsd`,
   `addss`, …, arguments and result in `xmm`), `바꾸다` (`cvtsi2sd`, `cvttsd2si`, `movsxd`, …),
-  and `mov` sized by the variable (4-byte `짧은 정수`). `sample/01_retour.kr`, `02_bonjour.kr`,
-  `03_chaines.kr` and `11` to `15` run; comparisons, conditions and loops are not generated yet.
+  `mov` sized by the variable (4-byte `짧은 정수`), comparisons (`cmp` / `ucomisd`, then
+  `setcc`), labels and jumps (`jmp`, `je` for `JumpIfNot`). `sample/01` to `04`, `07` and `11`
+  to `15` run; loops do not stop yet, as the converter does not emit their `JumpIfNot`.
 - **Tests of the samples**: `./run_samples.sh [file.kr...]` compiles, links and runs each
   `sample/*.kr`, compares its exit code (and its stdout with `sample/*.out`) with the expected
   one, and checks that each `sample/erreurs/*.kr` is refused with code 1.
@@ -50,7 +51,7 @@ flowchart TD
     RULES["RULES (grammar)"] -->|"ParsingTable::new"| PAR
     PAR -->|"TreeNode (parse tree)"| POST["convert_to_ast_tree<br/>src/parser/postparser"]
     POST -->|"Program (AST)"| CONV["Converter::convert<br/>semantic checks, src/converter"]
-    CONV -->|"ir::Program (typed IR)"| GEN["generate, started: Return, Copy, Unary, Binary, Cast, Call, strings, floats<br/>src/codegen"]
+    CONV -->|"ir::Program (typed IR)"| GEN["generate, started: Return, Copy, Unary, Binary, Cast, Call, Label, Jump, strings, floats<br/>src/codegen"]
     GEN -->|"Vec#lt;Instruction#gt;"| ELF["x86-64 encoder + ElfFile64<br/>src/elf"]
     DEMO["--demo<br/>src/samples"] -->|"Vec#lt;Instruction#gt;"| ELF
     ELF -->|"file.o (output.elf for --demo)"| LD["gcc (-x) / ld"]

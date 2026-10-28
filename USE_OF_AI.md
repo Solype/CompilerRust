@@ -276,6 +276,20 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Explanations (the cast table, the comparison problem) and a review of the architecture | AI, explanations only |
 | README and TODO updates | AI |
 
+## October 28 (continued): comparisons and jumps
+
+| Element | Who |
+|---|---|
+| `Size::from` for 1 and 2 bytes | Me |
+| The declaration and the calls of `comparison`, `그리고` / `또는` as `and` / `or` | AI, at my request |
+| `comparison` (`cmp` / `ucomisd`, `setcc`, sides swapped for `<` on `소수`) | AI, at my request, after my start |
+| `Instr::Label` to `Instruction::Label` | Me |
+| The `LabelId` table in `Context`, a new `LabelId` per label of the function | AI, at my request |
+| `Instr::Jump` to `jmp` | Me, finished by AI |
+| `generate_jmp_if_not` | Me |
+| Explanations (the label collisions, how `JumpIfNot` works, the priorities) | AI, explanations only |
+| README and TODO updates | AI |
+
 ## How I used the AI
 
 Over the whole project, the AI was mostly used to **explain**: how a format, an encoding or an

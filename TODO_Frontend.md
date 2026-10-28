@@ -15,9 +15,9 @@ src/
               postparser/ (arbre -> AST, types de l'AST dans structs.rs)
   converter/  analyse sémantique de l'AST, puis IR typée (étape 2.6)
   codegen/    IR typée -> Vec<Instruction> : generation.rs (generate,
-              Context, prologue), instructions.rs (Copy, Call, Return,
-              Cast), arithmetic.rs (Binary, Unary), utils.rs (var_size,
-              load_operand)
+              Context, prologue, Label, Jump), instructions.rs (Copy,
+              Call, Return, Cast, JumpIfNot), arithmetic.rs (Binary,
+              comparison, Unary), utils.rs (var_size, load_operand)
   elf/        (existant)
 
 Le lexer est écrit à la main (l'ancien automate lexical_analisys/ est supprimé).
@@ -91,22 +91,29 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 Étape 4 : trancher le type des opérandes de Binary / Unary
 [ ] Signé ou non, 32 / 64 bits (voir « Choix de l'IR à trancher » en
     2.6.7) : dans Instr::Binary, ou lu dans vars[left]
-[ ] Comparaisons : cmp rax, right ; setcc al ; movzx rax, al ; pour un
-    소수 ucomisd / ucomiss puis setb / seta (CF, ZF : flags non signés).
-    Fait côté converter : les deux côtés ont le type commun (common_type,
-    fit_operand), le résultat est un 논리
+[X] Comparaisons (comparison) : mov rax, left ; mov rcx, right ; cmp ;
+    setcc al ; mov [dest], al, sur la taille des opérandes (operand_kind).
+    Pour un 소수 ucomisd / ucomiss (flags non signés) : < et <= deviennent
+    > et >= côtés inversés (seta / setae), faux pour un NaN comme en C.
+    Côté converter : les deux côtés ont le type commun, le résultat est un 논리
+[ ] == et != d'un NaN : ZF vaut 1 comme pour égal, il faut aussi lire PF
+    (shortcut dans comparison)
 [ ] Div / Rem : idiv (signé, fait pour Div et Rem, Rem lit rdx) ou
     xor edx, edx ; div (양수)
 [ ] Shr : sar (fait, shortcut dans generate_binary) ou shr selon le signe
 
 Étape 5 : contrôle, samples 04, 05, 08, 09, 10
-[ ] Codegen : Label -> LabelId (un Vec<LabelId> par fonction, indexé par
-    Label.0) ; Jump -> jmp ; JumpIfNot -> cmp cond, 0 ; je
+[X] Codegen : Label -> LabelId (Context.labels, un LabelId::new() par
+    label de la fonction, indexé par Label.0) ; Jump -> jmp ;
+    JumpIfNot (generate_jmp_if_not) -> mov al, cond ; cmp al, 0 ; je.
+    04 et 07 passent ; 05, 08, 09 bouclent sans fin (timeout) et 10 ne
+    fait qu'un tour : le converter n'émet pas encore de JumpIfNot
 [ ] convert_condition rend un Operand ; if : JumpIfNot vers otherwise / end,
     Jump end après le then
 [ ] 동안 : labels, condition, sauts ; 세면서 : from, condition < until,
     incrément, 3e label pour 넘어가요
-[ ] 그리고 / 또는 en court-circuit
+[ ] 그리고 / 또는 en court-circuit (aujourd'hui and / or sur les deux
+    côtés déjà calculés, shortcut dans generate_binary)
 
 Étape 6 : largeur des mov selon VarId.1, sample/14_court.kr
 [X] var_size(dest) dans Copy, Binary, le résultat d'un Call et le
@@ -129,7 +136,7 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 [X] Littéral à la taille attendue : fit_operand (affectation, retour,
     opérandes d'un Binary, arguments ; 짧은 소수 promu en 소수 après les
     paramètres d'un variadique), Cast pour un 소수 calculé de l'autre taille
-[ ] Cast vers 1 octet (논리, 바이트) : var_size fait Size::from(1), panique
+[X] Cast vers 1 octet (논리, 바이트) : Size::from accepte 1 et 2 octets
 [ ] sample/06_types.kr : Type::size panique sur Null / Custom
 
 Plus tard : 7e argument entier et plus sur la pile, 07_phrases, pointeurs et tableaux (Load / Store / AddrOf), tests unitaires

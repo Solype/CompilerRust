@@ -1,10 +1,10 @@
 use super::generation::Context;
-use super::instructions::convert_operand;
+use super::instructions::{convert_operand, operand_kind};
 use crate::codegen::utils::{load_operand, var_size};
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
-use crate::elf::instructions::register::{RAX, RCX, RDX, Register, XMM0};
+use crate::elf::instructions::register::{RAX, RCX, RDX, Register, XMM0, XMM1};
 use crate::elf::instructions::{
-    BinOp, ComplexBinOp, ConditionCode, Instruction, Operand as ElfOper, ShiftOp,
+    BinOp, ComplexBinOp, ConditionCode, Instruction, Operand as ElfOper, ShiftOp, Size,
     UnaryOp as ElfUnOp,
 };
 use crate::parser::postparser::structs::{BinaryOp, UnaryOp};
@@ -149,8 +149,9 @@ fn shift(
     ];
 }
 
-/// `dest = left cc right`, dest a 논리 (0 or 1): `cmp` then `setcc`; on 소수 `ucomisd` /
-/// `ucomiss`, which sets the unsigned flags: `cc` (signed) becomes B, BE, A, AE
+/// `dest = left cc right`, dest a 논리 (0 or 1), both sides of the same type: `mov rax, left ;
+/// mov rcx, right ; cmp rax, rcx ; setcc al ; mov [dest], al`. On 소수 `ucomisd` / `ucomiss`
+/// sets the unsigned flags: < and <= become > and >= with the sides swapped, as a NaN sets CF
 fn comparison(
     dest: &VarId,
     left: &IrOp,
@@ -158,7 +159,37 @@ fn comparison(
     ctx: &Context,
     cc: ConditionCode,
 ) -> Vec<Instruction> {
-    todo!()
+    let (size, is_float) = operand_kind(left, ctx);
+    let size = Some(Size::from(size));
+    // shortcut: == and != of a NaN are wrong (ZF set as for equal), PF to check if NaN matters
+    let (left, right, cc, a, b) = match (is_float, cc) {
+        (false, cc) => (left, right, cc, RAX, RCX),
+        (true, ConditionCode::L) => (right, left, ConditionCode::A, XMM0, XMM1),
+        (true, ConditionCode::LE) => (right, left, ConditionCode::AE, XMM0, XMM1),
+        (true, ConditionCode::G) => (left, right, ConditionCode::A, XMM0, XMM1),
+        (true, ConditionCode::GE) => (left, right, ConditionCode::AE, XMM0, XMM1),
+        (true, cc) => (left, right, cc, XMM0, XMM1),
+    };
+    return vec![
+        load_operand(a, left, ctx, size),
+        load_operand(b, right, ctx, size),
+        Instruction::Binary {
+            op: if is_float { BinOp::UcomiF } else { BinOp::Cmp },
+            dst: ElfOper::Reg(a),
+            src: ElfOper::Reg(b),
+            size,
+        },
+        Instruction::SetCC {
+            op: cc,
+            dst: ElfOper::Reg(RAX),
+        },
+        Instruction::Binary {
+            op: BinOp::Mov,
+            dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
+            src: ElfOper::Reg(RAX),
+            size: var_size(dest),
+        },
+    ];
 }
 
 /// The instructions of `dest = left op right`, sized by `dest`

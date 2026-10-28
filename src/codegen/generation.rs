@@ -3,7 +3,7 @@ use crate::{
         arithmetic::{generate_binary, generate_unary},
         instructions::{
             PARAM_FREGS, PARAM_REGS, convert_operand, func_epilogue, generate_call, generate_cast,
-            generate_copy, generate_return,
+            generate_copy, generate_jmp_if_not, generate_return,
         },
         utils::var_size,
     },
@@ -12,7 +12,7 @@ use crate::{
         elfsym::{StBind, StType, StVis, make_st_info},
         file::ElfFile64,
         instructions::{
-            BinOp, CtrlOp, Instruction, StackOp,
+            BinOp, CtrlOp, Instruction, LabelId, StackOp,
             register::{RBP, RSP},
         },
         shdr::{
@@ -43,10 +43,16 @@ fn generate_instruction(instr: &Instr, ctx: &Context) -> Vec<Instruction> {
         Instr::Unary { dest, op, src } => generate_unary(dest, op, src, ctx),
         Instr::Copy { dest, src } => generate_copy(dest, src, ctx),
         Instr::Cast { dest, src } => generate_cast(dest, src, ctx),
-        _ => {
-            println!("{:?}", instr);
-            unimplemented!()
-        }
+        Instr::Label(lab) => vec![Instruction::Label(ctx.labels[lab.0])],
+        Instr::Jump(lab) => vec![Instruction::Ctrl {
+            op: CtrlOp::Jmp,
+            target: ElfOper::Label(ctx.labels[lab.0]),
+        }],
+        Instr::JumpIfNot { cond, target } => generate_jmp_if_not(cond, target, ctx),
+        // _ => {
+        //     println!("{:?}", instr);
+        //     unimplemented!()
+        // }
     };
 }
 
@@ -143,6 +149,8 @@ pub struct Context<'a> {
     pub float_names: &'a [String],
     /// Each float constant and whether it is a 짧은 소수 (4 bytes): its only size
     pub floats: &'a [(f64, bool)],
+    /// The label of each IR label of the function: Label(id) is labels[id]
+    pub labels: Vec<LabelId>,
 }
 
 /// The object file ostrf `prog`: each string in .rodata as a local symbol `.str.N`, each function
@@ -183,6 +191,8 @@ pub fn generate(prog: &Program) -> ElfFile64 {
             data_names: &data_names,
             float_names: &float_names,
             floats: &prog.floats,
+            // IR labels are numbered per function, a LabelId is unique in the whole object file
+            labels: func.labels.iter().map(|_| LabelId::new()).collect(),
             return_type: func.return_type.clone(),
         };
         let mut bin_instr: Vec<Instruction> = func_prologue(func, &ctx);

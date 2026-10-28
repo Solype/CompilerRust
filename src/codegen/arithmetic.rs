@@ -27,7 +27,7 @@ fn simple_operation(
         },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(*dest), ctx),
+            dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
             src: ElfOper::Reg(RAX),
             size: var_size(dest),
         },
@@ -54,7 +54,7 @@ fn float_operation(
         },
         Instruction::Binary {
             op: BinOp::StoreF,
-            dst: convert_operand(&IrOp::Var(*dest), ctx),
+            dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
             src: ElfOper::Reg(XMM0),
             size: var_size(dest),
         },
@@ -75,7 +75,7 @@ fn division(
         load_operand(RAX, left, ctx, var_size(dest)),
         load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::Unary {
-            op: if dest.size == 4 {
+            op: if dest.ty.size() == 4 {
                 ElfUnOp::Cdq
             } else {
                 ElfUnOp::Cqo
@@ -92,7 +92,7 @@ fn division(
         },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(*dest), ctx),
+            dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
             src: ElfOper::Reg(result),
             size: var_size(dest),
         },
@@ -115,7 +115,7 @@ fn multiplication(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec
         },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(*dest), ctx),
+            dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
             src: ElfOper::Reg(RAX),
             size: var_size(dest),
         },
@@ -141,7 +141,7 @@ fn shift(
         },
         Instruction::Binary {
             op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(*dest), ctx),
+            dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
             src: ElfOper::Reg(RAX),
             size: var_size(dest),
         },
@@ -158,7 +158,7 @@ pub fn generate_binary(
     ctx: &Context,
 ) -> Vec<Instruction> {
     // the converter only lets + - * / reach a 소수
-    if dest.is_float {
+    if dest.ty.is_float() {
         return match op {
             BinaryOp::Add => float_operation(dest, left, right, ctx, BinOp::AddF),
             BinaryOp::Sub => float_operation(dest, left, right, ctx, BinOp::SubF),
@@ -190,11 +190,11 @@ pub fn generate_binary(
 pub fn generate_unary(dest: &VarId, op: &UnaryOp, src: &IrOp, ctx: &Context) -> Vec<Instruction> {
     let operation = match op {
         // not xorpd: its mask in memory would have to be 16 bytes, 16-byte aligned
-        UnaryOp::Neg if dest.is_float => vec![
+        UnaryOp::Neg if dest.ty.is_float() => vec![
             Instruction::Binary {
                 op: BinOp::Mov,
                 dst: ElfOper::Reg(RCX),
-                src: ElfOper::Imm(if dest.size == 4 { i32::MIN as i64 } else { i64::MIN }),
+                src: ElfOper::Imm(if dest.ty.size() == 4 { i32::MIN as i64 } else { i64::MIN }),
                 size: var_size(dest),
             },
             Instruction::Binary {
@@ -225,7 +225,7 @@ pub fn generate_unary(dest: &VarId, op: &UnaryOp, src: &IrOp, ctx: &Context) -> 
     instrs.extend(operation);
     instrs.push(Instruction::Binary {
         op: BinOp::Mov,
-        dst: convert_operand(&IrOp::Var(*dest), ctx),
+        dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
         src: ElfOper::Reg(RAX),
         size: var_size(dest),
     });

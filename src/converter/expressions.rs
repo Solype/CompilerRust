@@ -29,11 +29,11 @@ impl<'a> Converter<'a> {
     /// The type of `expr`, once its names and its calls are checked
     pub(super) fn get_type(&self, expr: &Expr, scope: &Scope) -> Result<Type, ConvertError> {
         match &expr.kind {
-            ExprKind::Int(_) => Ok(Type::Int {
-                short: false,
+            ExprKind::Int(_, is_short) => Ok(Type::Int {
+                short: *is_short,
                 unsigned: false,
             }),
-            ExprKind::Float(_) => Ok(Type::Float { short: false }),
+            ExprKind::Float(_, is_short) => Ok(Type::Float { short: *is_short }),
             // `"…"`: a 문자 주소, like the format of printf
             ExprKind::Str(_) => Ok(Type::Address(Box::new(Type::Char))),
             ExprKind::Bool(_) => Ok(Type::Bool),
@@ -319,13 +319,15 @@ fn binary_name(op: &BinaryOp) -> String {
 // shortcut: Str, SizeOf, Unary, Binary and Call give None, until convert_expr lowers them
 pub(super) fn operand(expr: &Expr, scope: &Scope, ir: &mut Program) -> Option<Operand> {
     return match &expr.kind {
-        ExprKind::Int(value) => Some(Operand::Int(*value)),
-        ExprKind::Float(value) => Some(Operand::Float(ir.float_id(*value, false))),
+        ExprKind::Int(value, is_short) => Some(Operand::Int(*value, *is_short)),
+        ExprKind::Float(value, is_short) => {
+            Some(Operand::Float(ir.float_id(*value, *is_short), *is_short))
+        }
         ExprKind::Bool(value) => Some(Operand::Bool(*value)),
         ExprKind::Null => Some(Operand::Null),
         ExprKind::Name(name) => scope
             .find_variable(name)
-            .map(|var| Operand::Var(var.var_id)),
+            .map(|var| Operand::Var(var.var_id.clone())),
         _ => None,
     };
 }

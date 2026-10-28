@@ -40,7 +40,7 @@ pub(super) fn range_error(expr: &Expr, ty: &Type, expected: &Type) -> Option<Con
 /// is -3; `None` for an expression that is no literal, or whose computation overflows
 fn int_value(expr: &Expr) -> Option<i128> {
     return match &expr.kind {
-        ExprKind::Int(value) => Some(*value as i128),
+        ExprKind::Int(value, _) => Some(*value as i128),
         ExprKind::Unary { op, operand } => {
             let value = int_value(operand)?;
             match op {
@@ -72,7 +72,7 @@ fn int_value(expr: &Expr) -> Option<i128> {
 /// The value of a 소수 literal, maybe with `-` or computed from other literals
 fn float_value(expr: &Expr) -> Option<f64> {
     return match &expr.kind {
-        ExprKind::Float(value) => Some(*value),
+        ExprKind::Float(value, _) => Some(*value),
         ExprKind::Unary {
             op: UnaryOp::Neg,
             operand,

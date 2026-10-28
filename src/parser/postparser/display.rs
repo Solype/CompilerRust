@@ -154,8 +154,8 @@ fn operand(expr: &Expr) -> String {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         return match &self.kind {
-            ExprKind::Int(number) => write!(f, "{number}"),
-            ExprKind::Float(number) => write!(f, "{number:?}"),
+            ExprKind::Int(number, _) => write!(f, "{number}"),
+            ExprKind::Float(number, _) => write!(f, "{number:?}"),
             ExprKind::Str(text) => write!(f, "{text:?}"),
             ExprKind::Bool(value) => write!(f, "{value}"),
             ExprKind::Name(name) => write!(f, "{name}"),

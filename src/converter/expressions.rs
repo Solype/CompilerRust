@@ -340,7 +340,7 @@ pub(super) fn operand(expr: &Expr, scope: &Scope, ir: &mut Program) -> Option<Op
     return match &expr.kind {
         ExprKind::Int(value, is_short) => Some(Operand::Int(*value, *is_short)),
         ExprKind::Float(value, is_short) => {
-            Some(Operand::Float(ir.float_id(*value, *is_short), *is_short))
+            Some(Operand::Float(ir.float_id(*value, *is_short)))
         }
         ExprKind::Bool(value) => Some(Operand::Bool(*value)),
         ExprKind::Null => Some(Operand::Null),

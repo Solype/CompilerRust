@@ -64,9 +64,9 @@ impl<'a> Converter<'a> {
         instrs: &mut Vec<ir::structs::Instr>,
     ) -> ir::structs::Operand {
         return match (op, expected) {
-            (ir::structs::Operand::Float(id, _), Type::Float { short }) => {
+            (ir::structs::Operand::Float(id), Type::Float { short }) => {
                 let value = self.ir.floats[id].0;
-                ir::structs::Operand::Float(self.ir.float_id(value, *short), *short)
+                ir::structs::Operand::Float(self.ir.float_id(value, *short))
             }
             (ir::structs::Operand::Int(value, _), Type::Int { short, .. }) => {
                 ir::structs::Operand::Int(value, *short)

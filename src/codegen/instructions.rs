@@ -20,7 +20,7 @@ pub fn convert_operand(op: &IrOp, ctx: &Context) -> ElfOper {
         IrOp::Bool(b) => ElfOper::Imm(*b as i64),
         IrOp::Null => ElfOper::Imm(0),
         // a float has no immediate form: it is read from its constant in .rodata
-        IrOp::Float(f, _) => {
+        IrOp::Float(f) => {
             ElfOper::MemoryAddress(MemAddress::symbol(&ctx.float_names[*f]).rip_relative())
         }
         _ => unimplemented!(),
@@ -84,11 +84,11 @@ pub fn normal_param(op: &IrOp, i: &mut i32, ctx: &Context) -> Instruction {
 }
 
 /// The size in bytes of the value of `op`, and true for a 소수
-fn operand_kind(op: &IrOp) -> (usize, bool) {
+fn operand_kind(op: &IrOp, ctx: &Context) -> (usize, bool) {
     return match op {
         IrOp::Var(var) => (var.ty.size(), var.ty.is_float()),
         IrOp::Int(_, short) => (if *short { 4 } else { 8 }, false),
-        IrOp::Float(_, short) => (if *short { 4 } else { 8 }, true),
+        IrOp::Float(f) => (if ctx.floats[*f].1 { 4 } else { 8 }, true),
         IrOp::Bool(_) => (1, false),
         // an address
         _ => (8, false),
@@ -98,7 +98,7 @@ fn operand_kind(op: &IrOp) -> (usize, bool) {
 /// `dest = 바꾸다(src)`: cvtss2sd / cvtsd2ss between two 소수, cvtsi2sd from a 정수, cvttsd2si
 /// to a 정수 (truncated toward 0, as in C), movsxd / movzx to a wider 정수; else a copy
 pub fn generate_cast(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction> {
-    let (src_size, src_float) = operand_kind(src);
+    let (src_size, src_float) = operand_kind(src, ctx);
     let (dest_size, dest_float) = (dest.ty.size(), dest.ty.is_float());
     let same_kind = src_float == dest_float && (src_size == dest_size || !dest_float);
     // to a smaller 정수, an address or the same type: the low bytes, as a copy sized by dest
@@ -202,7 +202,7 @@ pub fn generate_call(
 
     for arg in args {
         let new_instr = match arg {
-            IrOp::Float(..) => float_parameter(arg, &mut i_f, ctx),
+            IrOp::Float(_) => float_parameter(arg, &mut i_f, ctx),
             IrOp::Var(var) if var.ty.is_float() => float_parameter(arg, &mut i_f, ctx),
             _ => normal_param(arg, &mut i, ctx),
         };

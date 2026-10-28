@@ -1,13 +1,14 @@
 use super::generation::Context;
 use crate::codegen::utils::{load_operand, var_size};
+use crate::elf::instructions::CtrlOp::JmpCC;
 use crate::elf::instructions::Operand::Sym;
 use crate::elf::instructions::register::{
     R8, R9, RBP, RCX, RDI, RDX, RSI, RSP, Register, XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7,
 };
 use crate::elf::instructions::{BinOp, ConvOp, CtrlOp, ExtendOp, Instruction, Size, register::RAX};
 
-use crate::converter::ir::structs::{Operand as IrOp, VarId};
-use crate::elf::instructions::{MemAddress, Operand as ElfOper, StackOp};
+use crate::converter::ir::structs::{Label, Operand as IrOp, VarId};
+use crate::elf::instructions::{ConditionCode, MemAddress, Operand as ElfOper, StackOp};
 use crate::parser::postparser::structs::Type;
 
 /// `ctx.offsets`: the offset under rbp of each variable, see var_offsets
@@ -84,7 +85,7 @@ pub fn normal_param(op: &IrOp, i: &mut i32, ctx: &Context) -> Instruction {
 }
 
 /// The size in bytes of the value of `op`, and true for a 소수
-fn operand_kind(op: &IrOp, ctx: &Context) -> (usize, bool) {
+pub fn operand_kind(op: &IrOp, ctx: &Context) -> (usize, bool) {
     return match op {
         IrOp::Var(var) => (var.ty.size(), var.ty.is_float()),
         IrOp::Int(_, short) => (if *short { 4 } else { 8 }, false),
@@ -232,4 +233,22 @@ pub fn generate_call(
         });
     }
     return instr;
+}
+
+pub fn generate_jmp_if_not(cond: &IrOp, target: &Label, ctx: &Context) -> Vec<Instruction> {
+    let instrs: Vec<Instruction> = vec![
+        load_operand(RAX, cond, ctx, Some(Size::U8)),
+        Instruction::Binary {
+            op: BinOp::Cmp,
+            dst: ElfOper::Reg(RAX),
+            src: ElfOper::Imm(0),
+            size: Some(Size::U8),
+        },
+        Instruction::Ctrl {
+            op: JmpCC(ConditionCode::E),
+            target: ElfOper::Label(ctx.labels[target.0]),
+        },
+    ];
+
+    return instrs;
 }

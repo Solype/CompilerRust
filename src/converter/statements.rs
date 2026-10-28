@@ -3,7 +3,7 @@ use crate::converter::ir;
 use crate::converter::scope::LoopLabels;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
-    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, If, Init, Statement, StatementKind,
+    Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Statement, StatementKind,
     Type, UnaryOp, While,
 };
 
@@ -49,9 +49,59 @@ impl<'a> Converter<'a> {
                 self.convert_call_value(verb, args, expr.span, ty, scope, ir_func, instrs)
             }
             ExprKind::Str(str) => Ok(ir::structs::Operand::DataAddress(self.ir.string_id(str))),
-            ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(ir::structs::get_size_of(ty))),
+            ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(ty.size() as i64, false)),
             _ => unimplemented!(),
         }
+    }
+
+    /// `op` as a value of type `expected`, once `fits` accepted it: a literal takes the size of
+    /// `expected` (2.5 on 4 bytes for a 짧은 소수), a 소수 of the other size goes through a Cast
+    fn fit_operand(
+        &mut self,
+        op: ir::structs::Operand,
+        expected: &Type,
+        ir_func: &mut ir::structs::Function,
+        instrs: &mut Vec<ir::structs::Instr>,
+    ) -> ir::structs::Operand {
+        return match (op, expected) {
+            (ir::structs::Operand::Float(id, _), Type::Float { short }) => {
+                let value = self.ir.floats[id].0;
+                ir::structs::Operand::Float(self.ir.float_id(value, *short), *short)
+            }
+            (ir::structs::Operand::Int(value, _), Type::Int { short, .. }) => {
+                ir::structs::Operand::Int(value, *short)
+            }
+            // a 소수 computed from literals, (1.5 + 2.0) for a 짧은 소수
+            (ir::structs::Operand::Var(var), Type::Float { .. })
+                if var.ty.is_float() && var.ty != *expected =>
+            {
+                let dest = ir_func.new_var(expected.clone());
+                instrs.push(ir::structs::Instr::Cast {
+                    dest: dest.clone(),
+                    src: ir::structs::Operand::Var(var),
+                });
+                ir::structs::Operand::Var(dest)
+            }
+            (op, _) => op,
+        };
+    }
+
+    /// The arguments of a call to `func`, each fitted to its parameter; after the parameters of a
+    /// variadic, a 짧은 소수 goes as a 소수, as C promotes it
+    fn fit_args(
+        &mut self,
+        operands: Vec<ir::structs::Operand>,
+        func: &Function,
+        ir_func: &mut ir::structs::Function,
+        instrs: &mut Vec<ir::structs::Instr>,
+    ) -> Vec<ir::structs::Operand> {
+        let double = Type::Float { short: false };
+        let mut args = Vec::new();
+        for (i, op) in operands.into_iter().enumerate() {
+            let expected = func.params.get(i).map_or(&double, |param| &param.ty);
+            args.push(self.fit_operand(op, expected, ir_func, instrs));
+        }
+        return args;
     }
 
     /// `left op right` into a new variable of type `ty`
@@ -68,14 +118,17 @@ impl<'a> Converter<'a> {
     ) -> Result<ir::structs::Operand, ConvertError> {
         let left = self.convert_expr(left, scope, ir_func, instrs)?;
         let right = self.convert_expr(right, scope, ir_func, instrs)?;
+        // a literal beside a 짧은 value takes its size; nothing changes when ty is a 논리
+        let left = self.fit_operand(left, &ty, ir_func, instrs);
+        let right = self.fit_operand(right, &ty, ir_func, instrs);
         let dest = ir_func.new_var(ty);
         instrs.push(ir::structs::Instr::Binary {
-            dest,
+            dest: dest.clone(),
             op,
             left,
             right,
         });
-        return Ok(ir::structs::Operand::Var(dest));
+        return Ok(ir::structs::Operand::Var(dest.clone()));
     }
 
     /// `op operand` into a new variable of type `ty`
@@ -90,7 +143,11 @@ impl<'a> Converter<'a> {
     ) -> Result<ir::structs::Operand, ConvertError> {
         let src = self.convert_expr(operand, scope, ir_func, instrs)?;
         let dest = ir_func.new_var(ty);
-        instrs.push(ir::structs::Instr::Unary { dest, op, src });
+        instrs.push(ir::structs::Instr::Unary {
+            dest: dest.clone(),
+            op,
+            src,
+        });
         return Ok(ir::structs::Operand::Var(dest));
     }
 
@@ -110,14 +167,17 @@ impl<'a> Converter<'a> {
         let mut operands = self.convert_args(args, scope, ir_func, instrs)?;
         let dest = ir_func.new_var(ty);
         match callee {
-            Callee::Function(func) => instrs.push(ir::structs::Instr::Call {
-                dest: Some(dest),
-                symbol: func.mangled_name.clone(),
-                args: operands,
-            }),
+            Callee::Function(func) => {
+                let args = self.fit_args(operands, func, ir_func, instrs);
+                instrs.push(ir::structs::Instr::Call {
+                    dest: Some(dest.clone()),
+                    symbol: func.mangled_name.clone(),
+                    args,
+                })
+            }
             // 바꾸다 : une seule valeur, le cast lit les deux types dans vars
             Callee::Cast(_) => instrs.push(ir::structs::Instr::Cast {
-                dest,
+                dest: dest.clone(),
                 src: operands.remove(0),
             }),
         }
@@ -257,7 +317,7 @@ impl<'a> Converter<'a> {
         let var = ir_func.new_var(ty.clone());
 
         let variable = Variable {
-            var_id: var,
+            var_id: var.clone(),
             ty,
             constant: init.constant,
         };
@@ -300,8 +360,9 @@ impl<'a> Converter<'a> {
             };
             return Err(ConvertError::new(kind, span));
         }
+        let src = self.fit_operand(src, &var.ty, ir_func, &mut instrs);
         instrs.push(ir::structs::Instr::Copy {
-            dest: var.var_id,
+            dest: var.var_id.clone(),
             src,
         });
         return Ok(instrs);
@@ -338,6 +399,7 @@ impl<'a> Converter<'a> {
         }
         let mut instrs: Vec<ir::structs::Instr> = vec![];
         let value = self.convert_expr(value, scope, ir_func, &mut instrs)?;
+        let value = self.fit_operand(value, decl_ret_ty, ir_func, &mut instrs);
         instrs.push(ir::structs::Instr::Return(value));
         return Ok(instrs);
     }
@@ -357,10 +419,11 @@ impl<'a> Converter<'a> {
                 let res: Callee = self.resolve_call(verb, args, scope, call.span)?;
                 match res {
                     Callee::Function(f) => {
+                        let operands = self.convert_args(args, scope, ir_func, &mut instrs)?;
                         let op = ir::structs::Instr::Call {
                             dest: None,
                             symbol: f.mangled_name.clone(),
-                            args: self.convert_args(args, scope, ir_func, &mut instrs)?,
+                            args: self.fit_args(operands, f, ir_func, &mut instrs),
                         };
                         instrs.push(op);
                     }

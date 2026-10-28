@@ -29,11 +29,7 @@ impl Function {
 
     /// A new variable of type `ty`: its id is its index in `vars`, unique in the whole function
     pub fn new_var(&mut self, ty: Type) -> VarId {
-        let var = VarId::new(
-            self.vars.len(),
-            get_size_of(&ty) as usize,
-            matches!(ty, Type::Float { .. }),
-        );
+        let var = VarId::new(self.vars.len(), ty.clone());
         self.vars.push(ty);
         var
     }
@@ -49,19 +45,17 @@ impl Function {
 }
 
 /// A variable of a function, with what the codegen needs to know of its type
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct VarId {
     /// Its index in `Function::vars`
     pub id: usize,
-    /// Its size in bytes: 4 for a 짧은 type, 8 for a 정수, a 소수 or an address, 1 for a 논리
-    pub size: usize,
-    /// True for a 소수: its computations go through the xmm registers
-    pub is_float: bool,
+    /// Its type: the codegen reads its size and whether it is a 소수 (xmm registers)
+    pub ty: Type,
 }
 
 impl VarId {
-    pub fn new(id: usize, size: usize, is_float: bool) -> Self {
-        Self { id, size, is_float }
+    pub fn new(id: usize, ty: Type) -> Self {
+        Self { id, ty }
     }
 }
 
@@ -77,8 +71,8 @@ impl Label {
 #[derive(Debug)]
 pub enum Operand {
     Var(VarId),
-    Int(i64),
-    Float(usize),
+    Int(i64, bool),
+    Float(usize, bool),
     Bool(bool),
     Address(VarId),
     DataAddress(usize),
@@ -157,20 +151,4 @@ impl Program {
         self.floats.push((value, short));
         self.floats.len() - 1
     }
-}
-
-/// The size in bytes of a value of type `value`
-pub fn get_size_of(value: &Type) -> i64 {
-    return match value {
-        Type::Int { short: true, .. } => 4,
-        Type::Int { short: false, .. } => 8,
-        Type::Float { short: true } => 4,
-        Type::Float { short: false } => 8,
-        Type::Address(_) => 8,
-        Type::Array(ty, nb) => get_size_of(ty.as_ref()) * (*nb as i64),
-        Type::Char => 1,
-        Type::Byte => 1,
-        Type::Bool => 1,
-        _ => unimplemented!(),
-    };
 }

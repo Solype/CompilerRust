@@ -31,7 +31,7 @@ pub struct Param {
     pub span: Span,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     /// 정수: 64 bits; `짧은 정수`: 32 bits; `부호 없는 정수`: unsigned
     Int {
@@ -55,6 +55,27 @@ pub enum Type {
     Custom(String),
     /// The type of `빈 주소`: fits any `Address`
     Null,
+}
+
+impl Type {
+    pub fn is_float(&self) -> bool {
+        return matches!(self, Type::Float { .. });
+    }
+
+    pub fn size(&self) -> usize {
+        return match self {
+            Type::Int { short: true, .. } => 4,
+            Type::Int { short: false, .. } => 8,
+            Type::Float { short: true } => 4,
+            Type::Float { short: false } => 8,
+            Type::Address(_) => 8,
+            Type::Array(ty, nb) => ty.size() * (*nb),
+            Type::Char => 1,
+            Type::Byte => 1,
+            Type::Bool => 1,
+            _ => unimplemented!(),
+        };
+    }
 }
 
 /// A statement and its source, from its first token to its `.`
@@ -131,8 +152,8 @@ pub struct Expr {
 }
 
 pub enum ExprKind {
-    Int(i64),
-    Float(f64),
+    Int(i64, bool),
+    Float(f64, bool),
     Str(String),
     Bool(bool),
     Name(String),

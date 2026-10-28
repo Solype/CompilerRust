@@ -2,12 +2,12 @@ use crate::{
     codegen::{
         arithmetic::{generate_binary, generate_unary},
         instructions::{
-            PARAM_FREGS, PARAM_REGS, convert_operand, func_epilogue, generate_call, generate_copy,
-            generate_return,
+            PARAM_FREGS, PARAM_REGS, convert_operand, func_epilogue, generate_call, generate_cast,
+            generate_copy, generate_return,
         },
         utils::var_size,
     },
-    converter::ir::structs::{Function, Instr, Program, get_size_of},
+    converter::ir::structs::{Function, Instr, Program},
     elf::{
         elfsym::{StBind, StType, StVis, make_st_info},
         file::ElfFile64,
@@ -42,6 +42,7 @@ fn generate_instruction(instr: &Instr, ctx: &Context) -> Vec<Instruction> {
         } => generate_binary(dest, op, left, right, ctx),
         Instr::Unary { dest, op, src } => generate_unary(dest, op, src, ctx),
         Instr::Copy { dest, src } => generate_copy(dest, src, ctx),
+        Instr::Cast { dest, src } => generate_cast(dest, src, ctx),
         _ => {
             println!("{:?}", instr);
             unimplemented!()
@@ -55,7 +56,7 @@ fn var_offsets(func: &Function) -> Vec<i32> {
         .vars
         .iter()
         .scan(0, |end, ty| {
-            *end += get_size_of(ty) as i32;
+            *end += ty.size() as i32;
             Some(*end)
         })
         .collect();
@@ -64,7 +65,7 @@ fn var_offsets(func: &Function) -> Vec<i32> {
 /// `push rbp ; mov rbp, rsp ; sub rsp, frame`, the frame being the sizes of the variables rounded
 /// up to 16; then each parameter goes from its register into its case
 fn func_prologue(func: &Function, ctx: &Context) -> Vec<Instruction> {
-    let sum: i64 = func.vars.iter().map(get_size_of).sum();
+    let sum: i64 = func.vars.iter().map(|ty| ty.size() as i64).sum();
     let frame = (sum + 15) & !15;
 
     let mut prologue = vec![
@@ -88,18 +89,28 @@ fn func_prologue(func: &Function, ctx: &Context) -> Vec<Instruction> {
     ];
     // each parameter, given in its register, goes into its case
     // shortcut: no 7th integer parameter (it comes on the stack), add it for more than 6
-    for (var, reg) in func.params.iter().filter(|p| !p.is_float).zip(PARAM_REGS) {
+    for (var, reg) in func
+        .params
+        .iter()
+        .filter(|p| !p.ty.is_float())
+        .zip(PARAM_REGS)
+    {
         prologue.push(Instruction::Binary {
             op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(*var), ctx),
+            dst: convert_operand(&IrOp::Var(var.clone()), ctx),
             src: ElfOper::Reg(reg),
             size: var_size(var),
         });
     }
-    for (var, reg) in func.params.iter().filter(|p| p.is_float).zip(PARAM_FREGS) {
+    for (var, reg) in func
+        .params
+        .iter()
+        .filter(|p| p.ty.is_float())
+        .zip(PARAM_FREGS)
+    {
         prologue.push(Instruction::Binary {
-            op: BinOp::MovF,
-            dst: convert_operand(&IrOp::Var(*var), ctx),
+            op: BinOp::StoreF,
+            dst: convert_operand(&IrOp::Var(var.clone()), ctx),
             src: ElfOper::Reg(reg),
             size: var_size(var),
         });
@@ -153,8 +164,12 @@ pub fn generate(prog: &Program) -> ElfFile64 {
         add_data_to_roddata(&mut elf_file, rodata, name, &bytes, 1);
     }
     for (name, float) in float_names.iter().zip(&prog.floats) {
-        let bytes = &float.0.to_le_bytes().to_vec();
-        add_data_to_roddata(&mut elf_file, rodata, name, bytes, 8);
+        let bytes: Vec<u8> = if float.1 {
+            (float.0 as f32).to_le_bytes().to_vec()
+        } else {
+            float.0.to_le_bytes().to_vec()
+        };
+        add_data_to_roddata(&mut elf_file, rodata, name, &bytes, 8);
     }
 
     for func in &prog.funcs {

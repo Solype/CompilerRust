@@ -9,7 +9,7 @@ use crate::{
 /// The size of a `mov` that touches `var`: its own size in bytes, so that writing a 4-byte
 /// 짧은 정수 does not overflow on its neighbour
 pub fn var_size(var: &VarId) -> Option<Size> {
-    return Some(Size::from(var.size));
+    return Some(Size::from(var.ty.size()));
 }
 
 /// `reg = op`: a string is an address, computed by lea, not a value read by mov; an xmm register
@@ -23,7 +23,11 @@ pub fn load_operand(reg: Register, op: &IrOp, ctx: &Context, size: Option<Size>)
         },
         _ => Instruction::Binary {
             // not MovF: movapd reads 16 bytes and wants them 16-byte aligned
-            op: if reg.is_xmm() { BinOp::LoadF } else { BinOp::Mov },
+            op: if reg.is_xmm() {
+                BinOp::LoadF
+            } else {
+                BinOp::Mov
+            },
             dst: ElfOper::Reg(reg),
             src: convert_operand(op, ctx),
             size,

@@ -97,7 +97,7 @@ fn negative_literal_spans_its_minus() {
     let StatementKind::Return(value) = &body(&program)[0].kind else {
         panic!("a return was expected");
     };
-    assert!(matches!(value.kind, ExprKind::Int(-1)));
+    assert!(matches!(value.kind, ExprKind::Int(-1, _)));
     assert_eq!(text(source, value.span), "-1");
 }
 

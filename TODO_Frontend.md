@@ -113,8 +113,10 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
     start: var + 1 ; check: JumpIfNot var < until (recalculé à chaque
     tour) ; corps ; Jump start. L'incrément est sous start : 넘어가요 y saute
     sans 3e label dans LoopLabels
-[ ] 그리고 / 또는 en court-circuit (aujourd'hui and / or sur les deux
-    côtés déjà calculés, shortcut dans generate_binary)
+[X] 그리고 / 또는 en court-circuit (convert_binary) : t = left ; JumpIfNot
+    vers end (그리고) ou rhs + Jump end (또는) ; t = right ; end:. Labels
+    logic_{n}_rhs / _end, n = ir_func.labels.len(), réservés avant de
+    convertir les côtés ; generate_binary ne voit plus And / Or
 
 Étape 6 : largeur des mov selon VarId.1, sample/14_court.kr
 [X] var_size(dest) dans Copy, Binary, le résultat d'un Call et le
@@ -571,7 +573,7 @@ Fait :
 [X] Operand::Float(index dans Program.floats)
 
 Instructions IR manquantes :
-[ ] convert_expr : 그리고 / 또는 en court-circuit, JumpIfNot, jamais
+[X] convert_expr : 그리고 / 또는 en court-circuit, JumpIfNot, jamais
     Binary And / Or
 [X] convert_expr et operand() (expressions.rs) : les littéraux ne sont plus
     lus que par operand()
@@ -721,7 +723,7 @@ Vérification : 3과 4를 더해서 제곱해서 반환해요 -> 49
 [X] 만약 ... 이면 / 아니면 만약 / 아니면 (LabelId + jcc)
 [X] COND인 동안
 [X] NOM을 A부터 B까지 세면서 : borne de fin exclue (< et non <=)
-[ ] 그리고 / 또는 en court-circuit
+[X] 그리고 / 또는 en court-circuit
 [X] Négation : COND이/가 아니면, COND이/가 아닌 동안
 [X] 그만해요 / 넘어가요 : pile des boucles (label de fin, label de suite) ;
     hors boucle = erreur

@@ -79,11 +79,10 @@ fn add_pointers(elf_file: &mut ElfFile64, section: usize, name: &str, targets: &
     elf_file.add_symbol_to_section_relocated(
         section,
         name.to_string(),
-        &vec![0; targets.len() * 8],
+        (&vec![0; targets.len() * 8], &relocations),
         make_st_info(StBind::Global, StType::Object),
         StVis::Default as u8,
         8,
-        &relocations,
     );
 }
 

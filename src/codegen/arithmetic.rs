@@ -223,9 +223,8 @@ pub fn generate_binary(
         BinaryOp::Shl => shift(dest, left, right, ctx, ShiftOp::Shl),
         // shortcut: arithmetic shift as for a signed value, Shr for 양수 once Binary carries the sign
         BinaryOp::Shr => shift(dest, left, right, ctx, ShiftOp::Sar),
-        // shortcut: both sides already computed, no short-circuit; jumps once 그리고 / 또는 have them
-        BinaryOp::And => simple_operation(dest, left, right, ctx, BinOp::And),
-        BinaryOp::Or => simple_operation(dest, left, right, ctx, BinOp::Or),
+        // the converter turns them into jumps, to compute right only when needed
+        BinaryOp::And | BinaryOp::Or => unreachable!("그리고 / 또는 never reach the codegen"),
         BinaryOp::Eq => comparison(dest, left, right, ctx, ConditionCode::E),
         BinaryOp::NotEq => comparison(dest, left, right, ctx, ConditionCode::NE),
         BinaryOp::Lt => comparison(dest, left, right, ctx, ConditionCode::L),

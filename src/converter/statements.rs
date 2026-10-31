@@ -14,14 +14,18 @@ use super::scope::{BlockKind, Scope, Variable};
 use super::types::{fits, range_error, type_name};
 
 impl<'a> Converter<'a> {
-    /// `condition` must be a 논리
-    fn convert_condition(
-        &self,
+    /// TODO !!!
+    /// The operand of `condition`, which must be a 논리; the instructions that compute it are
+    /// pushed into `instrs`
+    fn convert_cond(
+        &mut self,
         condition: &Expr,
         scope: &Scope,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut ir::structs::Function,
+        instrs: &mut Vec<ir::structs::Instr>,
+    ) -> Result<ir::structs::Operand, ConvertError> {
         match self.get_type(condition, scope)? {
-            Type::Bool => Ok(vec![]),
+            Type::Bool => self.convert_expr(condition, scope, ir_func, instrs),
             _ => Err(ConvertError::new(ConvertErrorKind::NotBool, condition.span)),
         }
     }
@@ -265,6 +269,7 @@ impl<'a> Converter<'a> {
         return Ok(instr);
     }
 
+    /// TODO !!!
     fn convert_while_loop(
         &mut self,
         parent: &Scope,
@@ -274,13 +279,26 @@ impl<'a> Converter<'a> {
         let (label_start, label_end) = parent.generate_labels("loop", "start");
         let scope = Scope::new(
             BlockKind::Loop(LoopLabels {
-                label_start,
-                label_end,
+                label_start: label_start.clone(),
+                label_end: label_end.clone(),
             }),
             Some(parent),
         );
-        let _cond = self.convert_condition(&while_loop.condition, parent)?;
-        return self.convert_block(&while_loop.body, &scope, ir_func);
+        let mut cond_instrs: Vec<ir::structs::Instr> =
+            vec![ir::structs::Instr::Label(ir_func.label_id(&label_start))];
+
+        let cond = self.convert_cond(&while_loop.condition, parent, ir_func, &mut cond_instrs)?;
+
+        cond_instrs.push(ir::structs::Instr::JumpIfNot {
+            cond,
+            target: ir_func.label_id(&label_end),
+        });
+
+        let mut block_instrs = self.convert_block(&while_loop.body, &scope, ir_func)?;
+        cond_instrs.append(&mut block_instrs);
+        cond_instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&label_start)));
+        cond_instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_end)));
+        return Ok(cond_instrs);
     }
 
     /// `수는 정수예요.`: adds the variable to `scope`
@@ -439,6 +457,7 @@ impl<'a> Converter<'a> {
         Ok(instrs)
     }
 
+    /// TODO !!!
     /// `만약 … { … } 아니면 { … }`
     fn convert_if(
         &mut self,
@@ -446,10 +465,25 @@ impl<'a> Converter<'a> {
         if_statement: &'a If,
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let _cond = self.convert_condition(&if_statement.condition, parent)?;
+        let mut cond_instrs = Vec::new();
+        let cond = self.convert_cond(&if_statement.condition, parent, ir_func, &mut cond_instrs)?;
         let (otherwise_label, end_label) = parent.generate_labels("condition", "otherwise");
+
+        let if_not_label = if if_statement.otherwise.is_some() {
+            &otherwise_label
+        } else {
+            &end_label
+        };
+
+        cond_instrs.push(ir::structs::Instr::JumpIfNot {
+            cond,
+            target: ir_func.label_id(&if_not_label),
+        });
+        // convert the block
         let mut block_instr = self.convert_block(&if_statement.then, parent, ir_func)?;
+
         if let Some(otherwise_block) = &if_statement.otherwise {
+            block_instr.push(ir::structs::Instr::Jump(ir_func.label_id(&end_label)));
             block_instr.push(ir::structs::Instr::Label(
                 ir_func.label_id(&otherwise_label),
             ));
@@ -457,7 +491,8 @@ impl<'a> Converter<'a> {
             block_instr.append(&mut instr);
         }
         block_instr.push(ir::structs::Instr::Label(ir_func.label_id(&end_label)));
-        return Ok(block_instr);
+        cond_instrs.append(&mut block_instr);
+        return Ok(cond_instrs);
     }
 
     /// `그만해요`

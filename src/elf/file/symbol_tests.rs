@@ -336,7 +336,7 @@ fn quad(offset: usize, target: impl Into<Target>) -> Relocation {
 
 fn relocated(elf: &mut ElfFile<u64>, section: usize, name: &str, bytes: &[u8], align: usize, relocs: &[Relocation]) {
     let info = make_st_info(StBind::Global, StType::Object);
-    elf.add_symbol_to_section_relocated(section, name.to_string(), &bytes.to_vec(), info, StVis::Default as u8, align, relocs);
+    elf.add_symbol_to_section_relocated(section, name.to_string(), (bytes, relocs), info, StVis::Default as u8, align);
 }
 
 /// (offset, symbol index, type, addend) of the rela entries of `section`
@@ -429,7 +429,7 @@ fn label_in_32_bits_writes_offset_as_addend() {
     function(&mut elf, text, "f", vec![ret(), ret(), label(case), ret()]);
     let info = make_st_info(StBind::Global, StType::Object);
     let reloc = Relocation { target: case.into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 0 };
-    elf.add_symbol_to_section_relocated(data, "table".into(), &vec![0; 4], info, StVis::Default as u8, 4, &[reloc]);
+    elf.add_symbol_to_section_relocated(data, "table".into(), (&[0; 4], &[reloc]), info, StVis::Default as u8, 4);
     elf.resolve_relocations();
 
     assert_eq!(elf.sections[data].get_data(), &[2, 0, 0, 0]);
@@ -482,7 +482,7 @@ fn data_relocation_in_32_bits_writes_the_addend() {
     );
     let info = make_st_info(StBind::Global, StType::Object);
     let reloc = Relocation { target: "x".into(), offset: 0, size: 4, kind: RelocKind::Absolute, addend: 0x10 };
-    elf.add_symbol_to_section_relocated(data, "p".into(), &vec![0; 4], info, StVis::Default as u8, 4, &[reloc]);
+    elf.add_symbol_to_section_relocated(data, "p".into(), (&[0; 4], &[reloc]), info, StVis::Default as u8, 4);
     elf.resolve_relocations();
 
     assert_eq!(elf.sections[data].get_data(), &[0x10, 0, 0, 0]);

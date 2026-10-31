@@ -300,6 +300,9 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | `세면서`: init, increment under the start label, condition, `JumpIfNot` | AI, at my request |
 | The exit code of `sample/10_pgcd.kr` in its header | AI, at my request |
 | A variable from `빈 주소` typed `Address(Null)` (void*), and its rule in `fits` | AI, at my request |
+| `그리고` / `또는` in short-circuit: started | Me |
+| `그리고` / `또는` in short-circuit: finished, unique labels | AI, at my request |
+| `add_symbol_to_section_relocated`: `data` and `relocations` as one argument | AI, at my request |
 | README and TODO updates | AI |
 
 ## How I used the AI

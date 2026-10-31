@@ -122,6 +122,41 @@ impl<'a> Converter<'a> {
     ) -> Result<ir::structs::Operand, ConvertError> {
         let operand_ty = self.common_type(left, right, scope)?.unwrap_or(ty.clone());
 
+        // 그리고 / 또는 in short-circuit: right is computed only when left does not decide.
+        // 그리고: `t = left ; JumpIfNot t, end ; t = right ; end:`
+        // 또는: `t = left ; JumpIfNot t, rhs ; Jump end ; rhs: t = right ; end:`
+        if matches!(op, BinaryOp::And | BinaryOp::Or) {
+            let dest = ir_func.new_var(ty);
+            let n = ir_func.labels.len();
+            let (rhs, end) = (format!("logic_{n}_rhs"), format!("logic_{n}_end"));
+            // registered now, so that a 그리고 inside left or right takes the next numbers
+            ir_func.label_id(&rhs);
+            ir_func.label_id(&end);
+
+            let left = self.convert_expr(left, scope, ir_func, instrs)?;
+            instrs.push(ir::structs::Instr::Copy {
+                dest: dest.clone(),
+                src: left,
+            });
+            let cond = ir::structs::Operand::Var(dest.clone());
+            if matches!(op, BinaryOp::And) {
+                let target = ir_func.label_id(&end);
+                instrs.push(ir::structs::Instr::JumpIfNot { cond, target });
+            } else {
+                let target = ir_func.label_id(&rhs);
+                instrs.push(ir::structs::Instr::JumpIfNot { cond, target });
+                instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&end)));
+                instrs.push(ir::structs::Instr::Label(ir_func.label_id(&rhs)));
+            }
+            let right = self.convert_expr(right, scope, ir_func, instrs)?;
+            instrs.push(ir::structs::Instr::Copy {
+                dest: dest.clone(),
+                src: right,
+            });
+            instrs.push(ir::structs::Instr::Label(ir_func.label_id(&end)));
+            return Ok(ir::structs::Operand::Var(dest));
+        }
+
         let left = self.convert_expr(left, scope, ir_func, instrs)?;
         let right = self.convert_expr(right, scope, ir_func, instrs)?;
         // a literal beside a 짧은 value takes its size; a comparison fits its sides to each other

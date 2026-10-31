@@ -32,7 +32,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     /// to `align` so the final address is aligned too.
     pub fn add_symbol_to_section_raw(&mut self, section_ndx: usize, name: String, data: &Vec<u8>, info: u8, other: u8, align: usize)
     {
-        self.add_symbol_to_section_relocated(section_ndx, name, data, info, other, align, &[]);
+        self.add_symbol_to_section_relocated(section_ndx, name, (data, &[]), info, other, align);
     }
 
     /// Same as `add_symbol_to_section_raw`, with relocations inside the data:
@@ -43,11 +43,10 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         &mut self,
         section_ndx: usize,
         name: String,
-        data: &Vec<u8>,
+        (data, relocations): (&[u8], &[Relocation]),
         info: u8,
         other: u8,
         align: usize,
-        relocations: &[Relocation],
     ) {
         self.align_section(section_ndx, align);
 
@@ -62,7 +61,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             st_size: T::from_usize(data.len()),
             st_other: other,
         });
-        self.add_bytes_with_relocations(section_ndx, data.clone(), relocations);
+        self.add_bytes_with_relocations(section_ndx, data.to_vec(), relocations);
     }
 
     fn align_section(&mut self, section_ndx: usize, align: usize)

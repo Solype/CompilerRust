@@ -282,12 +282,11 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 |---|---|
 | `Size::from` for 1 and 2 bytes | Me |
 | The declaration and the calls of `comparison`, `그리고` / `또는` as `and` / `or` | AI, at my request |
-| `comparison` (`cmp` / `ucomisd`, `setcc`, sides swapped for `<` on `소수`) | AI, at my request, after my start |
+| `comparison` (`cmp` / `ucomisd`, `setcc`, sides swapped for `<` on `소수`) | Me, AI autocomplete |
 | `Instr::Label` to `Instruction::Label` | Me |
 | The `LabelId` table in `Context`, a new `LabelId` per label of the function | AI, at my request |
-| `Instr::Jump` to `jmp` | Me, finished by AI |
+| `Instr::Jump` to `jmp` | Me, AI autocomplete |
 | `generate_jmp_if_not` | Me |
-| Explanations (the label collisions, how `JumpIfNot` works, the priorities) | AI, explanations only |
 | README and TODO updates | AI |
 
 ## How I used the AI

@@ -1,5 +1,6 @@
 /*
  * 10_pgcd.kr : plus grand commun diviseur, algorithme d'Euclide.
+ * main rend pgcd(48, 18) = 6 : `echo $?` après l'exécution affiche 6.
  */
 
 외부 정수를 반환하는 printf(문자 주소 형식, …)

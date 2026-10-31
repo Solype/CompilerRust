@@ -106,12 +106,13 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 [X] Codegen : Label -> LabelId (Context.labels, un LabelId::new() par
     label de la fonction, indexé par Label.0) ; Jump -> jmp ;
     JumpIfNot (generate_jmp_if_not) -> mov al, cond ; cmp al, 0 ; je.
-    04 et 07 passent ; 05, 08, 09 bouclent sans fin (timeout) et 10 ne
-    fait qu'un tour : le converter n'émet pas encore de JumpIfNot
-[ ] convert_condition rend un Operand ; if : JumpIfNot vers otherwise / end,
+    04, 05, 07, 08, 09, 10 passent
+[X] convert_cond rend un Operand ; if : JumpIfNot vers otherwise / end,
     Jump end après le then
-[ ] 동안 : labels, condition, sauts ; 세면서 : from, condition < until,
-    incrément, 3e label pour 넘어가요
+[X] 동안 : labels, condition, sauts ; 세면서 : var = from ; Jump check ;
+    start: var + 1 ; check: JumpIfNot var < until (recalculé à chaque
+    tour) ; corps ; Jump start. L'incrément est sous start : 넘어가요 y saute
+    sans 3e label dans LoopLabels
 [ ] 그리고 / 또는 en court-circuit (aujourd'hui and / or sur les deux
     côtés déjà calculés, shortcut dans generate_binary)
 
@@ -578,18 +579,17 @@ Instructions IR manquantes :
 [X] Littéral 소수 rangé à la taille attendue (fit_operand)
 [X] convert_init / convert_assign : valeur composée (calcul, appel, chaîne,
     sizeof) par convert_expr, puis Copy
-[ ] convert_condition : rendre l'Operand de la condition, pas seulement
+[X] convert_cond : rendre l'Operand de la condition, pas seulement
     vérifier le type
-[ ] convert_if : JumpIfNot vers le else, instructions du then et du else
-    (rendues par convert_block puis jetées), Jump vers la fin, labels
-[ ] convert_while_loop : Label début, condition, JumpIfNot fin, corps (rendu
-    puis jeté), Jump début, Label fin
-[ ] convert_for_loop : Copy de from dans la variable, condition variable <
-    until (B exclu) + JumpIfNot fin, incrément (Binary Add 1) ; Label début, Jump et
-    Label fin déjà émis
-[ ] convert_break : Jump(label_id(label_end)) ; il faut passer ir_func
-[ ] convert_continue : Jump vers le début (동안) ou vers l'incrément
-    (세면서, 3e label)
+[X] convert_if : JumpIfNot vers le else, instructions du then et du else,
+    Jump vers la fin, labels
+[X] convert_while_loop : Label début, condition, JumpIfNot fin, corps,
+    Jump début, Label fin
+[X] convert_for_loop : Copy de from dans la variable, condition variable <
+    until (B exclu) + JumpIfNot fin, incrément (Binary Add 1)
+[X] convert_break : Jump(label_id(label_end))
+[X] convert_continue : Jump vers le début (동안) ou vers l'incrément
+    (세면서, placé sous le label de début)
 [X] convert_call : arguments de l'appel par convert_args
 [ ] convert_call : bras Callee::Cast (unimplemented!()), 바꾸다 en phrase seule
 
@@ -717,12 +717,12 @@ Vérification : 3과 4를 더해서 제곱해서 반환해요 -> 49
 
 [X] Parser et AST : 만약 / 아니면 만약 / 아니면, 동안, 세면서, 그리고 / 또는,
     négations, 그만해요 / 넘어가요 ; reste le codegen ci-dessous
-[ ] 만약 ... 이면 / 아니면 만약 / 아니면 (LabelId + jcc)
-[ ] COND인 동안
-[ ] NOM을 A부터 B까지 세면서 : borne de fin exclue (< et non <=)
+[X] 만약 ... 이면 / 아니면 만약 / 아니면 (LabelId + jcc)
+[X] COND인 동안
+[X] NOM을 A부터 B까지 세면서 : borne de fin exclue (< et non <=)
 [ ] 그리고 / 또는 en court-circuit
-[ ] Négation : COND이/가 아니면, COND이/가 아닌 동안
-[ ] 그만해요 / 넘어가요 : pile des boucles (label de fin, label de suite) ;
+[X] Négation : COND이/가 아니면, COND이/가 아닌 동안
+[X] 그만해요 / 넘어가요 : pile des boucles (label de fin, label de suite) ;
     hors boucle = erreur
 
 ==================================================

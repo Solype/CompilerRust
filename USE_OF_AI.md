@@ -289,6 +289,18 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | `generate_jmp_if_not` | Me |
 | README and TODO updates | AI |
 
+## October 31: `만약`, `동안` and `세면서`
+
+| Element | Who |
+|---|---|
+| `convert_cond`: the operand of the condition, its new signature | AI, at my request |
+| `만약` / `아니면`: `JumpIfNot`, labels | Me |
+| The missing `Jump end` after the then, the missing labels of `동안` | AI, review of my code |
+| `동안`: labels, condition, `JumpIfNot`, `Jump` | Me |
+| `세면서`: init, increment under the start label, condition, `JumpIfNot` | AI, at my request |
+| The exit code of `sample/10_pgcd.kr` in its header | AI, at my request |
+| README and TODO updates | AI |
+
 ## How I used the AI
 
 Over the whole project, the AI was mostly used to **explain**: how a format, an encoding or an

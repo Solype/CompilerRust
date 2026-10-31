@@ -409,8 +409,7 @@ Particle, Bool. Le parser ne voit plus que des catégories fixes.
 [X] 부호 없는 -> Keyword(Unsigned), un seul token sur les deux mots
 [X] 참 / 거짓 -> Bool, seuls ou avec particule (참이면)
 [X] Option --pre-tokens (retirée dans 5aeb848)
-[ ] Portées : aujourd'hui les noms sont ceux de tout le fichier, sans portée
-    (nom utilisé hors de sa portée accepté) ; à faire avec le parser
+[X] Portées : faites dans le converter (Scope), sample/erreurs/hors_bloc.kr
 
 --------------------------------------------------
 2.5.1 Vérification des particules selon le 받침 (étape suivante)
@@ -475,8 +474,8 @@ retours, opérateurs), puis chemins.
     définies après
 [ ] Variable lue après Declare sans valeur (erreur ou warning)
 [X] Deux paramètres de même nom
-[ ] Variable locale du nom d'un paramètre : aujourd'hui permise (le corps est
-    un bloc à l'intérieur des paramètres, donc masquage)
+[X] Variable locale du nom d'un paramètre : refusée,
+    sample/erreurs/masquer_parametre.kr
 [X] For : ty Some = déclare la variable, visible dans le corps seulement ;
     ty None = la variable doit exister et ne pas être 고정된
 [ ] Type::Custom inconnu (pas de déclaration de type : toujours une erreur
@@ -493,11 +492,10 @@ retours, opérateurs), puis chemins.
     des premiers arguments puis $...
 [X] Résultat d'une fonction sans retour (return_type None) utilisé dans une
     expression ou un Init (NoValue)
-[ ] 외부 (extern) : trouvés par leur nom et leur nombre d'arguments seuls ;
-    vérifier les paramètres fixes avec fits (1.5를 abs해요 passe aujourd'hui)
-[ ] Verbes intégrés : 바꾸다 (cast) rend le type de son Argument::ToType sans
-    regarder la valeur ; règle des casts permis à fixer (nombre -> nombre,
-    주소 -> 주소...) ; particules selon le rôle attendu
+[X] 외부 (extern) : paramètres fixes vérifiés (1.5를 abs해요 refusé,
+    sample/erreurs/externe_mauvais_type.kr)
+[X] Verbes intégrés : 바꾸다 (cast) vérifie la valeur (InvalidCast,
+    sample/erreurs/conversion_invalide.kr)
 
 --------------------------------------------------
 2.6.4 Retour
@@ -573,8 +571,8 @@ Fait :
 Instructions IR manquantes :
 [ ] convert_expr : 그리고 / 또는 en court-circuit, JumpIfNot, jamais
     Binary And / Or
-[ ] convert_expr et operand() (expressions.rs) : les littéraux sont lus aux
-    deux endroits, n'en garder qu'un
+[X] convert_expr et operand() (expressions.rs) : les littéraux ne sont plus
+    lus que par operand()
 [ ] Type::size (ex get_size_of) : Null, Custom tombent dans unimplemented!()
 [X] Littéral 소수 rangé à la taille attendue (fit_operand)
 [X] convert_init / convert_assign : valeur composée (calcul, appel, chaîne,
@@ -598,8 +596,8 @@ Choix de l'IR à trancher :
     소수) : comparaisons, Div, Rem, Shr en dépendent, pas dest. Aujourd'hui
     VarId porte le Type de l'AST (cloné partout, pas Copy) ; piste : un
     IrType Copy (Int { size, signed }, Float { size }, Ptr)
-[ ] Taille d'une constante en double : Operand::Int / Float (_, short) et
-    Program.floats[id].1, une seule source à terme
+[ ] Taille d'une constante en double : Operand::Int (_, short) ; fait pour
+    Float, qui n'est plus qu'un index (sa taille dans Program.floats[id].1)
 [ ] Une seule passe dans le converter : convert_expr(expr, expected)
     -> (Operand, Type), à la place de get_type + convert_expr + fit_operand
 [ ] Pointeurs et tableaux : Load / Store / AddrOf
@@ -649,8 +647,8 @@ tests/kr/42.kr :
 [X] Écrire un .o avec main global (réutiliser add_section / add_function)
 [X] Retirer les samples de main.rs : seulement avec --demo
 [X] Lien : gcc fichier.o -o prog (la libc fournit _start) : option -x
-[ ] Script de test : compile chaque tests/kr/*.kr, lance le binaire, compare
-    code de sortie et stdout avec un .expected
+[X] Script de test : run_samples.sh, sur sample/*.kr (code de sortie dans
+    l'en-tête, stdout dans un .out)
 
 Vérification : ./prog; echo $? -> 42
 
@@ -662,11 +660,11 @@ Vérification : ./prog; echo $? -> 42
     (ou règles de précédence / associativité pour trancher les conflits
     shift/reduce)
 [X] - unaire, et "- suivi d'un nombre" = terme simple
-[ ] Codegen en pile, résultat dans rax :
+[X] Codegen en pile : remplacé par l'IR, chaque calcul va dans une variable
     a op b -> calculer a ; push rax ; calculer b ; mov rcx, rax ; pop rax ; op rax, rcx
-[ ] / et % : cqo ; idiv rcx (quotient rax, reste rdx)
-[ ] Comparaisons : cmp ; setcc al ; movzx rax, al
-[ ] Opérateurs bit à bit, décalages (sar si signé, shr si 부호 없는)
+[X] / et % : cqo ; idiv rcx (quotient rax, reste rdx)
+[X] Comparaisons : cmp ; setcc al (rangé sur 1 octet, pas de movzx)
+[X] Opérateurs bit à bit, décalages (sar toujours, shr à faire : étape 4)
 
 Vérification : un .kr par opérateur ; ((3 + 4) * 5)를 줘요 -> 35
 (code de sortie limité à 0-255)

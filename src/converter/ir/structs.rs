@@ -71,7 +71,7 @@ impl Label {
 #[derive(Debug)]
 pub enum Operand {
     Var(VarId),
-    Int(i64, bool),
+    Int(i64, bool, bool),
     /// Its index in `Program.floats`, which holds its size
     Float(usize),
     Bool(bool),

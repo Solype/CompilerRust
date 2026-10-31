@@ -752,7 +752,7 @@ fn expression(node: &TreeNode) -> Result<Expr, PostParseError> {
         (NTerm::Primary, _) => primary(children)?,
         (_, [inner]) => return expression(inner),
         (NTerm::Operand, [_, number]) => match token(number) {
-            ParserTokenKind::Int(number) => ExprKind::Int(-number, false),
+            ParserTokenKind::Int(number) => ExprKind::Int(-number, false, false),
             ParserTokenKind::Float(number) => ExprKind::Float(-number, false),
             kind => panic!("a number was expected, found {kind:?}"),
         },
@@ -778,7 +778,7 @@ fn expression(node: &TreeNode) -> Result<Expr, PostParseError> {
 fn primary(children: &[TreeNode]) -> Result<ExprKind, PostParseError> {
     return Ok(match children {
         [leaf] => match token(leaf) {
-            ParserTokenKind::Int(number) => ExprKind::Int(*number, false),
+            ParserTokenKind::Int(number) => ExprKind::Int(*number, false, false),
             ParserTokenKind::Float(number) => ExprKind::Float(*number, false),
             ParserTokenKind::Str(text) => ExprKind::Str(text.clone()),
             ParserTokenKind::Bool(value) => ExprKind::Bool(*value),

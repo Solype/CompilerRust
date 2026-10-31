@@ -68,8 +68,13 @@ impl fmt::Display for Operand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         return match self {
             Operand::Var(var) => write!(f, "{var}"),
-            Operand::Int(value, short) => {
-                write!(f, "{value}{}", short.then(|| 's').unwrap_or('l'))
+            Operand::Int(value, short, unsigned) => {
+                write!(
+                    f,
+                    "{value}{}{}",
+                    short.then(|| 's').unwrap_or('l'),
+                    unsigned.then(|| 'u').unwrap_or('s')
+                )
             }
             Operand::Float(index) => write!(f, "f{index}"),
             Operand::Bool(value) => write!(f, "{value}"),

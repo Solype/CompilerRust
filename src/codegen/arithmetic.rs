@@ -159,7 +159,7 @@ fn comparison(
     ctx: &Context,
     cc: ConditionCode,
 ) -> Vec<Instruction> {
-    let (size, is_float) = operand_kind(left, ctx);
+    let (size, is_float, is_unsigned) = operand_kind(left, ctx);
     let size = Some(Size::from(size));
     // shortcut: == and != of a NaN are wrong (ZF set as for equal), PF to check if NaN matters
     let (left, right, cc, a, b) = match (is_float, cc) {

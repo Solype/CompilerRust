@@ -37,7 +37,7 @@ through Claude Code).
 | LR(1) table, parser, tree, AST (October 9) | Shared: detail below |
 | Converter, the semantic analysis (`src/converter`, October 12 to 15) | Shared: detail below |
 | IR, the output of the converter (`src/converter/ir`, October 16 to 19) | Me; the AI helped complete the structs |
-| First code generation (`src/codegen`, October 20) | Me |
+| Code generation (`src/codegen`, October 20 to 31) | Mostly me: detail below |
 | Command line: `-x`, several files, errors (October 20) | AI, at my request |
 
 ## Overall share (estimate, October 20)
@@ -193,116 +193,30 @@ I chose the points and asked for them. On that day, the AI wrote most of the cod
 The converter now gives an IR, the three address code the codegen will turn into x86-64
 instructions. The AI helped me complete the IR structs; I wrote the rest by hand.
 
-## October 20: the first code generation (`src/codegen`) and the command line
+## October 20 to 31: the code generation (`src/codegen`)
 
-`sample/01_retour.kr` is the first program compiled into a binary that runs, then
-`sample/12_addition.kr`, a call with two arguments.
-
-| Element | Who |
-|---|---|
-| `get_size_of`, `Operand::Float` as an index in `Program.floats`, the literal arms of `convert_expr` | Me |
-| The codegen: `generate`, one global function per IR function, `convert_operand`, `generate_return` | Me |
-| Prologue and epilogue, `generate_call` (argument counters, `al`), first version of `generate_binary`, the size in `VarId`, filling the IR params | Me |
-| Small corrections in my code (the `SizeOf` arm, floats in `operand()`, `Return`, `link`, `generate_binary` through `rax`) | AI |
-| `normal_param` (System V registers), exact offset of each variable (`var_offsets`), storing the call result and the parameters | AI, at my request |
-| Wiring the codegen into `main.rs`; the `-x` option; errors returned instead of `process::exit`; several files, each `file.kr` giving `file.o` | AI, at my request |
-| `get_size_of` as a free function, `unimplemented!()` instead of silent cases in the converter, warnings and style fixes, `sample/12_addition.kr` | AI, at my request |
-| Review of my code, guidelines for the codegen (stack frame, operands, x86 constraints, System V calling convention, later optimizations) | AI, explanations only |
-| README and TODO updates | AI |
-
-## October 21: `Copy`, and a script that runs the samples
+`sample/01_retour.kr` was the first program compiled into a binary that runs (October 20); every
+`sample/*.kr` runs since October 31.
 
 | Element | Who |
 |---|---|
-| `generate_copy` started, its arm in `generate_instruction`; `Type::Bool` in `get_size_of` | Me |
-| End of `generate_copy` (the value through `rax`) | AI, at my request |
-| `run_samples.sh` (compile, link, run each sample, compare the exit code and stdout; the error samples must give code 1), `sample/02_bonjour.out` | AI, at my request |
-| `convert_expr` split into `convert_binary`, `convert_unary`, `convert_call_value` and `convert_args` | AI, at my request |
-| Plan of the next steps, in `TODO_Frontend.md` | AI |
-| README and TODO updates | AI |
-
-## October 22: the operators, `짧은 정수` on the stack, calls with arguments
-
-| Element | Who |
-|---|---|
-| `convert_init` and `convert_assign` through `convert_expr` | Me |
-| The `ir_func` parameter of `convert_assign` | AI, at my request |
-| `generate_binary` moved into `arithmetic.rs`, `simple_operation` (Sub, And, Or, Xor) | Me |
-| `multiplication` and `division` from the instructions the AI gave me (`imul`, `cqo` / `idiv`) | Me, from AI code |
-| `shift` (`shl` / `sar` through `cl`), missing imports | AI, at my request |
-| `var_size` and the size of the `mov` in Copy, Binary, the call result, the prologue; `cdq` on 4 bytes | Me |
-| `sample/13_operateurs.kr`, `sample/14_court.kr`, which found the `cqo` and prologue bugs | AI, at my request |
-| `convert_call` converting the arguments of a call alone | Me |
-| `Context` passed instead of the offsets | AI, at my request |
-| Review of my code, explanations (x86 division, `mov` versus `lea` for a string, an address operand in the IR) | AI, explanations only |
-
-## October 23: strings in `.rodata`
-
-| Element | Who |
-|---|---|
-| `load_operand` (a string through `lea`), from code the AI gave me | Me, from AI code |
-| The imports of `utils.rs`, every `mov` that loads an operand replaced by `load_operand` | AI, at my request |
-| The strings in `.rodata` in `generate`: started | Me |
-| End of the `.rodata` strings (one local symbol `.str.N` per string, ended by 0) | AI, at my request |
-| Doc comments of the codegen functions | AI, at my request |
-| README and TODO updates | AI |
-
-## October 26 and 27: unary operators, `소수` arithmetic and float arguments
-
-| Element | Who |
-|---|---|
-| `generate_unary`: started | Me |
-| End of `generate_unary` (the store of the result, `xor al, 1` for the logical not) | AI, at my request |
-| `Operand::Str` renamed `Address`, then split into `Address(VarId)` and `DataAddress` | Me |
-| Float constants in `.rodata`, `float_names` in `Context` | Me |
-| `sample/15_flottants.kr` | AI, at my request |
-| `+ - * /` on `소수`, `-x` of a `소수`, integer `%`, `VarId` with named fields | AI, at my request |
-| Float arguments in `xmm`, float parameters stored by the prologue, return in `xmm0` | Me |
-| The `Type` import and the `Type` compile errors in that code | AI, at my request |
-| Review of my code (a symbol defined twice, `movapd` versus `movsd`, a float variable passed in an integer register) | AI, explanations only |
-
-## October 28: `바꾸다`, `짧은 소수` and comparisons
-
-| Element | Who |
-|---|---|
-| `VarId` carries its `Type`, `Type::size` and `Type::is_float` replace `get_size_of` | Me |
-| Every use adapted to the new `VarId` and `Type::size` | AI, at my request |
-| `Operand::Int` / `Float` carry their size, `짧은 소수` constants written on 4 bytes | Me |
-| `generate_cast` (`cvtss2sd`, `cvtsi2sd`, `cvttsd2si`, `movsxd`, `movzx`) | AI, at my request, after my start |
-| The result of a float call read from `xmm0` | Me |
-| `fit_operand` / `fit_args`: a literal takes the size of its expected type | AI, at my request |
-| `common_type`, the sides of a comparison fitted to it | Me, from AI code |
-| The type of the result of a comparison (`ty`, not the type of its sides) | AI |
-| Explanations (the cast table, the comparison problem) and a review of the architecture | AI, explanations only |
-| README and TODO updates | AI |
-
-## October 28 (continued): comparisons and jumps
-
-| Element | Who |
-|---|---|
-| `Size::from` for 1 and 2 bytes | Me |
-| The declaration and the calls of `comparison`, `그리고` / `또는` as `and` / `or` | AI, at my request |
-| `comparison` (`cmp` / `ucomisd`, `setcc`, sides swapped for `<` on `소수`) | Me, AI autocomplete |
-| `Instr::Label` to `Instruction::Label` | Me |
-| The `LabelId` table in `Context`, a new `LabelId` per label of the function | AI, at my request |
-| `Instr::Jump` to `jmp` | Me, AI autocomplete |
-| `generate_jmp_if_not` | Me |
-| README and TODO updates | AI |
-
-## October 31: `만약`, `동안` and `세면서`
-
-| Element | Who |
-|---|---|
-| `convert_cond`: the operand of the condition, its new signature | AI, at my request |
-| `만약` / `아니면`: `JumpIfNot`, labels | Me |
-| The missing `Jump end` after the then, the missing labels of `동안` | AI, review of my code |
-| `동안`: labels, condition, `JumpIfNot`, `Jump` | Me |
-| `세면서`: init, increment under the start label, condition, `JumpIfNot` | AI, at my request |
-| The exit code of `sample/10_pgcd.kr` in its header | AI, at my request |
-| A variable from `빈 주소` typed `Address(Null)` (void*), and its rule in `fits` | AI, at my request |
-| `그리고` / `또는` in short-circuit: started | Me |
-| `그리고` / `또는` in short-circuit: finished, unique labels | AI, at my request |
-| `add_symbol_to_section_relocated`: `data` and `relocations` as one argument | AI, at my request |
+| The codegen architecture: `generate`, one global function per IR function, `Context`, prologue and epilogue, `convert_operand`, `var_size` | Me |
+| Calls (System V): argument counters, `al`, float arguments in `xmm`, float parameters stored by the prologue, return and call result in `xmm0` | Me |
+| The pieces of the frame and the calls written for me: `normal_param`, `var_offsets`, storing the call result and the parameters, `Context` instead of the offsets | AI, at my request |
+| Copies, strings and float constants in `.rodata`, `load_operand` | Me, finished by AI (end of `generate_copy`, the `.rodata` strings) |
+| Integer operators: `simple_operation`, `multiplication`, `division` | Me, from the instructions the AI gave me |
+| The other operators: shifts, end of `generate_unary`, `+ - * /` and `-x` on `소수`, integer `%` | AI, at my request |
+| Sizes and types in the IR: `VarId` with its `Type`, `Type::size`, the size and the sign of the constants, `Type::is_unsigned`, `Size::from` for 1 and 2 bytes | Me; the AI adapted every use |
+| `바꾸다` (`generate_cast`) | AI, at my request, after my start |
+| Literals at the size of their expected type (`fit_operand`, `fit_args`), the common type of a comparison | AI; `common_type` by me, from AI code |
+| Comparisons, labels and jumps (`comparison`, `Label`, `Jump`, `generate_jmp_if_not`) | Me, AI autocomplete |
+| Control flow in the converter: `만약` / `아니면` and `동안` | Me, reviewed by AI |
+| Control flow in the converter: `convert_cond`, `세면서`, end of the `그리고` / `또는` short-circuit | AI, at my request |
+| The rest of the converter: `convert_init` and `convert_assign` through `convert_expr`, the `Operand` variants for addresses | Me |
+| The rest of the converter: `convert_expr` split in functions, a variable from `빈 주소` typed `Address(Null)` | AI, at my request |
+| Command line (`-x`, several files, errors), `run_samples.sh`, the samples `12` to `15` | AI, at my request |
+| Imports, compile errors, warnings, doc comments, refactorings (number of arguments) | AI, at my request |
+| Review of my code, explanations (stack frame, x86 constraints, division, casts, jumps) | AI, explanations only |
 | README and TODO updates | AI |
 
 ## How I used the AI

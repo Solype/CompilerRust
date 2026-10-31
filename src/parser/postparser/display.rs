@@ -93,7 +93,11 @@ fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Res
             name,
             value,
             constant,
-        }) => writeln!(f, "{} {name} = {value}", if *constant { "const" } else { "let" }),
+        }) => writeln!(
+            f,
+            "{} {name} = {value}",
+            if *constant { "const" } else { "let" }
+        ),
         StatementKind::Assign(Assign { target, value }) => writeln!(f, "{target} = {value}"),
         StatementKind::Return(value) => writeln!(f, "return {value}"),
         StatementKind::Call(call) => writeln!(f, "{call}"),
@@ -154,7 +158,7 @@ fn operand(expr: &Expr) -> String {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         return match &self.kind {
-            ExprKind::Int(number, _) => write!(f, "{number}"),
+            ExprKind::Int(number, _, _) => write!(f, "{number}"),
             ExprKind::Float(number, _) => write!(f, "{number:?}"),
             ExprKind::Str(text) => write!(f, "{text:?}"),
             ExprKind::Bool(value) => write!(f, "{value}"),

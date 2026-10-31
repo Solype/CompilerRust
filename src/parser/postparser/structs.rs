@@ -62,6 +62,14 @@ impl Type {
         return matches!(self, Type::Float { .. });
     }
 
+    pub fn is_unsigned(&self) -> bool {
+        return match self {
+            Type::Int { unsigned, .. } => *unsigned,
+            Type::Float { .. } => false,
+            _ => true,
+        };
+    }
+
     pub fn size(&self) -> usize {
         return match self {
             Type::Int { short: true, .. } => 4,
@@ -152,7 +160,7 @@ pub struct Expr {
 }
 
 pub enum ExprKind {
-    Int(i64, bool),
+    Int(i64, bool, bool),
     Float(f64, bool),
     Str(String),
     Bool(bool),

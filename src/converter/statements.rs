@@ -43,9 +43,7 @@ impl<'a> Converter<'a> {
         }
         let ty = self.get_type(expr, scope)?; // vérifs + type du résultat
         match &expr.kind {
-            ExprKind::Binary { op, left, right } => {
-                self.convert_binary(*op, left, right, ty, scope, ir_func, instrs)
-            }
+            ExprKind::Binary { .. } => self.convert_binary(expr, ty, scope, ir_func, instrs),
             ExprKind::Unary { op, operand } => {
                 self.convert_unary(*op, operand, ty, scope, ir_func, instrs)
             }
@@ -53,7 +51,7 @@ impl<'a> Converter<'a> {
                 self.convert_call_value(verb, args, expr.span, ty, scope, ir_func, instrs)
             }
             ExprKind::Str(str) => Ok(ir::structs::Operand::DataAddress(self.ir.string_id(str))),
-            ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(ty.size() as i64, false)),
+            ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(ty.size() as i64, false, false)),
             _ => unimplemented!(),
         }
     }
@@ -72,8 +70,8 @@ impl<'a> Converter<'a> {
                 let value = self.ir.floats[id].0;
                 ir::structs::Operand::Float(self.ir.float_id(value, *short))
             }
-            (ir::structs::Operand::Int(value, _), Type::Int { short, .. }) => {
-                ir::structs::Operand::Int(value, *short)
+            (ir::structs::Operand::Int(value, _, _), Type::Int { short, unsigned }) => {
+                ir::structs::Operand::Int(value, *short, *unsigned)
             }
             // a 소수 computed from literals, (1.5 + 2.0) for a 짧은 소수
             (ir::structs::Operand::Var(var), Type::Float { .. })
@@ -108,18 +106,19 @@ impl<'a> Converter<'a> {
         return args;
     }
 
-    /// `left op right` into a new variable of type `ty`
-    #[allow(clippy::too_many_arguments)]
+    /// `left op right` (`expr`, an ExprKind::Binary) into a new variable of type `ty`
     fn convert_binary(
         &mut self,
-        op: BinaryOp,
-        left: &Expr,
-        right: &Expr,
+        expr: &Expr,
         ty: Type,
         scope: &Scope,
         ir_func: &mut ir::structs::Function,
         instrs: &mut Vec<ir::structs::Instr>,
     ) -> Result<ir::structs::Operand, ConvertError> {
+        let ExprKind::Binary { op, left, right } = &expr.kind else {
+            unreachable!("convert_binary is only called on an ExprKind::Binary")
+        };
+        let op = *op;
         let operand_ty = self.common_type(left, right, scope)?.unwrap_or(ty.clone());
 
         // 그리고 / 또는 in short-circuit: right is computed only when left does not decide.
@@ -288,7 +287,7 @@ impl<'a> Converter<'a> {
                 (var.ty.clone(), var.var_id.clone())
             }
         };
-        let Type::Int { short, .. } = ty else {
+        let Type::Int { short, unsigned } = ty else {
             return Err(ConvertError::new(ConvertErrorKind::NotInteger, span));
         };
         for bound in [&for_loop.from, &for_loop.until] {
@@ -314,7 +313,7 @@ impl<'a> Converter<'a> {
             dest: var.clone(),
             op: BinaryOp::Add,
             left: ir::structs::Operand::Var(var.clone()),
-            right: ir::structs::Operand::Int(1, short),
+            right: ir::structs::Operand::Int(1, short, unsigned),
         });
         // until is computed again at each turn, as the condition of a C for
         instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_check)));

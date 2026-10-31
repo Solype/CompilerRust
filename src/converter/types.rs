@@ -42,7 +42,7 @@ pub(super) fn range_error(expr: &Expr, ty: &Type, expected: &Type) -> Option<Con
 /// is -3; `None` for an expression that is no literal, or whose computation overflows
 fn int_value(expr: &Expr) -> Option<i128> {
     return match &expr.kind {
-        ExprKind::Int(value, _) => Some(*value as i128),
+        ExprKind::Int(value, _, _) => Some(*value as i128),
         ExprKind::Unary { op, operand } => {
             let value = int_value(operand)?;
             match op {

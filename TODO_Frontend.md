@@ -89,8 +89,12 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
 [X] Vérifier : stdout égal à sample/02_bonjour.out, code 0 (02 et 03 passent)
 
 Étape 4 : trancher le type des opérandes de Binary / Unary
-[ ] Signé ou non, 32 / 64 bits (voir « Choix de l'IR à trancher » en
-    2.6.7) : dans Instr::Binary, ou lu dans vars[left]
+[X] Signé ou non, 32 / 64 bits : lu dans le Type des opérandes. VarId porte
+    son Type (Type::is_unsigned), un littéral son signe (ExprKind::Int et
+    Operand::Int (valeur, short, unsigned), fit_operand le met au type
+    attendu) ; operand_kind rend (taille, 소수, non signé)
+[ ] Comparaisons non signées : B / BE / A / AE (is_unsigned lu dans
+    comparison, pas encore utilisé)
 [X] Comparaisons (comparison) : mov rax, left ; mov rcx, right ; cmp ;
     setcc al ; mov [dest], al, sur la taille des opérandes (operand_kind).
     Pour un 소수 ucomisd / ucomiss (flags non signés) : < et <= deviennent
@@ -601,7 +605,7 @@ Choix de l'IR à trancher :
     소수) : comparaisons, Div, Rem, Shr en dépendent, pas dest. Aujourd'hui
     VarId porte le Type de l'AST (cloné partout, pas Copy) ; piste : un
     IrType Copy (Int { size, signed }, Float { size }, Ptr)
-[ ] Taille d'une constante en double : Operand::Int (_, short) ; fait pour
+[ ] Taille d'une constante en double : Operand::Int (_, short, unsigned) ; fait pour
     Float, qui n'est plus qu'un index (sa taille dans Program.floats[id].1)
 [ ] Une seule passe dans le converter : convert_expr(expr, expected)
     -> (Operand, Type), à la place de get_type + convert_expr + fit_operand

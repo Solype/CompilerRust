@@ -17,7 +17,7 @@ pub fn convert_operand(op: &IrOp, ctx: &Context) -> ElfOper {
         IrOp::Var(var) => {
             ElfOper::MemoryAddress(MemAddress::new().base(RBP).disp(-ctx.offsets[var.id]))
         }
-        IrOp::Int(n, _) => ElfOper::Imm(*n),
+        IrOp::Int(n, _, _) => ElfOper::Imm(*n),
         IrOp::Bool(b) => ElfOper::Imm(*b as i64),
         IrOp::Null => ElfOper::Imm(0),
         // a float has no immediate form: it is read from its constant in .rodata
@@ -85,21 +85,21 @@ pub fn normal_param(op: &IrOp, i: &mut i32, ctx: &Context) -> Instruction {
 }
 
 /// The size in bytes of the value of `op`, and true for a 소수
-pub fn operand_kind(op: &IrOp, ctx: &Context) -> (usize, bool) {
+pub fn operand_kind(op: &IrOp, ctx: &Context) -> (usize, bool, bool) {
     return match op {
-        IrOp::Var(var) => (var.ty.size(), var.ty.is_float()),
-        IrOp::Int(_, short) => (if *short { 4 } else { 8 }, false),
-        IrOp::Float(f) => (if ctx.floats[*f].1 { 4 } else { 8 }, true),
-        IrOp::Bool(_) => (1, false),
+        IrOp::Var(var) => (var.ty.size(), var.ty.is_float(), var.ty.is_unsigned()),
+        IrOp::Int(_, short, unsigned) => (if *short { 4 } else { 8 }, false, *unsigned),
+        IrOp::Float(f) => (if ctx.floats[*f].1 { 4 } else { 8 }, true, false),
+        IrOp::Bool(_) => (1, false, true),
         // an address
-        _ => (8, false),
+        _ => (8, false, true),
     };
 }
 
 /// `dest = 바꾸다(src)`: cvtss2sd / cvtsd2ss between two 소수, cvtsi2sd from a 정수, cvttsd2si
 /// to a 정수 (truncated toward 0, as in C), movsxd / movzx to a wider 정수; else a copy
 pub fn generate_cast(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction> {
-    let (src_size, src_float) = operand_kind(src, ctx);
+    let (src_size, src_float, src_unsigned) = operand_kind(src, ctx);
     let (dest_size, dest_float) = (dest.ty.size(), dest.ty.is_float());
     let same_kind = src_float == dest_float && (src_size == dest_size || !dest_float);
     // to a smaller 정수, an address or the same type: the low bytes, as a copy sized by dest

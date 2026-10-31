@@ -210,7 +210,9 @@ impl<'a> Converter<'a> {
         return Ok(operands);
     }
 
-    /// `수를 1부터 끝까지 세면서 { … }`: the variable and the bounds are the same 정수 type
+    /// `수를 1부터 끝까지 세면서 { … }`: the variable and the bounds are the same 정수 type, `끝`
+    /// excluded. `var = from ; Jump check ; start: var = var + 1 ; check: JumpIfNot var < until,
+    /// end ; body ; Jump start ; end:`: the increment is at start, so 넘어가요 runs it
     fn convert_for_loop(
         &mut self,
         parent: &Scope,
@@ -226,16 +228,17 @@ impl<'a> Converter<'a> {
             }),
             Some(parent),
         );
-        let ty = match &for_loop.ty {
+        let (ty, var) = match &for_loop.ty {
             // `정수 수를 …`: declared by the loop, in its own scope
             Some(ty) => {
+                let var = ir_func.new_var(ty.clone());
                 let variable = Variable {
                     ty: ty.clone(),
                     constant: false,
-                    var_id: ir_func.new_var(ty.clone()),
+                    var_id: var.clone(),
                 };
                 scope.declare(&for_loop.variable, variable, span)?;
-                ty.clone()
+                (ty.clone(), var)
             }
             // `수를 …`: a variable of the blocks around, that the loop changes
             None => {
@@ -247,12 +250,12 @@ impl<'a> Converter<'a> {
                     let kind = ConvertErrorKind::AssignToConstant(for_loop.variable.clone());
                     return Err(ConvertError::new(kind, span));
                 }
-                var.ty.clone()
+                (var.ty.clone(), var.var_id.clone())
             }
         };
-        if !matches!(ty, Type::Int { .. }) {
+        let Type::Int { short, .. } = ty else {
             return Err(ConvertError::new(ConvertErrorKind::NotInteger, span));
-        }
+        };
         for bound in [&for_loop.from, &for_loop.until] {
             let bound_ty = self.get_type(bound, parent)?;
             if !fits(bound, &bound_ty, &ty) {
@@ -262,11 +265,41 @@ impl<'a> Converter<'a> {
                 return Err(ConvertError::new(ConvertErrorKind::NotInteger, bound.span));
             }
         }
-        let mut instr = self.convert_block(&for_loop.body, &scope, ir_func)?;
-        instr.insert(0, ir::structs::Instr::Label(ir_func.label_id(&label_start)));
-        instr.push(ir::structs::Instr::Jump(ir_func.label_id(&label_start)));
-        instr.push(ir::structs::Instr::Label(ir_func.label_id(&label_end)));
-        return Ok(instr);
+        let label_check = format!("{label_start}_check");
+        let mut instrs = vec![];
+        let from = self.convert_expr(&for_loop.from, parent, ir_func, &mut instrs)?;
+        let from = self.fit_operand(from, &ty, ir_func, &mut instrs);
+        instrs.push(ir::structs::Instr::Copy {
+            dest: var.clone(),
+            src: from,
+        });
+        instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&label_check)));
+        instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_start)));
+        instrs.push(ir::structs::Instr::Binary {
+            dest: var.clone(),
+            op: BinaryOp::Add,
+            left: ir::structs::Operand::Var(var.clone()),
+            right: ir::structs::Operand::Int(1, short),
+        });
+        // until is computed again at each turn, as the condition of a C for
+        instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_check)));
+        let until = self.convert_expr(&for_loop.until, parent, ir_func, &mut instrs)?;
+        let until = self.fit_operand(until, &ty, ir_func, &mut instrs);
+        let cond = ir_func.new_var(Type::Bool);
+        instrs.push(ir::structs::Instr::Binary {
+            dest: cond.clone(),
+            op: BinaryOp::Lt,
+            left: ir::structs::Operand::Var(var),
+            right: until,
+        });
+        instrs.push(ir::structs::Instr::JumpIfNot {
+            cond: ir::structs::Operand::Var(cond),
+            target: ir_func.label_id(&label_end),
+        });
+        instrs.append(&mut self.convert_block(&for_loop.body, &scope, ir_func)?);
+        instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&label_start)));
+        instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_end)));
+        return Ok(instrs);
     }
 
     /// TODO !!!
@@ -517,8 +550,8 @@ impl<'a> Converter<'a> {
         span: Span,
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        // The start of the innermost loop: the same name gives the Label its loop places
-        // shortcut: a 세면서 must jump to its increment instead, once the loop emits one
+        // The start of the innermost loop: the same name gives the Label its loop places; the
+        // start of a 세면서 is its increment
         if let Some(loop_labels) = scope.in_loop() {
             let start = ir_func.label_id(&loop_labels.label_start);
             return Ok(vec![ir::structs::Instr::Jump(start)]);

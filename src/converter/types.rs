@@ -4,7 +4,8 @@ use super::convert_error::{ConvertError, ConvertErrorKind};
 
 /// Whether `expr`, of type `ty`, goes where `expected` goes: the same type, or a literal that
 /// takes the expected type when its value fits in it (`0` for a 짧은 정수, `1.5` for a 짧은 소수,
-/// `빈 주소` for any 주소)
+/// `빈 주소` for any 주소); an address to nothing (`없음은 빈 주소예요.`) takes any address and
+/// goes into any, as void* in C
 pub(super) fn fits(expr: &Expr, ty: &Type, expected: &Type) -> bool {
     if ty == expected {
         return true;
@@ -17,6 +18,7 @@ pub(super) fn fits(expr: &Expr, ty: &Type, expected: &Type) -> bool {
             float_value(expr).is_some_and(|value| float_fits(value, *short))
         }
         (Type::Null, Type::Address(_)) => matches!(expr.kind, ExprKind::Null),
+        (Type::Address(from), Type::Address(to)) => **from == Type::Null || **to == Type::Null,
         _ => false,
     };
 }

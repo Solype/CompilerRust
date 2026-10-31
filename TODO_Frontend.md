@@ -138,7 +138,9 @@ Fait : 01_retour.kr et 12_addition.kr rendent 42
     opérandes d'un Binary, arguments ; 짧은 소수 promu en 소수 après les
     paramètres d'un variadique), Cast pour un 소수 calculé de l'autre taille
 [X] Cast vers 1 octet (논리, 바이트) : Size::from accepte 1 et 2 octets
-[ ] sample/06_types.kr : Type::size panique sur Null / Custom
+[X] sample/06_types.kr : une variable déduite de 빈 주소 a le type
+    Address(Null), le void* du C (convert_init) ; fits accepte toute adresse
+    vers ou depuis Address(Null)
 
 Plus tard : 7e argument entier et plus sur la pile, 07_phrases, pointeurs et tableaux (Load / Store / AddrOf), tests unitaires
 du converter.
@@ -573,7 +575,8 @@ Instructions IR manquantes :
     Binary And / Or
 [X] convert_expr et operand() (expressions.rs) : les littéraux ne sont plus
     lus que par operand()
-[ ] Type::size (ex get_size_of) : Null, Custom tombent dans unimplemented!()
+[ ] Type::size (ex get_size_of) : Null (le littéral seul, plus aucune
+    variable), Custom tombent dans unimplemented!()
 [X] Littéral 소수 rangé à la taille attendue (fit_operand)
 [X] convert_init / convert_assign : valeur composée (calcul, appel, chaîne,
     sizeof) par convert_expr, puis Copy

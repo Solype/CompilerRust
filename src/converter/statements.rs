@@ -363,7 +363,11 @@ impl<'a> Converter<'a> {
         span: Span,
         ir_func: &mut ir::structs::Function,
     ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let ty = self.get_type(&init.value, scope)?;
+        let ty = match self.get_type(&init.value, scope)? {
+            // `없음은 빈 주소예요.`: an address to nothing, the void* of C
+            Type::Null => Type::Address(Box::new(Type::Null)),
+            ty => ty,
+        };
         let mut instrs: Vec<ir::structs::Instr> = vec![];
         let src = self.convert_expr(&init.value, scope, ir_func, &mut instrs)?;
 

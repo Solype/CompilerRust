@@ -23,7 +23,7 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
   `addss`, …, arguments and result in `xmm`), `바꾸다` (`cvtsi2sd`, `cvttsd2si`, `movsxd`, …),
   `mov` sized by the variable (4-byte `짧은 정수`), comparisons (`cmp` / `ucomisd`, then
   `setcc`), labels and jumps (`jmp`, `je` for `JumpIfNot`), so `만약` / `아니면`, `동안`,
-  `세면서`, `그만해요` and `넘어가요`. Every `sample/*.kr` runs except `06_types.kr`.
+  `세면서`, `그만해요` and `넘어가요`. Every `sample/*.kr` runs.
 - **Tests of the samples**: `./run_samples.sh [file.kr...]` compiles, links and runs each
   `sample/*.kr`, compares its exit code (and its stdout with `sample/*.out`) with the expected
   one, and checks that each `sample/erreurs/*.kr` is refused with code 1.

@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
+          components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
 
       - name: Format
@@ -20,6 +20,10 @@ jobs:
 
       - name: Build
         run: cargo build
+
+      # shortcut: warnings do not fail the job yet (201 today), add -- -D warnings once they are fixed
+      - name: Clippy
+        run: cargo clippy --all-targets
 
       - name: Unit tests
         run: cargo test

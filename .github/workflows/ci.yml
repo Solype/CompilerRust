@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build
+
+      - name: Unit tests
+        run: cargo test
+
+      # compiles, links with gcc and runs every sample/*.kr, and checks that sample/errors/*.kr are refused
+      - name: Samples
+        run: scripts/run_samples.sh

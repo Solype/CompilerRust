@@ -1,12 +1,12 @@
 pub mod file;
-pub mod strtab;
 pub mod section;
+pub mod strtab;
 
 pub use file::*;
 pub use symbols::natural_alignment;
 
-mod packing;
 mod encode;
+mod packing;
 mod symbols;
 
 #[cfg(test)]

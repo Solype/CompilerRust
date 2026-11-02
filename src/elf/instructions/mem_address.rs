@@ -1,5 +1,5 @@
-use super::register::{Register};
 use super::enums::{LabelId, Target};
+use super::register::Register;
 
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(u8)]
@@ -55,7 +55,6 @@ impl Default for MemDisplacement {
 
 #[allow(dead_code)]
 impl MemAddress {
-
     // ==========================================
     // Constructors
     // ==========================================

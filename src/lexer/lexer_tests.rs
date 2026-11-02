@@ -1,8 +1,8 @@
 use super::lexer_error::LexErrorKind::*;
-use super::span::Span;
+use super::lexer_token::LexerTokenKind::{self, *};
 use super::lexer_token::Operator::*;
 use super::lexer_token::Punctuation::*;
-use super::lexer_token::LexerTokenKind::{self, *};
+use super::span::Span;
 use super::tokenize;
 
 /// The kinds of `src`, without the final `Eof`
@@ -41,7 +41,10 @@ fn float_needs_a_digit_after_the_dot() {
     assert_eq!(kinds("-3.25"), [Operator(Minus), Float(3.25)]);
     // `5.` ends a statement, `1..2` is two dots between ints
     assert_eq!(kinds("5."), [Int(5), Punctuation(Dot)]);
-    assert_eq!(kinds("1..2"), [Int(1), Punctuation(Dot), Punctuation(Dot), Int(2)]);
+    assert_eq!(
+        kinds("1..2"),
+        [Int(1), Punctuation(Dot), Punctuation(Dot), Int(2)]
+    );
 }
 
 #[test]

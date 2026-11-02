@@ -44,7 +44,10 @@ impl fmt::Display for PostParseErrorKind {
             Self::ShortType => write!(f, "only 정수 and 소수 can be 짧은"),
             Self::UnsignedType => write!(f, "only 정수 can be 부호 없는"),
             Self::ConstantWithoutValue(name) => {
-                write!(f, "the constant '{name}' needs a value where it is declared")
+                write!(
+                    f,
+                    "the constant '{name}' needs a value where it is declared"
+                )
             }
             Self::DeclaredOutOfCount(name) => {
                 write!(f, "'{name}' can only be declared by a 세면서 loop")

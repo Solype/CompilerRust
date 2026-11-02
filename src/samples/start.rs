@@ -1,5 +1,5 @@
-use crate::elf::instructions::{register::*, *};
 use super::helpers::*;
+use crate::elf::instructions::{register::*, *};
 
 /// Entry point: exit(42)
 pub fn start() -> Vec<Instruction> {

@@ -55,8 +55,20 @@ pub fn bin(op: BinOp, dst: Operand, src: Operand, size: Option<Size>) -> Instruc
     Instruction::Binary { op, dst, src, size }
 }
 
-pub fn complex(op: ComplexBinOp, dst: Operand, src: Operand, extra: Option<Operand>, size: Option<Size>) -> Instruction {
-    Instruction::ComplexBinary { op, dst, src, extra, size }
+pub fn complex(
+    op: ComplexBinOp,
+    dst: Operand,
+    src: Operand,
+    extra: Option<Operand>,
+    size: Option<Size>,
+) -> Instruction {
+    Instruction::ComplexBinary {
+        op,
+        dst,
+        src,
+        extra,
+        size,
+    }
 }
 
 pub fn unary(op: UnaryOp, dst: Operand, size: Option<Size>) -> Instruction {
@@ -85,8 +97,20 @@ pub fn convert(op: ConvOp, dst: Register, src: Operand, size: Option<Size>) -> I
 }
 
 /// `src_size` is the source size, `size` the destination size
-pub fn extend(op: ExtendOp, dst: Register, src: Operand, src_size: Option<Size>, size: Option<Size>) -> Instruction {
-    Instruction::Extend { op, dst, src, src_size, size }
+pub fn extend(
+    op: ExtendOp,
+    dst: Register,
+    src: Operand,
+    src_size: Option<Size>,
+    size: Option<Size>,
+) -> Instruction {
+    Instruction::Extend {
+        op,
+        dst,
+        src,
+        src_size,
+        size,
+    }
 }
 
 pub fn shift(op: ShiftOp, dst: Operand, src: Operand, size: Option<Size>) -> Instruction {
@@ -102,7 +126,11 @@ pub fn setcc(cc: ConditionCode, dst: Operand) -> Instruction {
 }
 
 pub fn lea(dst: Register, src: MemAddress, size: Option<Size>) -> Instruction {
-    Instruction::Lea { dst, src: mem(src), size }
+    Instruction::Lea {
+        dst,
+        src: mem(src),
+        size,
+    }
 }
 
 pub fn string(op: StringOp, size: Option<Size>) -> Instruction {
@@ -114,7 +142,10 @@ pub fn sys(op: SysOp) -> Instruction {
 }
 
 pub fn prefixed(prefix: Vec<Prefix>, ins: Instruction) -> Instruction {
-    Instruction::Prefix { prefix, ins: Box::new(ins) }
+    Instruction::Prefix {
+        prefix,
+        ins: Box::new(ins),
+    }
 }
 
 pub fn label(id: LabelId) -> Instruction {
@@ -123,7 +154,10 @@ pub fn label(id: LabelId) -> Instruction {
 
 /// `target`: a symbol name (`&str`) or a `LabelId`
 pub fn ctrl(op: CtrlOp, target: impl Into<Operand>) -> Instruction {
-    Instruction::Ctrl { op, target: target.into() }
+    Instruction::Ctrl {
+        op,
+        target: target.into(),
+    }
 }
 
 pub fn jmp(target: impl Into<Operand>) -> Instruction {
@@ -140,18 +174,30 @@ pub fn call(target: impl Into<Operand>) -> Instruction {
 
 /// `jmp reg` / `jmp [mem]`
 pub fn jmp_indirect(target: Operand) -> Instruction {
-    Instruction::Ctrl { op: CtrlOp::Jmp, target }
+    Instruction::Ctrl {
+        op: CtrlOp::Jmp,
+        target,
+    }
 }
 
 /// `call reg` / `call [mem]`
 pub fn call_indirect(target: Operand) -> Instruction {
-    Instruction::Ctrl { op: CtrlOp::Call, target }
+    Instruction::Ctrl {
+        op: CtrlOp::Call,
+        target,
+    }
 }
 
 pub fn ret() -> Instruction {
-    Instruction::Ctrl { op: CtrlOp::Ret, target: Operand::NoOperand }
+    Instruction::Ctrl {
+        op: CtrlOp::Ret,
+        target: Operand::NoOperand,
+    }
 }
 
 pub fn iret() -> Instruction {
-    Instruction::Ctrl { op: CtrlOp::IRet, target: Operand::NoOperand }
+    Instruction::Ctrl {
+        op: CtrlOp::IRet,
+        target: Operand::NoOperand,
+    }
 }

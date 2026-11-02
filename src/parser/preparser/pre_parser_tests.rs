@@ -418,7 +418,9 @@ fn sentence_declaration_names() {
 fn every_name_of_the_prototype() {
     assert_names(
         include_str!("../../../Proto.kr"),
-        &["형식", "가", "나", "끝", "결과", "수", "개수", "숫자", "평균"],
+        &[
+            "형식", "가", "나", "끝", "결과", "수", "개수", "숫자", "평균",
+        ],
     );
 }
 

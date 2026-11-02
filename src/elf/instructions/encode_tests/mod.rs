@@ -32,13 +32,21 @@ mod unary;
 const DEFAULT_SIZE: Size = Size::U64;
 
 fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02X}")).collect::<Vec<_>>().join(" ")
+    bytes
+        .iter()
+        .map(|b| format!("{b:02X}"))
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Text of a case's `///` comment (the instruction in assembly).
 fn asm_from_attrs(attrs: &[&str]) -> Option<String> {
     attrs.iter().find_map(|a| {
-        let rest = a.strip_prefix("doc")?.trim_start().strip_prefix('=')?.trim();
+        let rest = a
+            .strip_prefix("doc")?
+            .trim_start()
+            .strip_prefix('=')?
+            .trim();
         // `stringify!` turns the comment into a raw string: `r" add bl, al"`
         let rest = rest.trim_start_matches('r').trim_matches('#');
         Some(rest.trim_matches('"').trim().to_string())
@@ -51,12 +59,20 @@ fn diff_lines(got: &[u8], reference: &[u8]) -> (String, String) {
     let (mut bytes, mut marks) = (Vec::new(), Vec::new());
     for (i, b) in got.iter().enumerate() {
         let same = reference.get(i) == Some(b);
-        bytes.push(if same || !color { format!("{b:02X}") } else { format!("\x1b[1;31m{b:02X}\x1b[0m") });
+        bytes.push(if same || !color {
+            format!("{b:02X}")
+        } else {
+            format!("\x1b[1;31m{b:02X}\x1b[0m")
+        });
         marks.push(if same { "  " } else { "^^" });
     }
     // expected bytes that are missing
     for _ in got.len()..reference.len() {
-        bytes.push(if color { "\x1b[2m--\x1b[0m".into() } else { "--".into() });
+        bytes.push(if color {
+            "\x1b[2m--\x1b[0m".into()
+        } else {
+            "--".into()
+        });
         marks.push("^^");
     }
     (bytes.join(" "), marks.join(" ").trim_end().to_string())

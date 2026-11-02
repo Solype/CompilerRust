@@ -1,4 +1,3 @@
-
 #[allow(dead_code)]
 pub struct SystemInfo {
     pub arch: String,
@@ -23,9 +22,9 @@ pub fn get_system_info() -> SystemInfo {
 #[allow(dead_code)]
 pub fn get_machine(arch: &str) -> u16 {
     match arch {
-        "x86_64" => 0x3E, // EM_X86_64
+        "x86_64" => 0x3E,       // EM_X86_64
         "x86" | "i686" => 0x03, // EM_386
-        "aarch64" => 0xB7, // EM_AARCH64
+        "aarch64" => 0xB7,      // EM_AARCH64
         _ => 0,
     }
 }

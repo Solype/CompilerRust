@@ -3,33 +3,33 @@ use elf_derive::BinaryLogicSize;
 
 use std::fmt::Debug;
 
-
 use super::phdr;
 use super::shdr;
 
 #[derive(BinaryLogicSize, Debug, Clone, Copy)]
 pub struct ElfEhdr<T>
-where T: Copy + ElfWritable + Debug + Default
+where
+    T: Copy + ElfWritable + Debug + Default,
 {
-    pub e_ident: [u8; 16],   // ELF identification (magic, class, endianness, version, ABI)
+    pub e_ident: [u8; 16], // ELF identification (magic, class, endianness, version, ABI)
 
-    pub e_type: u16,         // Object file type (ET_REL, ET_EXEC, ET_DYN, etc.)
-    pub e_machine: u16,      // Target architecture (e.g., EM_X86_64)
-    pub e_version: u32,      // ELF version (usually 1)
+    pub e_type: u16,    // Object file type (ET_REL, ET_EXEC, ET_DYN, etc.)
+    pub e_machine: u16, // Target architecture (e.g., EM_X86_64)
+    pub e_version: u32, // ELF version (usually 1)
 
-    pub e_entry: T,          // Entry point virtual address (0 for relocatable files)
-    pub e_phoff: T,          // Offset to program header table (in bytes)
-    pub e_shoff: T,          // Offset to section header table (in bytes)
+    pub e_entry: T, // Entry point virtual address (0 for relocatable files)
+    pub e_phoff: T, // Offset to program header table (in bytes)
+    pub e_shoff: T, // Offset to section header table (in bytes)
 
-    pub e_flags: u32,        // Processor-specific flags
+    pub e_flags: u32, // Processor-specific flags
 
-    pub e_ehsize: u16,       // ELF header size (sizeof ElfEhdr)
-    pub e_phentsize: u16,    // Size of one program header entry
-    pub e_phnum: u16,        // Number of program header entries
+    pub e_ehsize: u16,    // ELF header size (sizeof ElfEhdr)
+    pub e_phentsize: u16, // Size of one program header entry
+    pub e_phnum: u16,     // Number of program header entries
 
-    pub e_shentsize: u16,    // Size of one section header entry
-    pub e_shnum: u16,        // Number of section header entries
-    pub e_shstrndx: u16,     // Index of the section name string table (.shstrtab)
+    pub e_shentsize: u16, // Size of one section header entry
+    pub e_shnum: u16,     // Number of section header entries
+    pub e_shstrndx: u16,  // Index of the section name string table (.shstrtab)
 }
 
 impl<T> ElfWritable for ElfEhdr<T>
@@ -64,8 +64,9 @@ where
     }
 }
 
-impl <T> Default for ElfEhdr<T>
-where T: Copy + ElfWritable + Debug + Default
+impl<T> Default for ElfEhdr<T>
+where
+    T: Copy + ElfWritable + Debug + Default,
 {
     fn default() -> Self {
         let (bit, machine): (u8, u16) = match size_of::<T>() {
@@ -109,11 +110,11 @@ pub enum ElfClass {
 #[allow(dead_code)]
 #[repr(u16)]
 pub enum ElfType {
-    None = 0,        // ET_NONE
-    Rel = 1,         // ET_REL
-    Exec = 2,        // ET_EXEC
-    Dyn = 3,         // ET_DYN
-    Core = 4,        // ET_CORE
+    None = 0, // ET_NONE
+    Rel = 1,  // ET_REL
+    Exec = 2, // ET_EXEC
+    Dyn = 3,  // ET_DYN
+    Core = 4, // ET_CORE
     // OS-specific
     LoOs = 0xfe00,
     HiOs = 0xfeff,

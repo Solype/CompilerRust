@@ -13,28 +13,46 @@ fn encode(dst: Register, src: Operand, size: Size) -> Vec<u8> {
 
 #[test]
 fn reg64() {
-    assert_eq!(encode(XMM0, Operand::Reg(RAX), Size::U64), [0xF2, 0x48, 0x0F, 0x2A, 0xC0]);
+    assert_eq!(
+        encode(XMM0, Operand::Reg(RAX), Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2A, 0xC0]
+    );
 }
 
 #[test]
 fn reg32_has_no_rex() {
-    assert_eq!(encode(XMM0, Operand::Reg(RAX), Size::U32), [0xF2, 0x0F, 0x2A, 0xC0]);
+    assert_eq!(
+        encode(XMM0, Operand::Reg(RAX), Size::U32),
+        [0xF2, 0x0F, 0x2A, 0xC0]
+    );
 }
 
 #[test]
 fn extended_xmm_sets_rex_r() {
-    assert_eq!(encode(XMM15, Operand::Reg(RDI), Size::U64), [0xF2, 0x4C, 0x0F, 0x2A, 0xFF]);
+    assert_eq!(
+        encode(XMM15, Operand::Reg(RDI), Size::U64),
+        [0xF2, 0x4C, 0x0F, 0x2A, 0xFF]
+    );
 }
 
 #[test]
 fn extended_gpr_sets_rex_b() {
-    assert_eq!(encode(XMM3, Operand::Reg(R8), Size::U64), [0xF2, 0x49, 0x0F, 0x2A, 0xD8]);
-    assert_eq!(encode(XMM3, Operand::Reg(R8), Size::U32), [0xF2, 0x41, 0x0F, 0x2A, 0xD8]);
+    assert_eq!(
+        encode(XMM3, Operand::Reg(R8), Size::U64),
+        [0xF2, 0x49, 0x0F, 0x2A, 0xD8]
+    );
+    assert_eq!(
+        encode(XMM3, Operand::Reg(R8), Size::U32),
+        [0xF2, 0x41, 0x0F, 0x2A, 0xD8]
+    );
 }
 
 #[test]
 fn extended_both() {
-    assert_eq!(encode(XMM8, Operand::Reg(R15), Size::U64), [0xF2, 0x4D, 0x0F, 0x2A, 0xC7]);
+    assert_eq!(
+        encode(XMM8, Operand::Reg(R15), Size::U64),
+        [0xF2, 0x4D, 0x0F, 0x2A, 0xC7]
+    );
 }
 
 #[test]
@@ -50,33 +68,51 @@ fn prefix_comes_before_rex() {
 
 #[test]
 fn mem64() {
-    assert_eq!(encode(XMM1, mem(at(RBX)), Size::U64), [0xF2, 0x48, 0x0F, 0x2A, 0x0B]);
+    assert_eq!(
+        encode(XMM1, mem(at(RBX)), Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2A, 0x0B]
+    );
 }
 
 #[test]
 fn mem32() {
-    assert_eq!(encode(XMM1, mem(at(RBX)), Size::U32), [0xF2, 0x0F, 0x2A, 0x0B]);
+    assert_eq!(
+        encode(XMM1, mem(at(RBX)), Size::U32),
+        [0xF2, 0x0F, 0x2A, 0x0B]
+    );
 }
 
 #[test]
 fn mem_with_disp8() {
     let src = Operand::MemoryAddress(MemAddress::new().base(RBP).disp(8));
-    assert_eq!(encode(XMM1, src, Size::U64), [0xF2, 0x48, 0x0F, 0x2A, 0x4D, 0x08]);
+    assert_eq!(
+        encode(XMM1, src, Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2A, 0x4D, 0x08]
+    );
 }
 
 #[test]
 fn mem_rsp_base_needs_sib() {
-    assert_eq!(encode(XMM2, mem(at(RSP)), Size::U64), [0xF2, 0x48, 0x0F, 0x2A, 0x14, 0x24]);
+    assert_eq!(
+        encode(XMM2, mem(at(RSP)), Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2A, 0x14, 0x24]
+    );
 }
 
 #[test]
 fn mem_extended_xmm() {
-    assert_eq!(encode(XMM9, mem(at(RAX)), Size::U64), [0xF2, 0x4C, 0x0F, 0x2A, 0x08]);
+    assert_eq!(
+        encode(XMM9, mem(at(RAX)), Size::U64),
+        [0xF2, 0x4C, 0x0F, 0x2A, 0x08]
+    );
 }
 
 #[test]
 fn mem_extended_base() {
-    assert_eq!(encode(XMM1, mem(at(R12)), Size::U64), [0xF2, 0x49, 0x0F, 0x2A, 0x0C, 0x24]);
+    assert_eq!(
+        encode(XMM1, mem(at(R12)), Size::U64),
+        [0xF2, 0x49, 0x0F, 0x2A, 0x0C, 0x24]
+    );
 }
 
 #[test]
@@ -84,7 +120,10 @@ fn rip_relative_symbol_emits_relocation() {
     let src = Operand::MemoryAddress(MemAddress::symbol("my_float"));
     let info = encode_conversion(ConvOp::Cvtsi2sd, &XMM2, &src, Size::U64);
 
-    assert_eq!(info.data, [0xF2, 0x48, 0x0F, 0x2A, 0x15, 0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(
+        info.data,
+        [0xF2, 0x48, 0x0F, 0x2A, 0x15, 0x00, 0x00, 0x00, 0x00]
+    );
     assert_eq!(info.relocations.len(), 1);
     assert_eq!(info.relocations[0].target, "my_float");
     assert_eq!(info.relocations[0].offset, 5);
@@ -96,14 +135,24 @@ fn rip_relative_symbol_emits_relocation() {
 
 #[test]
 fn instruction_uses_default_size() {
-    let ins = Instruction::Convert { op: ConvOp::Cvtsi2sd, dst: XMM0, src: Operand::Reg(RAX), size: None };
+    let ins = Instruction::Convert {
+        op: ConvOp::Cvtsi2sd,
+        dst: XMM0,
+        src: Operand::Reg(RAX),
+        size: None,
+    };
     assert_eq!(ins.encode(Size::U64).data, [0xF2, 0x48, 0x0F, 0x2A, 0xC0]);
     assert_eq!(ins.encode(Size::U32).data, [0xF2, 0x0F, 0x2A, 0xC0]);
 }
 
 #[test]
 fn instruction_explicit_size_wins() {
-    let ins = Instruction::Convert { op: ConvOp::Cvtsi2sd, dst: XMM0, src: Operand::Reg(RAX), size: Some(Size::U32) };
+    let ins = Instruction::Convert {
+        op: ConvOp::Cvtsi2sd,
+        dst: XMM0,
+        src: Operand::Reg(RAX),
+        size: Some(Size::U32),
+    };
     assert_eq!(ins.encode(Size::U64).data, [0xF2, 0x0F, 0x2A, 0xC0]);
 }
 
@@ -117,59 +166,95 @@ fn encode_ss(dst: Register, src: Operand, size: Size) -> Vec<u8> {
 
 #[test]
 fn ss_reg64() {
-    assert_eq!(encode_ss(XMM0, Operand::Reg(RAX), Size::U64), [0xF3, 0x48, 0x0F, 0x2A, 0xC0]);
+    assert_eq!(
+        encode_ss(XMM0, Operand::Reg(RAX), Size::U64),
+        [0xF3, 0x48, 0x0F, 0x2A, 0xC0]
+    );
 }
 
 #[test]
 fn ss_reg32_has_no_rex() {
-    assert_eq!(encode_ss(XMM0, Operand::Reg(RAX), Size::U32), [0xF3, 0x0F, 0x2A, 0xC0]);
+    assert_eq!(
+        encode_ss(XMM0, Operand::Reg(RAX), Size::U32),
+        [0xF3, 0x0F, 0x2A, 0xC0]
+    );
 }
 
 #[test]
 fn ss_extended_xmm_sets_rex_r() {
-    assert_eq!(encode_ss(XMM15, Operand::Reg(RDI), Size::U64), [0xF3, 0x4C, 0x0F, 0x2A, 0xFF]);
+    assert_eq!(
+        encode_ss(XMM15, Operand::Reg(RDI), Size::U64),
+        [0xF3, 0x4C, 0x0F, 0x2A, 0xFF]
+    );
 }
 
 #[test]
 fn ss_extended_gpr_sets_rex_b() {
-    assert_eq!(encode_ss(XMM3, Operand::Reg(R8), Size::U64), [0xF3, 0x49, 0x0F, 0x2A, 0xD8]);
-    assert_eq!(encode_ss(XMM3, Operand::Reg(R8), Size::U32), [0xF3, 0x41, 0x0F, 0x2A, 0xD8]);
+    assert_eq!(
+        encode_ss(XMM3, Operand::Reg(R8), Size::U64),
+        [0xF3, 0x49, 0x0F, 0x2A, 0xD8]
+    );
+    assert_eq!(
+        encode_ss(XMM3, Operand::Reg(R8), Size::U32),
+        [0xF3, 0x41, 0x0F, 0x2A, 0xD8]
+    );
 }
 
 #[test]
 fn ss_extended_both() {
-    assert_eq!(encode_ss(XMM8, Operand::Reg(R15), Size::U64), [0xF3, 0x4D, 0x0F, 0x2A, 0xC7]);
+    assert_eq!(
+        encode_ss(XMM8, Operand::Reg(R15), Size::U64),
+        [0xF3, 0x4D, 0x0F, 0x2A, 0xC7]
+    );
 }
 
 #[test]
 fn ss_mem64() {
-    assert_eq!(encode_ss(XMM1, mem(at(RBX)), Size::U64), [0xF3, 0x48, 0x0F, 0x2A, 0x0B]);
+    assert_eq!(
+        encode_ss(XMM1, mem(at(RBX)), Size::U64),
+        [0xF3, 0x48, 0x0F, 0x2A, 0x0B]
+    );
 }
 
 #[test]
 fn ss_mem32() {
-    assert_eq!(encode_ss(XMM1, mem(at(RBX)), Size::U32), [0xF3, 0x0F, 0x2A, 0x0B]);
+    assert_eq!(
+        encode_ss(XMM1, mem(at(RBX)), Size::U32),
+        [0xF3, 0x0F, 0x2A, 0x0B]
+    );
 }
 
 #[test]
 fn ss_mem_with_disp8() {
     let src = Operand::MemoryAddress(MemAddress::new().base(RBP).disp(8));
-    assert_eq!(encode_ss(XMM1, src, Size::U64), [0xF3, 0x48, 0x0F, 0x2A, 0x4D, 0x08]);
+    assert_eq!(
+        encode_ss(XMM1, src, Size::U64),
+        [0xF3, 0x48, 0x0F, 0x2A, 0x4D, 0x08]
+    );
 }
 
 #[test]
 fn ss_mem_rsp_base_needs_sib() {
-    assert_eq!(encode_ss(XMM2, mem(at(RSP)), Size::U64), [0xF3, 0x48, 0x0F, 0x2A, 0x14, 0x24]);
+    assert_eq!(
+        encode_ss(XMM2, mem(at(RSP)), Size::U64),
+        [0xF3, 0x48, 0x0F, 0x2A, 0x14, 0x24]
+    );
 }
 
 #[test]
 fn ss_mem_extended_xmm() {
-    assert_eq!(encode_ss(XMM9, mem(at(RAX)), Size::U64), [0xF3, 0x4C, 0x0F, 0x2A, 0x08]);
+    assert_eq!(
+        encode_ss(XMM9, mem(at(RAX)), Size::U64),
+        [0xF3, 0x4C, 0x0F, 0x2A, 0x08]
+    );
 }
 
 #[test]
 fn ss_mem_extended_base() {
-    assert_eq!(encode_ss(XMM1, mem(at(R12)), Size::U64), [0xF3, 0x49, 0x0F, 0x2A, 0x0C, 0x24]);
+    assert_eq!(
+        encode_ss(XMM1, mem(at(R12)), Size::U64),
+        [0xF3, 0x49, 0x0F, 0x2A, 0x0C, 0x24]
+    );
 }
 
 #[test]
@@ -177,7 +262,10 @@ fn ss_rip_relative_symbol_emits_relocation() {
     let src = Operand::MemoryAddress(MemAddress::symbol("my_float"));
     let info = encode_conversion(ConvOp::Cvtsi2ss, &XMM2, &src, Size::U64);
 
-    assert_eq!(info.data, [0xF3, 0x48, 0x0F, 0x2A, 0x15, 0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(
+        info.data,
+        [0xF3, 0x48, 0x0F, 0x2A, 0x15, 0x00, 0x00, 0x00, 0x00]
+    );
     assert_eq!(info.relocations.len(), 1);
     assert_eq!(info.relocations[0].target, "my_float");
     assert_eq!(info.relocations[0].offset, 5);
@@ -205,26 +293,47 @@ fn enc(op: ConvOp, dst: Register, src: Operand, size: Size) -> Vec<u8> {
 
 #[test]
 fn cvttsd2si_reg() {
-    assert_eq!(enc(ConvOp::Cvttsd2si, RAX, Operand::Reg(XMM0), Size::U64), [0xF2, 0x48, 0x0F, 0x2C, 0xC0]);
-    assert_eq!(enc(ConvOp::Cvttsd2si, RAX, Operand::Reg(XMM0), Size::U32), [0xF2, 0x0F, 0x2C, 0xC0]);
+    assert_eq!(
+        enc(ConvOp::Cvttsd2si, RAX, Operand::Reg(XMM0), Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2C, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvttsd2si, RAX, Operand::Reg(XMM0), Size::U32),
+        [0xF2, 0x0F, 0x2C, 0xC0]
+    );
 }
 
 #[test]
 fn cvttsd2si_extended_gpr_sets_rex_r() {
-    assert_eq!(enc(ConvOp::Cvttsd2si, R15, Operand::Reg(XMM8), Size::U64), [0xF2, 0x4D, 0x0F, 0x2C, 0xF8]);
+    assert_eq!(
+        enc(ConvOp::Cvttsd2si, R15, Operand::Reg(XMM8), Size::U64),
+        [0xF2, 0x4D, 0x0F, 0x2C, 0xF8]
+    );
 }
 
 #[test]
 fn cvttsd2si_extended_xmm_sets_rex_b() {
-    assert_eq!(enc(ConvOp::Cvttsd2si, RDI, Operand::Reg(XMM15), Size::U64), [0xF2, 0x49, 0x0F, 0x2C, 0xFF]);
+    assert_eq!(
+        enc(ConvOp::Cvttsd2si, RDI, Operand::Reg(XMM15), Size::U64),
+        [0xF2, 0x49, 0x0F, 0x2C, 0xFF]
+    );
 }
 
 #[test]
 fn cvttsd2si_mem() {
-    assert_eq!(enc(ConvOp::Cvttsd2si, RCX, mem(at(RBX)), Size::U64), [0xF2, 0x48, 0x0F, 0x2C, 0x0B]);
-    assert_eq!(enc(ConvOp::Cvttsd2si, RDX, mem(at(RSP)), Size::U64), [0xF2, 0x48, 0x0F, 0x2C, 0x14, 0x24]);
+    assert_eq!(
+        enc(ConvOp::Cvttsd2si, RCX, mem(at(RBX)), Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2C, 0x0B]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvttsd2si, RDX, mem(at(RSP)), Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2C, 0x14, 0x24]
+    );
     let src = Operand::MemoryAddress(MemAddress::new().base(RBP).disp(8));
-    assert_eq!(enc(ConvOp::Cvttsd2si, R9, src, Size::U64), [0xF2, 0x4C, 0x0F, 0x2C, 0x4D, 0x08]);
+    assert_eq!(
+        enc(ConvOp::Cvttsd2si, R9, src, Size::U64),
+        [0xF2, 0x4C, 0x0F, 0x2C, 0x4D, 0x08]
+    );
 }
 
 #[test]
@@ -232,7 +341,10 @@ fn cvttsd2si_rip_relative_symbol_emits_relocation() {
     let src = Operand::MemoryAddress(MemAddress::symbol("my_float"));
     let info = encode_conversion(ConvOp::Cvttsd2si, &RAX, &src, Size::U64);
 
-    assert_eq!(info.data, [0xF2, 0x48, 0x0F, 0x2C, 0x05, 0x00, 0x00, 0x00, 0x00]);
+    assert_eq!(
+        info.data,
+        [0xF2, 0x48, 0x0F, 0x2C, 0x05, 0x00, 0x00, 0x00, 0x00]
+    );
     assert_eq!(info.relocations.len(), 1);
     assert_eq!(info.relocations[0].target, "my_float");
     assert_eq!(info.relocations[0].offset, 5);
@@ -240,26 +352,62 @@ fn cvttsd2si_rip_relative_symbol_emits_relocation() {
 
 #[test]
 fn cvttss2si() {
-    assert_eq!(enc(ConvOp::Cvttss2si, RAX, Operand::Reg(XMM0), Size::U64), [0xF3, 0x48, 0x0F, 0x2C, 0xC0]);
-    assert_eq!(enc(ConvOp::Cvttss2si, RAX, Operand::Reg(XMM0), Size::U32), [0xF3, 0x0F, 0x2C, 0xC0]);
-    assert_eq!(enc(ConvOp::Cvttss2si, R15, Operand::Reg(XMM8), Size::U64), [0xF3, 0x4D, 0x0F, 0x2C, 0xF8]);
-    assert_eq!(enc(ConvOp::Cvttss2si, RCX, mem(at(RBX)), Size::U32), [0xF3, 0x0F, 0x2C, 0x0B]);
+    assert_eq!(
+        enc(ConvOp::Cvttss2si, RAX, Operand::Reg(XMM0), Size::U64),
+        [0xF3, 0x48, 0x0F, 0x2C, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvttss2si, RAX, Operand::Reg(XMM0), Size::U32),
+        [0xF3, 0x0F, 0x2C, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvttss2si, R15, Operand::Reg(XMM8), Size::U64),
+        [0xF3, 0x4D, 0x0F, 0x2C, 0xF8]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvttss2si, RCX, mem(at(RBX)), Size::U32),
+        [0xF3, 0x0F, 0x2C, 0x0B]
+    );
 }
 
 #[test]
 fn cvtsd2si() {
-    assert_eq!(enc(ConvOp::Cvtsd2si, RAX, Operand::Reg(XMM0), Size::U64), [0xF2, 0x48, 0x0F, 0x2D, 0xC0]);
-    assert_eq!(enc(ConvOp::Cvtsd2si, RAX, Operand::Reg(XMM0), Size::U32), [0xF2, 0x0F, 0x2D, 0xC0]);
-    assert_eq!(enc(ConvOp::Cvtsd2si, R12, Operand::Reg(XMM9), Size::U64), [0xF2, 0x4D, 0x0F, 0x2D, 0xE1]);
-    assert_eq!(enc(ConvOp::Cvtsd2si, RCX, mem(at(RBX)), Size::U64), [0xF2, 0x48, 0x0F, 0x2D, 0x0B]);
+    assert_eq!(
+        enc(ConvOp::Cvtsd2si, RAX, Operand::Reg(XMM0), Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2D, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtsd2si, RAX, Operand::Reg(XMM0), Size::U32),
+        [0xF2, 0x0F, 0x2D, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtsd2si, R12, Operand::Reg(XMM9), Size::U64),
+        [0xF2, 0x4D, 0x0F, 0x2D, 0xE1]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtsd2si, RCX, mem(at(RBX)), Size::U64),
+        [0xF2, 0x48, 0x0F, 0x2D, 0x0B]
+    );
 }
 
 #[test]
 fn cvtss2si() {
-    assert_eq!(enc(ConvOp::Cvtss2si, RAX, Operand::Reg(XMM0), Size::U64), [0xF3, 0x48, 0x0F, 0x2D, 0xC0]);
-    assert_eq!(enc(ConvOp::Cvtss2si, RAX, Operand::Reg(XMM0), Size::U32), [0xF3, 0x0F, 0x2D, 0xC0]);
-    assert_eq!(enc(ConvOp::Cvtss2si, R12, Operand::Reg(XMM9), Size::U64), [0xF3, 0x4D, 0x0F, 0x2D, 0xE1]);
-    assert_eq!(enc(ConvOp::Cvtss2si, RCX, mem(at(RBX)), Size::U32), [0xF3, 0x0F, 0x2D, 0x0B]);
+    assert_eq!(
+        enc(ConvOp::Cvtss2si, RAX, Operand::Reg(XMM0), Size::U64),
+        [0xF3, 0x48, 0x0F, 0x2D, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtss2si, RAX, Operand::Reg(XMM0), Size::U32),
+        [0xF3, 0x0F, 0x2D, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtss2si, R12, Operand::Reg(XMM9), Size::U64),
+        [0xF3, 0x4D, 0x0F, 0x2D, 0xE1]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtss2si, RCX, mem(at(RBX)), Size::U32),
+        [0xF3, 0x0F, 0x2D, 0x0B]
+    );
 }
 
 // ==========================================
@@ -268,15 +416,30 @@ fn cvtss2si() {
 
 #[test]
 fn cvtsd2ss_reg() {
-    assert_eq!(enc(ConvOp::Cvtsd2ss, XMM0, Operand::Reg(XMM1), Size::U64), [0xF2, 0x0F, 0x5A, 0xC1]);
-    assert_eq!(enc(ConvOp::Cvtsd2ss, XMM8, Operand::Reg(XMM15), Size::U64), [0xF2, 0x45, 0x0F, 0x5A, 0xC7]);
-    assert_eq!(enc(ConvOp::Cvtsd2ss, XMM2, Operand::Reg(XMM9), Size::U64), [0xF2, 0x41, 0x0F, 0x5A, 0xD1]);
+    assert_eq!(
+        enc(ConvOp::Cvtsd2ss, XMM0, Operand::Reg(XMM1), Size::U64),
+        [0xF2, 0x0F, 0x5A, 0xC1]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtsd2ss, XMM8, Operand::Reg(XMM15), Size::U64),
+        [0xF2, 0x45, 0x0F, 0x5A, 0xC7]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtsd2ss, XMM2, Operand::Reg(XMM9), Size::U64),
+        [0xF2, 0x41, 0x0F, 0x5A, 0xD1]
+    );
 }
 
 #[test]
 fn cvtsd2ss_mem() {
-    assert_eq!(enc(ConvOp::Cvtsd2ss, XMM1, mem(at(RBX)), Size::U64), [0xF2, 0x0F, 0x5A, 0x0B]);
-    assert_eq!(enc(ConvOp::Cvtsd2ss, XMM1, mem(at(R12)), Size::U64), [0xF2, 0x41, 0x0F, 0x5A, 0x0C, 0x24]);
+    assert_eq!(
+        enc(ConvOp::Cvtsd2ss, XMM1, mem(at(RBX)), Size::U64),
+        [0xF2, 0x0F, 0x5A, 0x0B]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtsd2ss, XMM1, mem(at(R12)), Size::U64),
+        [0xF2, 0x41, 0x0F, 0x5A, 0x0C, 0x24]
+    );
 }
 
 #[test]
@@ -292,15 +455,30 @@ fn cvtsd2ss_rip_relative_symbol_emits_relocation() {
 
 #[test]
 fn cvtss2sd_reg() {
-    assert_eq!(enc(ConvOp::Cvtss2sd, XMM0, Operand::Reg(XMM1), Size::U64), [0xF3, 0x0F, 0x5A, 0xC1]);
-    assert_eq!(enc(ConvOp::Cvtss2sd, XMM8, Operand::Reg(XMM15), Size::U64), [0xF3, 0x45, 0x0F, 0x5A, 0xC7]);
-    assert_eq!(enc(ConvOp::Cvtss2sd, XMM9, Operand::Reg(XMM2), Size::U64), [0xF3, 0x44, 0x0F, 0x5A, 0xCA]);
+    assert_eq!(
+        enc(ConvOp::Cvtss2sd, XMM0, Operand::Reg(XMM1), Size::U64),
+        [0xF3, 0x0F, 0x5A, 0xC1]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtss2sd, XMM8, Operand::Reg(XMM15), Size::U64),
+        [0xF3, 0x45, 0x0F, 0x5A, 0xC7]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtss2sd, XMM9, Operand::Reg(XMM2), Size::U64),
+        [0xF3, 0x44, 0x0F, 0x5A, 0xCA]
+    );
 }
 
 #[test]
 fn cvtss2sd_mem() {
-    assert_eq!(enc(ConvOp::Cvtss2sd, XMM1, mem(at(RBX)), Size::U64), [0xF3, 0x0F, 0x5A, 0x0B]);
-    assert_eq!(enc(ConvOp::Cvtss2sd, XMM1, mem(at(RSP)), Size::U64), [0xF3, 0x0F, 0x5A, 0x0C, 0x24]);
+    assert_eq!(
+        enc(ConvOp::Cvtss2sd, XMM1, mem(at(RBX)), Size::U64),
+        [0xF3, 0x0F, 0x5A, 0x0B]
+    );
+    assert_eq!(
+        enc(ConvOp::Cvtss2sd, XMM1, mem(at(RSP)), Size::U64),
+        [0xF3, 0x0F, 0x5A, 0x0C, 0x24]
+    );
 }
 
 #[test]
@@ -315,7 +493,12 @@ fn cvtss2sd_rip_relative_symbol_emits_relocation() {
 #[test]
 fn float_to_float_ignores_size() {
     // no REX.W even with a 64-bit default size
-    let ins = Instruction::Convert { op: ConvOp::Cvtsd2ss, dst: XMM0, src: Operand::Reg(XMM1), size: None };
+    let ins = Instruction::Convert {
+        op: ConvOp::Cvtsd2ss,
+        dst: XMM0,
+        src: Operand::Reg(XMM1),
+        size: None,
+    };
     assert_eq!(ins.encode(Size::U64).data, [0xF2, 0x0F, 0x5A, 0xC1]);
     assert_eq!(ins.encode(Size::U32).data, [0xF2, 0x0F, 0x5A, 0xC1]);
 }
@@ -327,48 +510,90 @@ fn float_to_float_ignores_size() {
 #[test]
 fn movd_xmm_from_gpr() {
     // movd xmm0, eax / movd xmm9, r10d
-    assert_eq!(enc(ConvOp::Movd, XMM0, Operand::Reg(RAX), Size::U64), [0x66, 0x0F, 0x6E, 0xC0]);
-    assert_eq!(enc(ConvOp::Movd, XMM9, Operand::Reg(R10), Size::U64), [0x66, 0x45, 0x0F, 0x6E, 0xCA]);
+    assert_eq!(
+        enc(ConvOp::Movd, XMM0, Operand::Reg(RAX), Size::U64),
+        [0x66, 0x0F, 0x6E, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Movd, XMM9, Operand::Reg(R10), Size::U64),
+        [0x66, 0x45, 0x0F, 0x6E, 0xCA]
+    );
 }
 
 #[test]
 fn movd_xmm_from_mem() {
     // movd xmm1, dword ptr [rbx+8] / movd xmm12, dword ptr [r9+rcx*4]
-    assert_eq!(enc(ConvOp::Movd, XMM1, mem(at(RBX).disp(8)), Size::U64), [0x66, 0x0F, 0x6E, 0x4B, 0x08]);
+    assert_eq!(
+        enc(ConvOp::Movd, XMM1, mem(at(RBX).disp(8)), Size::U64),
+        [0x66, 0x0F, 0x6E, 0x4B, 0x08]
+    );
     let src = mem(at(R9).index_scale(RCX, Scale::Four));
-    assert_eq!(enc(ConvOp::Movd, XMM12, src, Size::U64), [0x66, 0x45, 0x0F, 0x6E, 0x24, 0x89]);
+    assert_eq!(
+        enc(ConvOp::Movd, XMM12, src, Size::U64),
+        [0x66, 0x45, 0x0F, 0x6E, 0x24, 0x89]
+    );
 }
 
 #[test]
 fn movd_gpr_from_xmm() {
     // movd eax, xmm0 / movd r11d, xmm13
-    assert_eq!(enc(ConvOp::Movd, RAX, Operand::Reg(XMM0), Size::U64), [0x66, 0x0F, 0x7E, 0xC0]);
-    assert_eq!(enc(ConvOp::Movd, R11, Operand::Reg(XMM13), Size::U64), [0x66, 0x45, 0x0F, 0x7E, 0xEB]);
+    assert_eq!(
+        enc(ConvOp::Movd, RAX, Operand::Reg(XMM0), Size::U64),
+        [0x66, 0x0F, 0x7E, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Movd, R11, Operand::Reg(XMM13), Size::U64),
+        [0x66, 0x45, 0x0F, 0x7E, 0xEB]
+    );
 }
 
 #[test]
 fn movq_xmm_from_gpr() {
     // movq xmm0, rax / movq xmm9, r10
-    assert_eq!(enc(ConvOp::Movq, XMM0, Operand::Reg(RAX), Size::U64), [0x66, 0x48, 0x0F, 0x6E, 0xC0]);
-    assert_eq!(enc(ConvOp::Movq, XMM9, Operand::Reg(R10), Size::U64), [0x66, 0x4D, 0x0F, 0x6E, 0xCA]);
+    assert_eq!(
+        enc(ConvOp::Movq, XMM0, Operand::Reg(RAX), Size::U64),
+        [0x66, 0x48, 0x0F, 0x6E, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Movq, XMM9, Operand::Reg(R10), Size::U64),
+        [0x66, 0x4D, 0x0F, 0x6E, 0xCA]
+    );
 }
 
 #[test]
 fn movq_gpr_from_xmm() {
     // movq rax, xmm0 / movq r11, xmm13
-    assert_eq!(enc(ConvOp::Movq, RAX, Operand::Reg(XMM0), Size::U64), [0x66, 0x48, 0x0F, 0x7E, 0xC0]);
-    assert_eq!(enc(ConvOp::Movq, R11, Operand::Reg(XMM13), Size::U64), [0x66, 0x4D, 0x0F, 0x7E, 0xEB]);
+    assert_eq!(
+        enc(ConvOp::Movq, RAX, Operand::Reg(XMM0), Size::U64),
+        [0x66, 0x48, 0x0F, 0x7E, 0xC0]
+    );
+    assert_eq!(
+        enc(ConvOp::Movq, R11, Operand::Reg(XMM13), Size::U64),
+        [0x66, 0x4D, 0x0F, 0x7E, 0xEB]
+    );
 }
 
 #[test]
 fn movq_xmm_from_xmm_or_mem() {
     // movq xmm0, xmm1 / movq xmm10, xmm3 : F3 0F 7E, as GNU as picks
-    assert_eq!(enc(ConvOp::Movq, XMM0, Operand::Reg(XMM1), Size::U64), [0xF3, 0x0F, 0x7E, 0xC1]);
-    assert_eq!(enc(ConvOp::Movq, XMM10, Operand::Reg(XMM3), Size::U64), [0xF3, 0x44, 0x0F, 0x7E, 0xD3]);
+    assert_eq!(
+        enc(ConvOp::Movq, XMM0, Operand::Reg(XMM1), Size::U64),
+        [0xF3, 0x0F, 0x7E, 0xC1]
+    );
+    assert_eq!(
+        enc(ConvOp::Movq, XMM10, Operand::Reg(XMM3), Size::U64),
+        [0xF3, 0x44, 0x0F, 0x7E, 0xD3]
+    );
     // movq xmm1, qword ptr [rbx+8] / movq xmm12, qword ptr [r9+rcx*4]
-    assert_eq!(enc(ConvOp::Movq, XMM1, mem(at(RBX).disp(8)), Size::U64), [0xF3, 0x0F, 0x7E, 0x4B, 0x08]);
+    assert_eq!(
+        enc(ConvOp::Movq, XMM1, mem(at(RBX).disp(8)), Size::U64),
+        [0xF3, 0x0F, 0x7E, 0x4B, 0x08]
+    );
     let src = mem(at(R9).index_scale(RCX, Scale::Four));
-    assert_eq!(enc(ConvOp::Movq, XMM12, src, Size::U64), [0xF3, 0x45, 0x0F, 0x7E, 0x24, 0x89]);
+    assert_eq!(
+        enc(ConvOp::Movq, XMM12, src, Size::U64),
+        [0xF3, 0x45, 0x0F, 0x7E, 0x24, 0x89]
+    );
 }
 
 #[test]
@@ -388,8 +613,18 @@ fn movd_movq_rip_relative_symbol_emits_relocation() {
 fn movd_movq_ignore_size() {
     // the size comes from the op, not from the default size
     for size in [None, Some(Size::U32), Some(Size::U64)] {
-        let movd = Instruction::Convert { op: ConvOp::Movd, dst: XMM0, src: Operand::Reg(RAX), size };
-        let movq = Instruction::Convert { op: ConvOp::Movq, dst: XMM0, src: Operand::Reg(RAX), size };
+        let movd = Instruction::Convert {
+            op: ConvOp::Movd,
+            dst: XMM0,
+            src: Operand::Reg(RAX),
+            size,
+        };
+        let movq = Instruction::Convert {
+            op: ConvOp::Movq,
+            dst: XMM0,
+            src: Operand::Reg(RAX),
+            size,
+        };
         assert_eq!(movd.encode(Size::U64).data, [0x66, 0x0F, 0x6E, 0xC0]);
         assert_eq!(movq.encode(Size::U64).data, [0x66, 0x48, 0x0F, 0x6E, 0xC0]);
     }

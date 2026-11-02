@@ -78,7 +78,10 @@ impl fmt::Display for ConvertErrorKind {
                 "'{name}' is already declared: 외부 functions and main keep their name alone, \
                  whatever their parameters"
             ),
-            Self::AlreadyDeclared(name) => write!(f, "'{name}' is already declared in this block or a block around it"),
+            Self::AlreadyDeclared(name) => write!(
+                f,
+                "'{name}' is already declared in this block or a block around it"
+            ),
             Self::UnknownVariable(name) => write!(f, "'{name}' is not a variable declared here"),
             Self::UnknownFunction { verb, types } => {
                 write!(f, "no function '{verb}' takes the arguments ({types})")

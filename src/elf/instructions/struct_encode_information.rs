@@ -1,6 +1,5 @@
 use super::Relocation;
 
-
 #[derive(Default)]
 pub struct EncodeInformation {
     pub data: Vec<u8>,
@@ -9,7 +8,6 @@ pub struct EncodeInformation {
 
 #[allow(dead_code)]
 impl EncodeInformation {
-
     // ==========================================
     // Constructors
     // ==========================================
@@ -35,7 +33,6 @@ impl EncodeInformation {
     // Data helpers
     // ==========================================
     pub fn push(&mut self, byte: u8) {
-
         self.data.push(byte);
 
         for rel in &mut self.relocations {
@@ -44,7 +41,6 @@ impl EncodeInformation {
     }
 
     pub fn extend(&mut self, bytes: &[u8]) {
-
         self.data.extend(bytes);
 
         let delta = bytes.len() as i32;
@@ -54,7 +50,6 @@ impl EncodeInformation {
     }
 
     pub fn extend_vec(&mut self, bytes: Vec<u8>) {
-
         let delta = bytes.len() as i32;
         self.data.extend(bytes);
         for rel in &mut self.relocations {
@@ -73,23 +68,19 @@ impl EncodeInformation {
     // ==========================================
     // Relocation helpers
     // ==========================================
-    pub fn add_and_shift_relocation(&mut self, mut relocation: Relocation)
-    {
+    pub fn add_and_shift_relocation(&mut self, mut relocation: Relocation) {
         relocation.offset += self.len()
     }
 
-    pub fn add_relocation(&mut self, relocation: Relocation)
-    {
+    pub fn add_relocation(&mut self, relocation: Relocation) {
         self.relocations.push(relocation);
     }
 
-    pub fn extend_relocations(&mut self, relocs: Vec<Relocation>,)
-    {
+    pub fn extend_relocations(&mut self, relocs: Vec<Relocation>) {
         self.relocations.extend(relocs);
     }
 
-    pub fn shift_relocations(&mut self, offset: usize)
-    {
+    pub fn shift_relocations(&mut self, offset: usize) {
         for rel in &mut self.relocations {
             rel.offset += offset;
         }
@@ -99,7 +90,6 @@ impl EncodeInformation {
     // Merge helpers
     // ==========================================
     pub fn append(&mut self, mut other: EncodeInformation) {
-
         let base = self.data.len();
 
         for rel in &mut other.relocations {
@@ -111,9 +101,7 @@ impl EncodeInformation {
     }
 
     pub fn prepend_bytes(&mut self, bytes: &[u8]) {
-
-        let mut new_data =
-            Vec::with_capacity(bytes.len() + self.data.len());
+        let mut new_data = Vec::with_capacity(bytes.len() + self.data.len());
 
         new_data.extend(bytes);
         new_data.extend(&self.data);

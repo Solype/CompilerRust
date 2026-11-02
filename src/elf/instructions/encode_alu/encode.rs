@@ -10,7 +10,12 @@ use super::*;
 
 ///////////////////////////////////////////////////////////////////
 
-fn encode_reg_sym(reg: Register, target: Target, size: Size, enc: &BinaryEncoding) -> EncodeInformation {
+fn encode_reg_sym(
+    reg: Register,
+    target: Target,
+    size: Size,
+    enc: &BinaryEncoding,
+) -> EncodeInformation {
     if !matches!(reg.class, RegisterClass::Gpr) {
         panic!("invalid register");
     }

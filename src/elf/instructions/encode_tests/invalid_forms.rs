@@ -10,13 +10,19 @@ fn encode(ins: Instruction) {
 #[should_panic(expected = "unsupported target for rel32")]
 fn jcc_register_target() {
     // Conditional jumps have no indirect form
-    encode(Instruction::Ctrl { op: CtrlOp::JmpCC(ConditionCode::G), target: reg(RAX) });
+    encode(Instruction::Ctrl {
+        op: CtrlOp::JmpCC(ConditionCode::G),
+        target: reg(RAX),
+    });
 }
 
 #[test]
 #[should_panic(expected = "unsupported target for rel8")]
 fn loop_register_target() {
-    encode(Instruction::Ctrl { op: CtrlOp::Loop, target: reg(RCX) });
+    encode(Instruction::Ctrl {
+        op: CtrlOp::Loop,
+        target: reg(RCX),
+    });
 }
 
 #[test]

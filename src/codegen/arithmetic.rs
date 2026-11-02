@@ -151,7 +151,9 @@ fn shift(
 
 /// `dest = left cc right`, dest a 논리 (0 or 1), both sides of the same type: `mov rax, left ;
 /// mov rcx, right ; cmp rax, rcx ; setcc al ; mov [dest], al`. On 소수 `ucomisd` / `ucomiss`
-/// sets the unsigned flags: < and <= become > and >= with the sides swapped, as a NaN sets CF
+/// sets the unsigned flags: < and <= become > and >= with the sides swapped, as a NaN sets CF.
+/// For `==` / `!=`, also read PF: unordered sets ZF like equal, so C-matching NaN compares need
+/// `sete; setnp; and` / `setne; setp; or` (#3).
 fn comparison(
     dest: &VarId,
     left: &IrOp,
@@ -161,7 +163,6 @@ fn comparison(
 ) -> Vec<Instruction> {
     let (size, is_float, is_unsigned) = operand_kind(left, ctx);
     let size = Some(Size::from(size));
-    // shortcut: == and != of a NaN are wrong (ZF set as for equal), PF to check if NaN matters
     let (left, right, cc, a, b) = match (is_float, is_unsigned, cc) {
         (false, true, ConditionCode::L) => (left, right, ConditionCode::B, RAX, RCX),
         (false, true, ConditionCode::LE) => (left, right, ConditionCode::BE, RAX, RCX),
@@ -174,7 +175,7 @@ fn comparison(
         (true, _, ConditionCode::GE) => (left, right, ConditionCode::AE, XMM0, XMM1),
         (true, _, cc) => (left, right, cc, XMM0, XMM1),
     };
-    return vec![
+    let mut instrs = vec![
         load_operand(a, left, ctx, size),
         load_operand(b, right, ctx, size),
         Instruction::Binary {
@@ -187,13 +188,43 @@ fn comparison(
             op: cc,
             dst: ElfOper::Reg(RAX),
         },
-        Instruction::Binary {
-            op: BinOp::Mov,
-            dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
-            src: ElfOper::Reg(RAX),
-            size: var_size(dest),
-        },
     ];
+    if is_float {
+        match cc {
+            ConditionCode::E => {
+                instrs.push(Instruction::SetCC {
+                    op: ConditionCode::NP,
+                    dst: ElfOper::Reg(RCX),
+                });
+                instrs.push(Instruction::Binary {
+                    op: BinOp::And,
+                    dst: ElfOper::Reg(RAX),
+                    src: ElfOper::Reg(RCX),
+                    size: Some(Size::U8),
+                });
+            }
+            ConditionCode::NE => {
+                instrs.push(Instruction::SetCC {
+                    op: ConditionCode::P,
+                    dst: ElfOper::Reg(RCX),
+                });
+                instrs.push(Instruction::Binary {
+                    op: BinOp::Or,
+                    dst: ElfOper::Reg(RAX),
+                    src: ElfOper::Reg(RCX),
+                    size: Some(Size::U8),
+                });
+            }
+            _ => {}
+        }
+    }
+    instrs.push(Instruction::Binary {
+        op: BinOp::Mov,
+        dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
+        src: ElfOper::Reg(RAX),
+        size: var_size(dest),
+    });
+    instrs
 }
 
 /// The instructions of `dest = left op right`, sized by `dest`
@@ -288,4 +319,127 @@ pub fn generate_unary(dest: &VarId, op: &UnaryOp, src: &IrOp, ctx: &Context) -> 
         size: var_size(dest),
     });
     return instrs;
+}
+
+#[cfg(test)]
+mod nan_eq_tests {
+    use super::*;
+    use crate::codegen::generation::Context;
+    use crate::converter::ir::structs::VarId;
+    use crate::elf::instructions::ConditionCode;
+    use crate::parser::postparser::structs::{BinaryOp, Type};
+
+    fn float_ctx<'a>(floats: &'a [(f64, bool)], float_names: &'a [String]) -> Context<'a> {
+        Context {
+            return_type: None,
+            offsets: vec![8, 16, 17],
+            data_names: &[],
+            float_names,
+            floats,
+            labels: vec![],
+        }
+    }
+
+    fn float_eq_or_ne(op: BinaryOp) -> Vec<Instruction> {
+        let floats = [(f64::NAN, false), (1.0, false)];
+        let names = ["f0".into(), "f1".into()];
+        let ctx = float_ctx(&floats, &names);
+        let dest = VarId::new(2, Type::Bool);
+        generate_binary(
+            &dest,
+            &op,
+            &IrOp::Float(0),
+            &IrOp::Float(1),
+            &ctx,
+        )
+    }
+
+    fn setcc_ops(instrs: &[Instruction]) -> Vec<ConditionCode> {
+        instrs
+            .iter()
+            .filter_map(|i| match i {
+                Instruction::SetCC { op, .. } => Some(*op),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn is_cc(op: ConditionCode, want: ConditionCode) -> bool {
+        matches!(
+            (op, want),
+            (ConditionCode::E, ConditionCode::E)
+                | (ConditionCode::NE, ConditionCode::NE)
+                | (ConditionCode::NP, ConditionCode::NP)
+                | (ConditionCode::P, ConditionCode::P)
+        )
+    }
+
+    #[test]
+    fn float_eq_also_requires_not_parity() {
+        let instrs = float_eq_or_ne(BinaryOp::Eq);
+        let ops = setcc_ops(&instrs);
+        assert_eq!(ops.len(), 2, "{ops:?}");
+        assert!(is_cc(ops[0], ConditionCode::E), "{ops:?}");
+        assert!(is_cc(ops[1], ConditionCode::NP), "{ops:?}");
+        assert!(
+            instrs.iter().any(|i| matches!(
+                i,
+                Instruction::Binary {
+                    op: BinOp::And,
+                    ..
+                }
+            )),
+            "expected and al, cl after sete/setnp: {instrs:?}"
+        );
+    }
+
+    #[test]
+    fn float_ne_also_accepts_parity() {
+        let instrs = float_eq_or_ne(BinaryOp::NotEq);
+        let ops = setcc_ops(&instrs);
+        assert_eq!(ops.len(), 2, "{ops:?}");
+        assert!(is_cc(ops[0], ConditionCode::NE), "{ops:?}");
+        assert!(is_cc(ops[1], ConditionCode::P), "{ops:?}");
+        assert!(
+            instrs.iter().any(|i| matches!(
+                i,
+                Instruction::Binary {
+                    op: BinOp::Or,
+                    ..
+                }
+            )),
+            "expected or al, cl after setne/setp: {instrs:?}"
+        );
+    }
+
+    #[test]
+    fn integer_eq_does_not_read_parity() {
+        let ctx = Context {
+            return_type: None,
+            offsets: vec![8, 16, 17],
+            data_names: &[],
+            float_names: &[],
+            floats: &[],
+            labels: vec![],
+        };
+        let dest = VarId::new(2, Type::Bool);
+        let left = VarId::new(0, Type::Int {
+            short: false,
+            unsigned: false,
+        });
+        let right = VarId::new(1, Type::Int {
+            short: false,
+            unsigned: false,
+        });
+        let instrs = generate_binary(
+            &dest,
+            &BinaryOp::Eq,
+            &IrOp::Var(left),
+            &IrOp::Var(right),
+            &ctx,
+        );
+        let ops = setcc_ops(&instrs);
+        assert_eq!(ops.len(), 1, "{ops:?}");
+        assert!(is_cc(ops[0], ConditionCode::E), "{ops:?}");
+    }
 }

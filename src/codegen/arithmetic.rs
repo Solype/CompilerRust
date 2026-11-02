@@ -162,13 +162,17 @@ fn comparison(
     let (size, is_float, is_unsigned) = operand_kind(left, ctx);
     let size = Some(Size::from(size));
     // shortcut: == and != of a NaN are wrong (ZF set as for equal), PF to check if NaN matters
-    let (left, right, cc, a, b) = match (is_float, cc) {
-        (false, cc) => (left, right, cc, RAX, RCX),
-        (true, ConditionCode::L) => (right, left, ConditionCode::A, XMM0, XMM1),
-        (true, ConditionCode::LE) => (right, left, ConditionCode::AE, XMM0, XMM1),
-        (true, ConditionCode::G) => (left, right, ConditionCode::A, XMM0, XMM1),
-        (true, ConditionCode::GE) => (left, right, ConditionCode::AE, XMM0, XMM1),
-        (true, cc) => (left, right, cc, XMM0, XMM1),
+    let (left, right, cc, a, b) = match (is_float, is_unsigned, cc) {
+        (false, true, ConditionCode::L) => (left, right, ConditionCode::B, RAX, RCX),
+        (false, true, ConditionCode::LE) => (left, right, ConditionCode::BE, RAX, RCX),
+        (false, true, ConditionCode::G) => (left, right, ConditionCode::A, RAX, RCX),
+        (false, true, ConditionCode::GE) => (left, right, ConditionCode::AE, RAX, RCX),
+        (false, _, cc) => (left, right, cc, RAX, RCX),
+        (true, _, ConditionCode::L) => (right, left, ConditionCode::A, XMM0, XMM1),
+        (true, _, ConditionCode::LE) => (right, left, ConditionCode::AE, XMM0, XMM1),
+        (true, _, ConditionCode::G) => (left, right, ConditionCode::A, XMM0, XMM1),
+        (true, _, ConditionCode::GE) => (left, right, ConditionCode::AE, XMM0, XMM1),
+        (true, _, cc) => (left, right, cc, XMM0, XMM1),
     };
     return vec![
         load_operand(a, left, ctx, size),

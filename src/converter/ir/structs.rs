@@ -4,12 +4,12 @@
 use crate::parser::postparser::structs::{BinaryOp, Type, UnaryOp};
 
 pub struct Function {
-    pub symbol: String, // déjà manglé : "더하다$int$int", "printf", "main"
+    pub symbol: String, // already mangled: "더하다$int$int", "printf", "main"
     pub params: Vec<VarId>,
     pub vars: Vec<Type>, // type de chaque VarId : params, variables, temporaires
     pub labels: Vec<String>, // nom de chaque Label : "loop_0_1_start"
     pub return_type: Option<Type>,
-    pub body: Option<Vec<Instr>>, // None pour un 외부
+    pub body: Option<Vec<Instr>>, // None for a 외부
     pub variadic: bool,
 }
 
@@ -100,7 +100,7 @@ pub enum Instr {
     Cast {
         dest: VarId,
         src: Operand,
-    }, // types lus dans vars
+    }, // types read in vars
     Call {
         dest: Option<VarId>,
         symbol: String,
@@ -121,7 +121,7 @@ pub enum Instr {
 pub struct Program {
     pub funcs: Vec<Function>,
     pub strings: Vec<String>,
-    pub floats: Vec<(f64, bool)>, // valeur et short : écrite sur 4 octets si 짧은 소수
+    pub floats: Vec<(f64, bool)>, // value and short: written on 4 bytes for a 짧은 소수
 }
 
 impl Program {

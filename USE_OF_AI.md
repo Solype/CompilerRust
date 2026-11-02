@@ -85,7 +85,7 @@ mechanism. The encoder architecture, ModRM/SIB, the prefixes and the ELF format 
 I wrote no test by hand: they were all written by the AI.
 
 - **Backend**: `src/elf/instructions/encode_tests/` (one file per instruction family),
-  `src/elf/file/symbol_tests.rs`, the report `TEST_REPORT.md` and the `nextest.toml`
+  `src/elf/file/symbol_tests.rs`, the report `docs/TEST_REPORT.md` and the `nextest.toml`
   configuration.
 - **Frontend**: `src/hangeul/hangul_tests.rs`, `src/lexer/lexer_tests.rs`,
   `src/parser/preparser/pre_parser_tests.rs`, `src/parser/cfg/first_tests.rs`,
@@ -116,7 +116,7 @@ except for the documentation, written together.
   - the `ParserProduction` struct is mine (I asked to keep it as I wrote it);
   - the rules of `rules.rs`, the `rule!` and `term!` macros, and the computation of the nullable
     non-terminals and FIRST sets (`first.rs`) were written by the AI;
-  - `LR_TABLE_EXAMPLE.txt`, the example table worked out by hand, was written by the AI.
+  - `docs/LR_TABLE_EXAMPLE.txt`, the example table worked out by hand, was written by the AI.
 
 ## October 9: LR(1) table, parser, tree and AST
 
@@ -185,7 +185,7 @@ I chose the points and asked for them. On that day, the AI wrote most of the cod
 | Literals taking the expected type (`fits`), `AmbiguousCall`, operand checks (`WrongOperands`) | AI |
 | Calls without a value (`NoValue`), missing return (`always_returns`, `MissingReturn`), `check_main` | AI |
 | Splitting `converter.rs` into `scope.rs`, `types.rs`, `expressions.rs`, `statements.rs` and `functions.rs` (`ebd3cc9`) | AI, at my request |
-| Error samples in `sample/erreurs/` | AI |
+| Error samples in `sample/errors/` | AI |
 | To-do lists, C equivalent of each type, explanation of the typed IR the codegen needs | AI, explanations only |
 
 ## October 16 to 19: the IR (`src/converter/ir`)
@@ -195,7 +195,7 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 
 ## October 20 to 31: the code generation (`src/codegen`)
 
-`sample/01_retour.kr` was the first program compiled into a binary that runs (October 20); every
+`sample/01_return.kr` was the first program compiled into a binary that runs (October 20); every
 `sample/*.kr` runs since October 31.
 
 | Element | Who |
@@ -214,10 +214,10 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Control flow in the converter: `convert_cond`, `세면서`, end of the `그리고` / `또는` short-circuit | AI, at my request |
 | The rest of the converter: `convert_init` and `convert_assign` through `convert_expr`, the `Operand` variants for addresses | Me |
 | The rest of the converter: `convert_expr` split in functions, a variable from `빈 주소` typed `Address(Null)` | AI, at my request |
-| Command line (`-x`, several files, errors), `run_samples.sh`, the samples `12` to `15` | AI, at my request |
+| Command line (`-x`, several files, errors), `scripts/run_samples.sh`, the samples `12` to `15` | AI, at my request |
 | Imports, compile errors, warnings, doc comments, refactorings (number of arguments) | AI, at my request |
 | Review of my code, explanations (stack frame, x86 constraints, division, casts, jumps) | AI, explanations only |
-| README and TODO updates | AI |
+| README and TODO updates, the TODO turned into GitHub issues, the repository layout (`docs/`, `scripts/`) | AI |
 
 ## How I used the AI
 

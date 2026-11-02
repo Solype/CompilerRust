@@ -1,0 +1,9 @@
+// Converter: 정수 칸을 … 세면서 declares 칸, while 칸 already exists around the loop.
+
+정수를 반환하는 main() {
+    칸은 0이에요.
+    정수 칸을 0부터 5까지 세면서 {
+        넘어가요.
+    }
+    칸을 반환해요.
+}

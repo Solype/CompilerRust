@@ -1,0 +1,5 @@
+// Pre-parser: 나 is not declared.
+
+정수를 반환하는 main() {
+    나를 반환해요.
+}

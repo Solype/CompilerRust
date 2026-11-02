@@ -1,0 +1,6 @@
+// Post-parser: a constant gets its value at its declaration.
+
+정수를 반환하는 main() {
+    고정된 끝은 정수예요.
+    0을 반환해요.
+}

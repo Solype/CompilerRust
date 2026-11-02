@@ -184,7 +184,7 @@ pub fn generate(prog: &Program) -> ElfFile64 {
 
     for func in &prog.funcs {
         let Some(body) = &func.body else {
-            continue; // 외부 : pas de corps
+            continue; // 외부: no body
         };
         let ctx = Context {
             offsets: var_offsets(func),

@@ -1,0 +1,9 @@
+// Parser: the condition of 만약 ends with 면 or 이면.
+
+정수를 반환하는 main() {
+    가는 0이에요.
+    만약 가 > 0 {
+        1을 반환해요.
+    }
+    가를 반환해요.
+}

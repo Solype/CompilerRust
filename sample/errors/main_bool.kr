@@ -1,0 +1,5 @@
+// Converter: main returns a 정수, not a 논리.
+
+논리를 반환하는 main() {
+    참을 반환해요.
+}

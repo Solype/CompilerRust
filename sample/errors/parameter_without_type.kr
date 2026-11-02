@@ -1,0 +1,9 @@
+// Post-parser: 나 has no type, and no counter (두, 세…) announces it.
+
+정수 가와 나를 받아 더하고 정수를 반환 {
+    (가 + 나)를 반환해요.
+}
+
+정수를 반환하는 main() {
+    0을 반환해요.
+}

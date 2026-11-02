@@ -1,0 +1,51 @@
+/*
+ * 07_sentences.kr: declare a function as a sentence.
+ * "takes the integer 가 and the integer 나, compares them and returns an integer":
+ * the parameters with the particles of the call, 받아, the verb in -고, then the returned type.
+ * `정수 가와 정수 나를 받아 비교하고 …` is declared the way `7과 3을 비교해요` is called.
+ */
+
+외부 정수를 반환하는 printf(문자 주소 형식, …)
+
+// C form
+정수를 반환하는 곱하다(정수 가, 정수 나) {
+    (가 * 나)를 반환해요.
+}
+
+// sentence form, two parameters
+정수 가와 정수 나를 받아 비교하고 정수를 반환 {
+    만약 가 > 나면 {
+        1을 반환해요.
+    } 아니면 만약 가 == 나면 {
+        0을 반환해요.
+    }
+    -1을 반환해요.
+}
+
+// short form: 두 announces two parameters of the same type
+두 정수 가와 나를 받아 빼고 정수를 반환 {
+    (가 - 나)를 반환해요.
+}
+
+// a single parameter: it carries 을/를
+정수 가를 받아 두배하고 정수를 반환 {
+    (가 * 2)를 반환해요.
+}
+
+// without a return type, the C form is the only one for now
+보여주다(정수 가) {
+    "%ld\n"과 가를 printf해요.
+}
+
+정수를 반환하는 main() {
+    결과는 정수예요.
+    7과 3을 비교해서 결과에 넣어요.
+    결과를 보여줘요.                        // 1
+    21을 두배해서 결과에 넣어요.
+    결과를 보여줘요.                        // 42
+    6과 7을 곱해서 결과에 넣어요.
+    결과를 보여줘요.                        // 42
+    10과 4를 빼서 결과에 넣어요.
+    결과를 보여줘요.                        // 6
+    0을 반환해요.
+}

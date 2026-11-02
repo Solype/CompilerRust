@@ -1,0 +1,8 @@
+// Post-parser: only 세면서 declares a variable in its arguments.
+
+외부 정수를 반환하는 abs(정수 가)
+
+정수를 반환하는 main() {
+    정수 가를 abs해요.
+    0을 반환해요.
+}

@@ -1,0 +1,25 @@
+/*
+ * 14_short.kr: 짧은 정수 (4 bytes) side by side on the stack.
+ * An 8-byte write into a slot overflows into the next one: 가 or 나 would become 0,
+ * and the prologue of 빼다 would overwrite the saved rbp (segfault).
+ * The 32-bit division extends eax with cdq: with cqo, -20 / 6 does not give -3.
+ * 5 + 7 + 12 + 22 - 3 = 43: `echo $?` prints 43 after the run.
+ */
+
+// the prologue stores the parameters in 4-byte slots
+짧은 정수를 반환하는 빼다(짧은 정수 가, 짧은 정수 나) {
+    (가 - 나)를 반환해요.
+}
+
+짧은 정수를 반환하는 main() {
+    가는 짧은 정수예요.
+    나는 짧은 정수예요.
+    가에 5를 넣어요.            // Copy: without the size, 나 would overwrite 가
+    나에 7을 넣어요.
+    다는 (가 + 나)예요.         // Binary: without the size, the result would overwrite 나
+    라는 짧은 정수예요.
+    라에 -20을 넣어요.
+    마는 짧은 정수예요.
+    30과 8을 빼서 마에 넣어요.   // 22
+    ((((가 + 나) + 다) + 마) + (라 / 6))을 반환해요.   // (라 / 6) = -3
+}

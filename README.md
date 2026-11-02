@@ -5,7 +5,7 @@ Compiler made in Rust for the Compiler class of CAU (Chung-Ang University).
 This project is a compiler written in Rust, developed as part of the Compiler course at CAU. Its
 source language is Korean: functions are verbs, arguments carry their particles
 (`3과 4를 더해서 제곱해서 반환해요`), and the libc is called as latin name + `하다`
-(`"%ld\n"과 가를 printf해요`). The design of the language is in `LANGUAGE_DESIGN.md` (French).
+(`"%ld\n"과 가를 printf해요`). The design of the language is in `docs/LANGUAGE_DESIGN.md`.
 The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `gcc`.
 
 ## Current State
@@ -25,9 +25,9 @@ The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `
   `setcc`), labels and jumps (`jmp`, `je` for `JumpIfNot`), so `만약` / `아니면`, `동안`,
   `세면서`, `그만해요`, `넘어가요`, and `그리고` / `또는` in short-circuit. Every `sample/*.kr`
   runs.
-- **Tests of the samples**: `./run_samples.sh [file.kr...]` compiles, links and runs each
+- **Tests of the samples**: `scripts/run_samples.sh [file.kr...]` compiles, links and runs each
   `sample/*.kr`, compares its exit code (and its stdout with `sample/*.out`) with the expected
-  one, and checks that each `sample/erreurs/*.kr` is refused with code 1.
+  one, and checks that each `sample/errors/*.kr` is refused with code 1.
 - The demo (`--demo`) writes the encoder test programs hardcoded in `src/samples/`.
 
 ## How it works
@@ -87,8 +87,8 @@ cargo build --release
 - `-x` links all the `.o` with `gcc` into `a.out`.
 - `--tree` also prints the parse tree, before the AST.
 - Any error (source, unreadable file, usage, `gcc`) exits with code 1.
-- Sample programs are in `sample/` (`01_retour.kr` to `15_flottants.kr`), programs that must be
-  refused in `sample/erreurs/`, and the reference program is `Proto.kr`.
+- Sample programs are in `sample/` (`01_return.kr` to `15_floats.kr`), programs that must be
+  refused in `sample/errors/`, and the reference program is `Proto.kr`.
 
 The demo calls an external `my_exit`, to provide at link time, for example with NASM:
 
@@ -108,18 +108,25 @@ ld -o output output.elf my_exit.o
 ./output; echo $?   # 42
 ```
 
-Tests: `cargo test`.
+Tests: `cargo test`, then `scripts/run_samples.sh`. `scripts/analyze.sh file.o` prints the
+symbols and the disassembly of an object file.
+
+## Repository layout
+| Path | Content |
+|---|---|
+| `src/` | The compiler, one folder per stage (see [How it works](#how-it-works)) |
+| `elf_derive/` | Derive macro that writes the ELF structures |
+| `sample/` | Programs that must run (`NN_*.kr`, expected stdout in `NN_*.out`) and programs that must be refused (`errors/`) |
+| `Proto.kr` | Reference program, expected values in its comments |
+| `scripts/` | `run_samples.sh` (sample tests), `analyze.sh` (`nm` + `objdump` of a `.o`) |
+| `docs/` | Language design (`LANGUAGE_DESIGN.md`), encoder test report, LR(1) table example |
+| `editors/` | Syntax highlighting for Zed, micro and tree-sitter |
+| `USE_OF_AI.md` | What was written with AI, and how |
 
 ## Roadmap
-- [ ] Finish all instructions (currently on x86-64 instructions on SIMD registers)
-- [x] Add a proper lexer/tokenizer for source input
-- [x] Add a parser to build an AST
-- [x] Support command-line arguments (input file, options)
-- [ ] Semantic analysis: finish the checks (literal ranges, casts, `외부` parameters), then
-  produce a typed IR for the code generation
-- [ ] Replace hardcoded instruction enums with dynamic instruction generation (code generation)
-- [x] Write the program to an ELF object file and link it with the libc (`-x`, `gcc file.o`)
-- [ ] Expand instruction set coverage
+What is left is tracked in the [GitHub issues](https://github.com/Solype/CompilerRust/issues),
+labelled by stage: `front-end`, `converter`, `codegen`, `backend`, `tooling`, and `later` for
+what the compiler does not need.
 
 ## Context
 This project was built during my second semester studying in Korea, as part of the Compiler class at CAU, with the goal of exploring how a compiler translates source-level instructions down into machine code and executable binaries.

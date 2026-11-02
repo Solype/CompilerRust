@@ -1,0 +1,9 @@
+// Converter: 1 is a 정수, 끝 a 짧은 정수: both bounds of 세면서 have the same type.
+
+정수를 반환하는 main() {
+    끝은 짧은 정수예요.
+    정수 수를 1부터 끝까지 세면서 {
+        넘어가요.
+    }
+    0을 반환해요.
+}

@@ -1,11 +1,11 @@
 /*
- * 04_conditions.kr : 만약 … 면, 아니면 만약, 아니면,
- * 그리고 (&&), 또는 (||) et la négation 이/가 아니면.
+ * 04_conditions.kr: 만약 … 면, 아니면 만약, 아니면,
+ * 그리고 (&&), 또는 (||) and the negation 이/가 아니면.
  */
 
 외부 정수를 반환하는 printf(문자 주소 형식, …)
 
-// 1 si 가 est entre 0 et 9, 0 sinon
+// 1 if 가 is between 0 and 9, 0 otherwise
 정수를 반환하는 확인하다(정수 가) {
     만약 가 < 0 또는 가 > 9면 {
         0을 반환해요.
@@ -13,7 +13,7 @@
     1을 반환해요.
 }
 
-// le signe : -1, 0 ou 1
+// the sign: -1, 0 or 1
 정수를 반환하는 부호하다(정수 가) {
     만약 가 > 0이면 {
         1을 반환해요.
@@ -29,7 +29,7 @@
     나는 -3이에요.
 
     만약 가 > 0 그리고 나 < 0이면 {
-        "signes opposés\n"를 printf해요.
+        "opposite signs\n"를 printf해요.
     }
 
     만약 (가 > 나)가 아니면 {

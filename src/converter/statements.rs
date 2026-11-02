@@ -36,12 +36,12 @@ impl<'a> Converter<'a> {
         expr: &Expr,
         scope: &Scope,
         ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>, // on pousse dedans : pas de Vec à concaténer
+        instrs: &mut Vec<ir::structs::Instr>, // pushed into: no Vec to concatenate
     ) -> Result<ir::structs::Operand, ConvertError> {
         if let Some(leaf) = operand(expr, scope, &mut self.ir) {
             return Ok(leaf);
         }
-        let ty = self.get_type(expr, scope)?; // vérifs + type du résultat
+        let ty = self.get_type(expr, scope)?; // checks + type of the result
         match &expr.kind {
             ExprKind::Binary { .. } => self.convert_binary(expr, ty, scope, ir_func, instrs),
             ExprKind::Unary { op, operand } => {
@@ -215,7 +215,7 @@ impl<'a> Converter<'a> {
                     args,
                 })
             }
-            // 바꾸다 : une seule valeur, le cast lit les deux types dans vars
+            // 바꾸다: a single value, the cast reads both types in vars
             Callee::Cast(_) => instrs.push(ir::structs::Instr::Cast {
                 dest: dest.clone(),
                 src: operands.remove(0),

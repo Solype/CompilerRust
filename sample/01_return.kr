@@ -1,0 +1,8 @@
+/*
+ * 01_return.kr: the smallest program.
+ * main returns 42: `echo $?` prints 42 after the run.
+ */
+
+정수를 반환하는 main() {
+    42를 반환해요.
+}

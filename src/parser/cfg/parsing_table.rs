@@ -196,7 +196,7 @@ impl ParsingTable {
             i += 1;
         }
         if conflicts > 0 {
-            eprintln!("{} états, {conflicts} conflits", states.len());
+            eprintln!("{} states, {conflicts} conflicts", states.len());
         }
 
         return Self {
@@ -269,7 +269,7 @@ impl ParsingTable {
     ) -> usize {
         match table.get(&entry) {
             Some(old) if *old != action => {
-                eprintln!("conflit dans {entry:?} : {old:?} ou {action:?}");
+                eprintln!("conflict in {entry:?}: {old:?} or {action:?}");
                 return 1;
             }
             _ => {

@@ -1,5 +1,5 @@
 /*
- * 08_fibonacci.kr : les 20 premiers nombres de Fibonacci.
+ * 08_fibonacci.kr: the first 20 Fibonacci numbers.
  */
 
 외부 정수를 반환하는 printf(문자 주소 형식, …)

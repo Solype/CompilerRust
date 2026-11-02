@@ -1,0 +1,9 @@
+// Converter: a 외부 keeps its bare name, two printf have the same symbol.
+
+외부 정수를 반환하는 printf(문자 주소 형식, …)
+외부 정수를 반환하는 printf(문자 주소 형식, 정수 가)
+
+정수를 반환하는 main() {
+    "hello\n"를 printf해요.
+    0을 반환해요.
+}

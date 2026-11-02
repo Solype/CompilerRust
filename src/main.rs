@@ -97,7 +97,7 @@ fn compile(args: &Args, path: &str, main_parser: &Parser) -> Result<String, Box<
 fn link(mut file_names: Vec<String>) -> std::io::Result<()> {
     file_names.extend(["-o".to_string(), "a.out".to_string()]);
 
-    let status = process::Command::new("gcc").args(&file_names).status()?; // Err si gcc est introuvable
+    let status = process::Command::new("gcc").args(&file_names).status()?; // Err if gcc is not found
     if !status.success() {
         return Err(std::io::Error::other(format!("gcc: {status}")));
     }

@@ -1,6 +1,0 @@
-// Post-parseur : une constante reçoit sa valeur à sa déclaration.
-
-정수를 반환하는 main() {
-    고정된 끝은 정수예요.
-    0을 반환해요.
-}

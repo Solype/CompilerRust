@@ -1,0 +1,12 @@
+/*
+ * 11_assignment.kr: initializations and assignments of literals and variables.
+ * main returns 7: `echo $?` prints 7 after the run.
+ */
+
+정수를 반환하는 main() {
+    가는 1이에요.
+    나는 2예요.
+    7을 가에 넣어요.
+    가를 나에 넣어요.
+    나를 반환해요.
+}

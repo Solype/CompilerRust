@@ -1,4 +1,4 @@
-# CompilerRust
+# Krc
 Compiler made in Rust for the Compiler class of CAU (Chung-Ang University).
 
 ## About
@@ -124,7 +124,7 @@ symbols and the disassembly of an object file.
 | `USE_OF_AI.md` | What was written with AI, and how |
 
 ## Roadmap
-What is left is tracked in the [GitHub issues](https://github.com/Solype/CompilerRust/issues),
+What is left is tracked in the [GitHub issues](https://github.com/Solype/Krc/issues),
 labelled by stage: `front-end`, `converter`, `codegen`, `backend`, `tooling`, and `later` for
 what the compiler does not need.
 

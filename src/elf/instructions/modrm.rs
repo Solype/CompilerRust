@@ -1,11 +1,8 @@
 use super::{
-    AddressingMode,
-    MemDisplacement,
-    struct_encode_information::*,
-    Scale,
-    MemAddress,
+    AddressingMode, MemAddress, MemDisplacement, Scale,
     enums::*,
-    register::{Register, RegisterClass, Gpr},
+    register::{Gpr, Register, RegisterClass},
+    struct_encode_information::*,
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -22,12 +19,7 @@ fn encode_sib(scale: Scale, index: Option<Register>, base: Option<Register>) -> 
     let scale_bits = scale as u8;
 
     let index_bits = match index {
-        Some(r)
-            if r.class == RegisterClass::Gpr
-            && r.index != Gpr::Sp as u8 =>
-        {
-            r.low3()
-        }
+        Some(r) if r.class == RegisterClass::Gpr && r.index != Gpr::Sp as u8 => r.low3(),
 
         _ => 0b100, // no index
     };
@@ -42,11 +34,7 @@ fn encode_sib(scale: Scale, index: Option<Register>, base: Option<Register>) -> 
 
 ///////////////////////////////////////////////////////////////////
 
-fn get_disp(
-    disp: &MemDisplacement,
-    data_len: usize,
-    relocs: &mut Vec<Relocation>,
-) -> i32 {
+fn get_disp(disp: &MemDisplacement, data_len: usize, relocs: &mut Vec<Relocation>) -> i32 {
     match disp {
         MemDisplacement::Imm(val) => *val,
 
@@ -64,11 +52,7 @@ fn get_disp(
     }
 }
 
-fn encode_rip_relative(
-    disp: &MemDisplacement,
-    data: &mut Vec<u8>,
-    relocs: &mut Vec<Relocation>,
-) {
+fn encode_rip_relative(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
     data[0] = (MEMNODISP << 6) | 0b101;
 
     let offset = data.len();
@@ -92,11 +76,7 @@ fn encode_rip_relative(
     }
 }
 
-fn encode_absolute(
-    disp: &MemDisplacement,
-    data: &mut Vec<u8>,
-    relocs: &mut Vec<Relocation>,
-) {
+fn encode_absolute(disp: &MemDisplacement, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
     // In 64 bits, mod = 00 / rm = 101 means [rip + disp32]:
     // an absolute address goes through a SIB with no base and no index (0x25)
     data[0] = (MEMNODISP << 6) | 0b100;
@@ -131,11 +111,9 @@ fn encode_base(base: Register, data: &mut Vec<u8>) {
     if base.low3() == Gpr::Sp as u8 {
         data[0] = (MEMNODISP << 6) | 0b100;
         data.push(encode_sib(Scale::One, None, Some(base)));
-
     } else if base.low3() == Gpr::Bp as u8 {
         data[0] = (MEMDISP8 << 6) | base.low3();
         data.push(0);
-
     } else {
         data[0] = (MEMNODISP << 6) | base.low3();
     }
@@ -159,8 +137,7 @@ fn encode_base_disp(
 
     let val = get_disp(disp, data.len(), relocs);
 
-    let (mod_bits, disp_bytes) =
-        encode_disp(val, disp.target().is_some());
+    let (mod_bits, disp_bytes) = encode_disp(val, disp.target().is_some());
 
     data[0] = (mod_bits << 6) | rm;
 
@@ -188,12 +165,7 @@ fn encode_index_disp(
     data.extend(val.to_le_bytes());
 }
 
-fn encode_base_index_scale(
-    base: Register,
-    index: Register,
-    scale: Scale,
-    data: &mut Vec<u8>,
-) {
+fn encode_base_index_scale(base: Register, index: Register, scale: Scale, data: &mut Vec<u8>) {
     assert!(base.class == RegisterClass::Gpr);
     assert!(index.class == RegisterClass::Gpr);
 
@@ -205,7 +177,6 @@ fn encode_base_index_scale(
         data[0] = (MEMDISP8 << 6) | 0b100;
         data.push(encode_sib(scale, Some(index), Some(base)));
         data.push(0);
-
     } else {
         data[0] = (MEMNODISP << 6) | 0b100;
         data.push(encode_sib(scale, Some(index), Some(base)));
@@ -230,8 +201,7 @@ fn encode_base_index_scale_disp(
 
     let val = get_disp(disp, data.len(), relocs);
 
-    let (mod_bits, disp_bytes) =
-        encode_disp(val, disp.target().is_some());
+    let (mod_bits, disp_bytes) = encode_disp(val, disp.target().is_some());
 
     data[0] = (mod_bits << 6) | 0b100;
 
@@ -247,68 +217,50 @@ fn encode_disp(disp: i32, is_placeholder: bool) -> (u8, Vec<u8>) {
 
     if disp == 0 {
         (MEMNODISP, vec![])
-
     } else if (-128..=127).contains(&disp) {
         (MEMDISP8, vec![disp as u8])
-
     } else {
         (MEMDISP32, disp.to_le_bytes().to_vec())
     }
 }
 
-fn encode_memory(
-    mem: &MemAddress,
-    data: &mut Vec<u8>,
-    relocs: &mut Vec<Relocation>,
-) {
+fn encode_memory(mem: &MemAddress, data: &mut Vec<u8>, relocs: &mut Vec<Relocation>) {
     match (mem.base, mem.index) {
-
         // [disp]
-        (None, None) => {
-            match mem.mode {
-                AddressingMode::RipRelative
-                | AddressingMode::Default => encode_rip_relative(&mem.disp, data, relocs),
-
-                AddressingMode::Absolute => encode_absolute(&mem.disp, data, relocs)
+        (None, None) => match mem.mode {
+            AddressingMode::RipRelative | AddressingMode::Default => {
+                encode_rip_relative(&mem.disp, data, relocs)
             }
-        }
+
+            AddressingMode::Absolute => encode_absolute(&mem.disp, data, relocs),
+        },
 
         // [base]
         // [base + disp]
-        (Some(base), None) => {
-            match &mem.disp {
-                MemDisplacement::Imm(0) =>encode_base(base, data),
-                _ => encode_base_disp( base, &mem.disp, data, relocs, ),
-            }
-        }
+        (Some(base), None) => match &mem.disp {
+            MemDisplacement::Imm(0) => encode_base(base, data),
+            _ => encode_base_disp(base, &mem.disp, data, relocs),
+        },
 
         // [index * scale + disp]
-        (None, Some(index)) => {
-            encode_index_disp( index, mem.scale, &mem.disp, data, relocs, )
-        }
+        (None, Some(index)) => encode_index_disp(index, mem.scale, &mem.disp, data, relocs),
 
         // [base + index * scale]
         // [base + index * scale + disp]
-        (Some(base), Some(index)) => {
-            match &mem.disp {
-                MemDisplacement::Imm(0) => encode_base_index_scale( base, index, mem.scale, data, ),
-                _ => encode_base_index_scale_disp( base, index, mem.scale, &mem.disp, data, relocs, ),
-            }
-        }
+        (Some(base), Some(index)) => match &mem.disp {
+            MemDisplacement::Imm(0) => encode_base_index_scale(base, index, mem.scale, data),
+            _ => encode_base_index_scale_disp(base, index, mem.scale, &mem.disp, data, relocs),
+        },
     }
 }
 
 ///////////////////////////////////////////////////////////////////
 
-fn encode_reg(data: &mut Vec<u8>, rm: Register)
-{
+fn encode_reg(data: &mut Vec<u8>, rm: Register) {
     data[0] = (REG << 6) | rm.low3();
 }
 
-pub(super) fn mod_rm_encode(
-    op1: &Operand,
-    op2: &Operand,
-) -> EncodeInformation {
+pub(super) fn mod_rm_encode(op1: &Operand, op2: &Operand) -> EncodeInformation {
     let mut data = vec![0u8];
     let mut relocs = vec![];
 
@@ -322,9 +274,7 @@ pub(super) fn mod_rm_encode(
         _ => panic!("Invalid operand for ModRM"),
     }
 
-    data[0] =
-        (data[0] & 0b11000111)
-        | ((reg_field & 0b111) << 3);
+    data[0] = (data[0] & 0b11000111) | ((reg_field & 0b111) << 3);
 
     EncodeInformation {
         data,

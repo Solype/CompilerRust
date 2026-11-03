@@ -3,7 +3,7 @@ use elf_derive::BinaryLogicSize;
 use crate::elf::traits::UsizeCompatible;
 
 use super::traits::ElfWritable;
-use std::{fmt::Debug};
+use std::fmt::Debug;
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy, BinaryLogicSize)]
@@ -11,16 +11,16 @@ pub struct ElfShdr<T>
 where
     T: Debug + Copy,
 {
-    pub sh_name: u32,        // Offset into .shstrtab (section name string table)
-    pub sh_type: u32,        // Section type (SHT_PROGBITS, SHT_SYMTAB, etc.)
-    pub sh_flags: T,         // Section flags (SHF_WRITE, SHF_ALLOC, SHF_EXECINSTR...) → u32/u64
-    pub sh_addr: T,          // Virtual address in memory (0 if not loaded)
-    pub sh_offset: T,        // Offset of section in the file (in bytes)
-    pub sh_size: T,          // Section size in bytes
-    pub sh_link: u32,        // Index of a related section (depends on sh_type)
-    pub sh_info: u32,        // Extra information (depends on sh_type)
-    pub sh_addralign: T,     // Required alignment (power of 2, e.g., 4, 8, 16)
-    pub sh_entsize: T,       // Entry size if section holds a table (0 otherwise)
+    pub sh_name: u32,    // Offset into .shstrtab (section name string table)
+    pub sh_type: u32,    // Section type (SHT_PROGBITS, SHT_SYMTAB, etc.)
+    pub sh_flags: T,     // Section flags (SHF_WRITE, SHF_ALLOC, SHF_EXECINSTR...) → u32/u64
+    pub sh_addr: T,      // Virtual address in memory (0 if not loaded)
+    pub sh_offset: T,    // Offset of section in the file (in bytes)
+    pub sh_size: T,      // Section size in bytes
+    pub sh_link: u32,    // Index of a related section (depends on sh_type)
+    pub sh_info: u32,    // Extra information (depends on sh_type)
+    pub sh_addralign: T, // Required alignment (power of 2, e.g., 4, 8, 16)
+    pub sh_entsize: T,   // Entry size if section holds a table (0 otherwise)
 }
 
 impl<T> ElfShdr<T>
@@ -30,19 +30,19 @@ where
     pub fn new_section(
         sh_name: u32,
         sh_type: u32,
-        sh_flags: T,    // flags : SHF_ALLOC, SHF_WRITE, etc.
+        sh_flags: T, // flags : SHF_ALLOC, SHF_WRITE, etc.
     ) -> Self {
         Self {
             sh_name,
             sh_type,
             sh_flags,
-            sh_addr: T::default(),       // not loaded in memory
-            sh_offset: T::default(),     // offset in the file (updated later)
-            sh_size: T::default(),       // size (computed once filled)
-            sh_link: 0,                  // link to the related section (0 if unused)
-            sh_info: 0,                  // extra info (0 by default)
-            sh_addralign: T::from_usize(1),  // alignment (can be 1 or 4 for strtab)
-            sh_entsize: T::default(),    // entry size (used by symtab)
+            sh_addr: T::default(),          // not loaded in memory
+            sh_offset: T::default(),        // offset in the file (updated later)
+            sh_size: T::default(),          // size (computed once filled)
+            sh_link: 0,                     // link to the related section (0 if unused)
+            sh_info: 0,                     // extra info (0 by default)
+            sh_addralign: T::from_usize(1), // alignment (can be 1 or 4 for strtab)
+            sh_entsize: T::default(),       // entry size (used by symtab)
         }
     }
 
@@ -79,18 +79,18 @@ where
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum ShType {
-    Null     = 0,
+    Null = 0,
     ProgBits = 1,
-    SymTab   = 2,
-    StrTab   = 3,
-    Rela     = 4,
-    Hash     = 5,
-    Dynamic  = 6,
-    Note     = 7,
-    NoBits   = 8,
-    Rel      = 9,
-    ShLib    = 10,
-    DynSym   = 11,
+    SymTab = 2,
+    StrTab = 3,
+    Rela = 4,
+    Hash = 5,
+    Dynamic = 6,
+    Note = 7,
+    NoBits = 8,
+    Rel = 9,
+    ShLib = 10,
+    DynSym = 11,
 }
 
 /// Section flags (sh_flags) – use u64 for ELF64, u32 for ELF32
@@ -98,17 +98,17 @@ pub enum ShType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum ShFlags {
-    NoFlag          = 0x0,
-    Write           = 0x1,
-    Alloc           = 0x2,
-    ExecInstr       = 0x4,
-    Merge           = 0x10,
-    Strings         = 0x20,
-    InfoLink        = 0x40,
-    LinkOrder       = 0x80,
+    NoFlag = 0x0,
+    Write = 0x1,
+    Alloc = 0x2,
+    ExecInstr = 0x4,
+    Merge = 0x10,
+    Strings = 0x20,
+    InfoLink = 0x40,
+    LinkOrder = 0x80,
     OsNonConforming = 0x100,
-    Group           = 0x200,
-    TLS             = 0x400,
+    Group = 0x200,
+    TLS = 0x400,
 }
 
 /// Known section names
@@ -135,21 +135,21 @@ pub enum SectionName {
 impl SectionName {
     pub fn as_str(&self) -> &'static str {
         match self {
-            SectionName::Null      => "",
-            SectionName::Text      => ".text",
-            SectionName::Data      => ".data",
-            SectionName::Bss       => ".bss",
-            SectionName::Rodata    => ".rodata",
-            SectionName::Symtab    => ".symtab",
-            SectionName::Strtab    => ".strtab",
-            SectionName::ShStrtab  => ".shstrtab",
-            SectionName::RelaText  => ".rela.text",
-            SectionName::Comment   => ".comment",
-            SectionName::Dynamic   => ".dynamic",
-            SectionName::DynSym    => ".dynsym",
-            SectionName::DynStr    => ".dynstr",
-            SectionName::Got       => ".got",
-            SectionName::Plt       => ".plt",
+            SectionName::Null => "",
+            SectionName::Text => ".text",
+            SectionName::Data => ".data",
+            SectionName::Bss => ".bss",
+            SectionName::Rodata => ".rodata",
+            SectionName::Symtab => ".symtab",
+            SectionName::Strtab => ".strtab",
+            SectionName::ShStrtab => ".shstrtab",
+            SectionName::RelaText => ".rela.text",
+            SectionName::Comment => ".comment",
+            SectionName::Dynamic => ".dynamic",
+            SectionName::DynSym => ".dynsym",
+            SectionName::DynStr => ".dynstr",
+            SectionName::Got => ".got",
+            SectionName::Plt => ".plt",
         }
     }
 }

@@ -1,29 +1,29 @@
 use std::fmt::Debug;
 
+use super::super::instructions::{LabelId, Relocation, Size, Target, enums::RelocKind};
 
-use super::super::instructions::{enums::RelocKind, LabelId, Relocation, Size, Target};
-
-use super::file::{ElfFile, PendingReloc};
 use super::super::{
-    elfsym::{SHN_UNDEF, make_st_info, ElfSym, StVis, StBind, StType},
+    elfsym::{ElfSym, SHN_UNDEF, StBind, StType, StVis, make_st_info},
+    instructions,
     rel::{ElfRel, ElfRela},
     traits::{ElfWritable, UsizeCompatible},
-    instructions,
 };
+use super::file::{ElfFile, PendingReloc};
 
-impl <T> ElfFile<T>
-where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
+impl<T> ElfFile<T>
+where
+    T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
     fn get_abs_reloc_type(&self, reloc_size: usize) -> u32 {
         match (size_of::<T>(), reloc_size) {
             // ===== x86 =====
-            (4, 4) => 1,   // R_386_32
+            (4, 4) => 1, // R_386_32
 
             // ===== x86_64 =====
-            (8, 1) => 14,  // R_X86_64_8
-            (8, 2) => 12,  // R_X86_64_16
-            (8, 4) => 10,  // R_X86_64_32
-            (8, 8) => 1,   // R_X86_64_64
+            (8, 1) => 14, // R_X86_64_8
+            (8, 2) => 12, // R_X86_64_16
+            (8, 4) => 10, // R_X86_64_32
+            (8, 8) => 1,  // R_X86_64_64
 
             _ => panic!("Unsupported absolute relocation size"),
         }
@@ -32,10 +32,10 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     fn get_abs_signed_reloc_type(&self, reloc_size: usize) -> u32 {
         match (size_of::<T>(), reloc_size) {
             // ===== x86 =====
-            (4, 4) => 1,   // R_386_32 (no sign extension in 32 bits)
+            (4, 4) => 1, // R_386_32 (no sign extension in 32 bits)
 
             // ===== x86_64 =====
-            (8, 4) => 11,  // R_X86_64_32S
+            (8, 4) => 11, // R_X86_64_32S
 
             _ => panic!("Unsupported signed absolute relocation size"),
         }
@@ -59,10 +59,10 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     fn get_plt_reloc_type(&self, reloc_size: usize) -> u32 {
         match (size_of::<T>(), reloc_size) {
             // ===== x86 =====
-            (4, 4) => 2,  // R_386_PC32 (GNU as only uses the PLT for PIC)
+            (4, 4) => 2, // R_386_PC32 (GNU as only uses the PLT for PIC)
 
             // ===== x86_64 =====
-            (8, 4) => 4,  // R_X86_64_PLT32
+            (8, 4) => 4, // R_X86_64_PLT32
 
             _ => panic!("Unsupported PLT relocation size"),
         }
@@ -82,7 +82,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         &mut self,
         instr: &instructions::enums::Instruction,
         sec_ndx: usize,
-    ){
+    ) {
         let encode = instr.encode(Size::from(size_of::<T>()));
         self.add_bytes_with_relocations(sec_ndx, encode.data, &encode.relocations);
     }
@@ -94,7 +94,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         sec_ndx: usize,
         data: Vec<u8>,
         relocations: &[Relocation],
-    ){
+    ) {
         let base_offset = self.sections[sec_ndx].get_data().len();
 
         // The target is resolved when writing (resolve_relocations), once
@@ -104,7 +104,10 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
             if info.offset + size > data.len() {
                 panic!(
                     "relocation of {} at offset {} ({} bytes) goes past the end of the data ({} bytes)",
-                    info.target, info.offset, size, data.len()
+                    info.target,
+                    info.offset,
+                    size,
+                    data.len()
                 );
             }
 
@@ -122,8 +125,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     }
 
     /// Defines `id` at the current end of the section
-    pub fn define_label(&mut self, section_ndx: usize, id: LabelId)
-    {
+    pub fn define_label(&mut self, section_ndx: usize, id: LabelId) {
         let offset = self.sections[section_ndx].get_data().len();
         if self.labels.insert(id, (section_ndx, offset)).is_some() {
             panic!("label {} defined twice", id);
@@ -131,8 +133,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     }
 
     /// Writes `value` on the `size` bytes of the field at `offset`
-    fn patch(&mut self, section: usize, offset: usize, size: u8, value: i64)
-    {
+    fn patch(&mut self, section: usize, offset: usize, size: u8, value: i64) {
         let size = size as usize;
         let data = self.sections[section].get_data_mut();
         data[offset..offset + size].copy_from_slice(&value.to_le_bytes()[..size]);
@@ -146,8 +147,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
     ///   label offset added to the addend.
     /// - A symbol that is never defined becomes global undefined (external),
     ///   as with GNU as.
-    pub(super) fn resolve_relocations(&mut self)
-    {
+    pub(super) fn resolve_relocations(&mut self) {
         let pending = std::mem::take(&mut self.pending_relocs);
 
         // Labels first: patch in place or rewrite as section symbol + offset
@@ -158,14 +158,17 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                 continue;
             };
 
-            let (label_section, label_offset) = *self.labels.get(&id)
+            let (label_section, label_offset) = *self
+                .labels
+                .get(&id)
                 .unwrap_or_else(|| panic!("label {} is used but never defined", id));
             let pc_relative = matches!(reloc.kind, RelocKind::Relative | RelocKind::Plt32);
 
             if pc_relative && label_section == reloc.section {
                 let value = label_offset as i64 + reloc.addend as i64 - reloc.offset as i64;
                 let bits = reloc.size as u32 * 8;
-                let fits = bits == 64 || (-(1i64 << (bits - 1))..(1i64 << (bits - 1))).contains(&value);
+                let fits =
+                    bits == 64 || (-(1i64 << (bits - 1))..(1i64 << (bits - 1))).contains(&value);
                 if !fits {
                     panic!(
                         "label {} is out of range of its {}-byte displacement ({} bytes away)",
@@ -213,27 +216,34 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
                     self.symtab.get_index_from_name(name_idx).unwrap()
                 }
             };
-            let r_info = ElfRel::pack_info(sym_ndx as u32, self.reloc_type(&reloc.kind, reloc.size));
+            let r_info =
+                ElfRel::pack_info(sym_ndx as u32, self.reloc_type(&reloc.kind, reloc.size));
             let r_offset = T::from_usize(reloc.offset);
 
             match size_of::<T>() {
                 // rel: the addend is written into the data, on the field size
                 4 => {
                     self.patch(reloc.section, reloc.offset, reloc.size, reloc.addend as i64);
-                    self.rels.entry(reloc.section).or_default().push(ElfRel { r_offset, r_info });
+                    self.rels
+                        .entry(reloc.section)
+                        .or_default()
+                        .push(ElfRel { r_offset, r_info });
                 }
                 8 => self.relas.entry(reloc.section).or_default().push(ElfRela {
                     r_offset,
                     r_info,
                     r_addend: T::from_usize(reloc.addend as usize),
                 }),
-                _ => panic!("Invalid template")
+                _ => panic!("Invalid template"),
             }
         }
     }
 
-    pub fn encode_instructions(&mut self, section_ndx: usize, data: &Vec<instructions::enums::Instruction>)
-    {
+    pub fn encode_instructions(
+        &mut self,
+        section_ndx: usize,
+        data: &Vec<instructions::enums::Instruction>,
+    ) {
         for ins in data {
             if let instructions::Instruction::Label(id) = ins {
                 self.define_label(section_ndx, *id);

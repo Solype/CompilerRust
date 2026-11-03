@@ -345,13 +345,7 @@ mod nan_eq_tests {
         let names = ["f0".into(), "f1".into()];
         let ctx = float_ctx(&floats, &names);
         let dest = VarId::new(2, Type::Bool);
-        generate_binary(
-            &dest,
-            &op,
-            &IrOp::Float(0),
-            &IrOp::Float(1),
-            &ctx,
-        )
+        generate_binary(&dest, &op, &IrOp::Float(0), &IrOp::Float(1), &ctx)
     }
 
     fn setcc_ops(instrs: &[Instruction]) -> Vec<ConditionCode> {
@@ -382,13 +376,9 @@ mod nan_eq_tests {
         assert!(is_cc(ops[0], ConditionCode::E), "{ops:?}");
         assert!(is_cc(ops[1], ConditionCode::NP), "{ops:?}");
         assert!(
-            instrs.iter().any(|i| matches!(
-                i,
-                Instruction::Binary {
-                    op: BinOp::And,
-                    ..
-                }
-            )),
+            instrs
+                .iter()
+                .any(|i| matches!(i, Instruction::Binary { op: BinOp::And, .. })),
             "expected and al, cl after sete/setnp: {instrs:?}"
         );
     }
@@ -401,13 +391,9 @@ mod nan_eq_tests {
         assert!(is_cc(ops[0], ConditionCode::NE), "{ops:?}");
         assert!(is_cc(ops[1], ConditionCode::P), "{ops:?}");
         assert!(
-            instrs.iter().any(|i| matches!(
-                i,
-                Instruction::Binary {
-                    op: BinOp::Or,
-                    ..
-                }
-            )),
+            instrs
+                .iter()
+                .any(|i| matches!(i, Instruction::Binary { op: BinOp::Or, .. })),
             "expected or al, cl after setne/setp: {instrs:?}"
         );
     }
@@ -423,14 +409,20 @@ mod nan_eq_tests {
             labels: vec![],
         };
         let dest = VarId::new(2, Type::Bool);
-        let left = VarId::new(0, Type::Int {
-            short: false,
-            unsigned: false,
-        });
-        let right = VarId::new(1, Type::Int {
-            short: false,
-            unsigned: false,
-        });
+        let left = VarId::new(
+            0,
+            Type::Int {
+                short: false,
+                unsigned: false,
+            },
+        );
+        let right = VarId::new(
+            1,
+            Type::Int {
+                short: false,
+                unsigned: false,
+            },
+        );
         let instrs = generate_binary(
             &dest,
             &BinaryOp::Eq,

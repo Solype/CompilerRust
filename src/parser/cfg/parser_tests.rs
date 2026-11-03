@@ -46,7 +46,10 @@ fn tree_of_main() {
     let mut found = Vec::new();
     leaves(&tree, &mut found);
     let kinds: Vec<&ParserTokenKind> = found.iter().map(|token| &token.kind).collect();
-    let expected: Vec<&ParserTokenKind> = tokens[..tokens.len() - 1].iter().map(|token| &token.kind).collect();
+    let expected: Vec<&ParserTokenKind> = tokens[..tokens.len() - 1]
+        .iter()
+        .map(|token| &token.kind)
+        .collect();
     assert_eq!(kinds, expected);
 }
 
@@ -80,7 +83,12 @@ fn extra_brace() {
     let Err(token) = parser().parse(&tokens) else {
         panic!("a second }} is accepted");
     };
-    assert_eq!(token.span.line_col("정수를 반환하는 main() {\n    42를 반환해요.\n}\n}\n"), (4, 1));
+    assert_eq!(
+        token
+            .span
+            .line_col("정수를 반환하는 main() {\n    42를 반환해요.\n}\n}\n"),
+        (4, 1)
+    );
 }
 
 #[test]
@@ -88,7 +96,11 @@ fn float_literals() {
     let source = "소수를 반환하는 main() {\n    가는 0.5예요.\n    -1.25를 반환해요.\n}\n";
     let tokens = tokens(source);
     assert!(parser().parse(&tokens).is_ok());
-    assert!(tokens.iter().any(|token| matches!(token.kind, ParserTokenKind::Float(0.5))));
+    assert!(
+        tokens
+            .iter()
+            .any(|token| matches!(token.kind, ParserTokenKind::Float(0.5)))
+    );
 }
 
 #[test]

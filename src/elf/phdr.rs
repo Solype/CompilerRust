@@ -1,43 +1,42 @@
-use elf_derive::BinaryLogicSize;
 use super::traits::ElfWritable;
+use elf_derive::BinaryLogicSize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum _SegmentType {
-    Null    = 0,    // PT_NULL
-    Load    = 1,    // PT_LOAD
-    Dynamic = 2,    // PT_DYNAMIC
-    Interp  = 3,    // PT_INTERP
-    Note    = 4,    // PT_NOTE
-    Shlib   = 5,    // PT_SHLIB
-    Phdr    = 6,    // PTPHDR
-    Tls     = 7,    // PT_TLS
+    Null = 0,    // PT_NULL
+    Load = 1,    // PT_LOAD
+    Dynamic = 2, // PT_DYNAMIC
+    Interp = 3,  // PT_INTERP
+    Note = 4,    // PT_NOTE
+    Shlib = 5,   // PT_SHLIB
+    Phdr = 6,    // PTPHDR
+    Tls = 7,     // PT_TLS
 }
 
 // Segment flags
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum _SegmentFlags {
-    Execute = 0x1,  // PF_X
-    Write   = 0x2,  // PF_W
-    Read    = 0x4,  // PF_R
+    Execute = 0x1, // PF_X
+    Write = 0x2,   // PF_W
+    Read = 0x4,    // PF_R
 }
 
 #[derive(Debug, Default, Clone, Copy, BinaryLogicSize)]
 pub struct ElfPhdr<T> {
-    pub p_type: u32,         // Segment type (PT_LOAD, PT_DYNAMIC, PT_INTERP, etc.)
-    pub p_flags: u32,        // Segment flags (PF_X, PF_W, PF_R)
+    pub p_type: u32,  // Segment type (PT_LOAD, PT_DYNAMIC, PT_INTERP, etc.)
+    pub p_flags: u32, // Segment flags (PF_X, PF_W, PF_R)
 
-    pub p_offset: T,         // Offset of segment in file (in bytes)
-    pub p_vaddr: T,          // Virtual address in memory
-    pub p_paddr: T,          // Physical address (unused on most systems)
+    pub p_offset: T, // Offset of segment in file (in bytes)
+    pub p_vaddr: T,  // Virtual address in memory
+    pub p_paddr: T,  // Physical address (unused on most systems)
 
-    pub p_filesz: T,         // Size of segment in file (in bytes)
-    pub p_memsz: T,          // Size of segment in memory (can be larger than filesz)
+    pub p_filesz: T, // Size of segment in file (in bytes)
+    pub p_memsz: T,  // Size of segment in memory (can be larger than filesz)
 
-    pub p_align: T,          // Alignment (must be power of 2, e.g., 0x1000)
+    pub p_align: T, // Alignment (must be power of 2, e.g., 0x1000)
 }
-
 
 impl<T> ElfWritable for ElfPhdr<T>
 where

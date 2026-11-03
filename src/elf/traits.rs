@@ -1,4 +1,4 @@
-use std::io::{Result};
+use std::io::Result;
 
 pub trait ElfWritable {
     fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()>;

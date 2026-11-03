@@ -5,7 +5,8 @@ use super::traits::{ElfWritable, UsizeCompatible};
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, BinaryLogicSize)]
 pub struct ElfRel<T>
-where T: Copy ,
+where
+    T: Copy,
 {
     pub r_offset: T, // Address of the relocation
     pub r_info: T,   // Relocation type and symbol index
@@ -14,17 +15,17 @@ where T: Copy ,
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, BinaryLogicSize)]
 pub struct ElfRela<T>
-where T: Copy ,
+where
+    T: Copy,
 {
-    pub r_offset: T,   // Address of the relocation
-    pub r_info: T,     // Relocation type and symbol index
-    pub r_addend: T,   // Addend for the relocation
+    pub r_offset: T, // Address of the relocation
+    pub r_info: T,   // Relocation type and symbol index
+    pub r_addend: T, // Addend for the relocation
 }
-
 
 impl<T> ElfRel<T>
 where
-    T: Copy  + UsizeCompatible,
+    T: Copy + UsizeCompatible,
 {
     pub fn pack_info(sym: u32, typ: u32) -> T {
         let value = if std::mem::size_of::<T>() == 4 {
@@ -38,7 +39,7 @@ where
 
 impl<T> ElfWritable for ElfRel<T>
 where
-    T: Copy  + ElfWritable, // Converted to u64 to handle 32/64 bits
+    T: Copy + ElfWritable, // Converted to u64 to handle 32/64 bits
 {
     fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         match std::mem::size_of::<T>() {
@@ -58,7 +59,7 @@ where
 
 impl<T> ElfWritable for ElfRela<T>
 where
-    T: Copy  + ElfWritable,
+    T: Copy + ElfWritable,
 {
     fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         match std::mem::size_of::<T>() {
@@ -78,7 +79,6 @@ where
     }
 }
 
-
 impl<T> ElfRel<T>
 where
     T: Copy + ElfWritable,
@@ -89,7 +89,6 @@ where
         Ok(buffer)
     }
 }
-
 
 impl<T> ElfRela<T>
 where

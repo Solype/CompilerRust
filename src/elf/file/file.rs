@@ -1,24 +1,23 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
-use std::{vec};
+use std::vec;
 
-
-use super::{
-    section::Section,
-    strtab::Strtab,
-};
+use super::{section::Section, strtab::Strtab};
 
 use super::super::{
-    ehdr, phdr, shdr,
-    traits::{ElfWritable, UsizeCompatible},
-    rel::{ElfRel, ElfRela},
+    ehdr,
     elfsym::SymbolCollection,
     instructions::{LabelId, RelocKind, Target},
+    phdr,
+    rel::{ElfRel, ElfRela},
+    shdr,
+    traits::{ElfWritable, UsizeCompatible},
 };
 
 #[allow(dead_code)]
-pub struct ElfFile <T>
-where T: Copy + ElfWritable + Debug + Default,
+pub struct ElfFile<T>
+where
+    T: Copy + ElfWritable + Debug + Default,
 {
     pub ehdr: ehdr::ElfEhdr<T>,
     pub shdrs: Vec<shdr::ElfShdr<T>>,
@@ -59,9 +58,9 @@ where
     fn default() -> Self {
         Self {
             ehdr: ehdr::ElfEhdr::default(),
-            shdrs: vec![ shdr::ElfShdr::<T>::default() ],
+            shdrs: vec![shdr::ElfShdr::<T>::default()],
             phdrs: vec![],
-            sections: vec![ Section::default() ],
+            sections: vec![Section::default()],
             symtab: SymbolCollection::new(),
             strtab: Strtab::default(),
             shstrtab: Strtab::default(),
@@ -79,12 +78,11 @@ pub enum SymbolType {
     Object,
 }
 
-impl <T> ElfFile <T>
-where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
+impl<T> ElfFile<T>
+where
+    T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
-
-    pub fn add_section( &mut self, name: String, mut header: shdr::ElfShdr<T>) -> usize
-    {
+    pub fn add_section(&mut self, name: String, mut header: shdr::ElfShdr<T>) -> usize {
         let section_ndx = self.shdrs.len();
         header.sh_name = self.shstrtab.name(&name) as u32;
         self.shdrs.push(header);
@@ -92,8 +90,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         section_ndx
     }
 
-    pub fn write(&mut self, file : &mut std::fs::File) -> std::io::Result<()>
-    {
+    pub fn write(&mut self, file: &mut std::fs::File) -> std::io::Result<()> {
         self.prepare_writing()?;
 
         self.ehdr.write(file)?;

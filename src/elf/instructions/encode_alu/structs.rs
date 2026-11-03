@@ -1,6 +1,4 @@
-use super::super::{
-    enums::*,
-};
+use super::super::enums::*;
 
 // ======================================================
 // Encoding families
@@ -42,14 +40,13 @@ pub(super) enum BinaryEncoding {
 
 pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
     match op {
-
         // --------------------------------------------------
         // MOV
         // --------------------------------------------------
         BinOp::Mov => BinaryEncoding::Mov {
             opcode_rm_r: if size == Size::U8 { 0x88 } else { 0x89 },
             opcode_r_rm: if size == Size::U8 { 0x8A } else { 0x8B },
-            opcode_imm:  if size == Size::U8 { 0xC6 } else { 0xC7 },
+            opcode_imm: if size == Size::U8 { 0xC6 } else { 0xC7 },
         },
 
         // --------------------------------------------------
@@ -65,7 +62,7 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         BinOp::Add => BinaryEncoding::Alu {
             opcode_rm_r: if size == Size::U8 { 0x00 } else { 0x01 },
             opcode_r_rm: if size == Size::U8 { 0x02 } else { 0x03 },
-            opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+            opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
             opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
             modrm_ext: 0,
         },
@@ -73,7 +70,7 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         BinOp::Adc => BinaryEncoding::Alu {
             opcode_rm_r: if size == Size::U8 { 0x10 } else { 0x11 },
             opcode_r_rm: if size == Size::U8 { 0x12 } else { 0x13 },
-            opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+            opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
             opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
             modrm_ext: 2,
         },
@@ -82,7 +79,7 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
             opcode_rm_r: if size == Size::U8 { 0x18 } else { 0x19 },
             opcode_r_rm: if size == Size::U8 { 0x1A } else { 0x1B },
 
-            opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+            opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
             opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
 
             modrm_ext: 3,
@@ -91,7 +88,7 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         BinOp::Or => BinaryEncoding::Alu {
             opcode_rm_r: if size == Size::U8 { 0x08 } else { 0x09 },
             opcode_r_rm: if size == Size::U8 { 0x0A } else { 0x0B },
-            opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+            opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
             opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
             modrm_ext: 1,
         },
@@ -99,7 +96,7 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         BinOp::And => BinaryEncoding::Alu {
             opcode_rm_r: if size == Size::U8 { 0x20 } else { 0x21 },
             opcode_r_rm: if size == Size::U8 { 0x22 } else { 0x23 },
-            opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+            opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
             opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
             modrm_ext: 4,
         },
@@ -107,7 +104,7 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         BinOp::Sub => BinaryEncoding::Alu {
             opcode_rm_r: if size == Size::U8 { 0x28 } else { 0x29 },
             opcode_r_rm: if size == Size::U8 { 0x2A } else { 0x2B },
-            opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+            opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
             opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
             modrm_ext: 5,
         },
@@ -115,7 +112,7 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         BinOp::Xor => BinaryEncoding::Alu {
             opcode_rm_r: if size == Size::U8 { 0x30 } else { 0x31 },
             opcode_r_rm: if size == Size::U8 { 0x32 } else { 0x33 },
-            opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+            opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
             opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
             modrm_ext: 6,
         },
@@ -123,7 +120,7 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         BinOp::Cmp => BinaryEncoding::Alu {
             opcode_rm_r: if size == Size::U8 { 0x38 } else { 0x39 },
             opcode_r_rm: if size == Size::U8 { 0x3A } else { 0x3B },
-            opcode_imm:  if size == Size::U8 { 0x80 } else { 0x81 },
+            opcode_imm: if size == Size::U8 { 0x80 } else { 0x81 },
             opcode_imm8: if size == Size::U8 { None } else { Some(0x83) },
             modrm_ext: 7,
         },
@@ -131,116 +128,170 @@ pub(super) fn get_op_codes(op: BinOp, size: Size) -> BinaryEncoding {
         BinOp::Test => BinaryEncoding::Alu {
             opcode_rm_r: if size == Size::U8 { 0x84 } else { 0x85 },
             opcode_r_rm: if size == Size::U8 { 0x84 } else { 0x85 },
-            opcode_imm:  if size == Size::U8 { 0xF6 } else { 0xF7 },
+            opcode_imm: if size == Size::U8 { 0xF6 } else { 0xF7 },
             opcode_imm8: None,
             modrm_ext: 0,
         },
 
-
         // --------------------------------------------------
         // SSE scalar double
         // --------------------------------------------------
-        BinOp::LoadF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x10, },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x10, },
-            }
+        BinOp::LoadF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x10,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x10,
+            },
         },
 
-        BinOp::StoreF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x11 },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x11 },
-            }
-        }
+        BinOp::StoreF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x11,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x11,
+            },
+        },
 
-        BinOp::AddF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x58, },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x58, }
-            }
-        }
+        BinOp::AddF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x58,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x58,
+            },
+        },
 
-        BinOp::SubF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x5C, },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x5C, }
-            }
-        }
+        BinOp::SubF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x5C,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x5C,
+            },
+        },
 
-        BinOp::MulF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x59, },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x59, }
-            }
-        }
+        BinOp::MulF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x59,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x59,
+            },
+        },
 
-        BinOp::DivF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x5E, },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x5E, },
-            }
-        }
+        BinOp::DivF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x5E,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x5E,
+            },
+        },
 
-        BinOp::ComiF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0x66, opcode: 0x2F, },
-                _ => BinaryEncoding::Sse { prefix: 0x00, opcode: 0x2F, }
-            }
-        }
+        BinOp::ComiF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0x66,
+                opcode: 0x2F,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0x00,
+                opcode: 0x2F,
+            },
+        },
 
-        BinOp::UcomiF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0x66, opcode: 0x2E, },
-                _ => BinaryEncoding::Sse { prefix: 0x00, opcode: 0x2E, }
-            }
-        }
+        BinOp::UcomiF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0x66,
+                opcode: 0x2E,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0x00,
+                opcode: 0x2E,
+            },
+        },
 
-        BinOp::XorF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0x66, opcode: 0x57, },
-                _ => BinaryEncoding::Sse { prefix: 0x00, opcode: 0x57, }
-            }
-        }
+        BinOp::XorF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0x66,
+                opcode: 0x57,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0x00,
+                opcode: 0x57,
+            },
+        },
 
-        BinOp::AndF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0x66, opcode: 0x54, },
-                _ => BinaryEncoding::Sse { prefix: 0x00, opcode: 0x54, }
-            }
-        }
+        BinOp::AndF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0x66,
+                opcode: 0x54,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0x00,
+                opcode: 0x54,
+            },
+        },
 
-        BinOp::MovF => {
-            match size {
-                Size::U64 => BinaryEncoding::SseMov { prefix: 0x66, opcode_r_rm: 0x28, opcode_rm_r: 0x29, },
-                _ => BinaryEncoding::SseMov { prefix: 0x00, opcode_r_rm: 0x28, opcode_rm_r: 0x29, }
-            }
-        }
+        BinOp::MovF => match size {
+            Size::U64 => BinaryEncoding::SseMov {
+                prefix: 0x66,
+                opcode_r_rm: 0x28,
+                opcode_rm_r: 0x29,
+            },
+            _ => BinaryEncoding::SseMov {
+                prefix: 0x00,
+                opcode_r_rm: 0x28,
+                opcode_rm_r: 0x29,
+            },
+        },
 
-        BinOp::SqrtF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x51, },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x51, }
-            }
-        }
+        BinOp::SqrtF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x51,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x51,
+            },
+        },
 
-        BinOp::MinF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x5D, },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x5D, }
-            }
-        }
+        BinOp::MinF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x5D,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x5D,
+            },
+        },
 
-        BinOp::MaxF => {
-            match size {
-                Size::U64 => BinaryEncoding::Sse { prefix: 0xF2, opcode: 0x5F, },
-                _ => BinaryEncoding::Sse { prefix: 0xF3, opcode: 0x5F, }
-            }
-        }
-
-        // --------------------------------------------------
-        // SSE scalar single
-        // --------------------------------------------------
-
+        BinOp::MaxF => match size {
+            Size::U64 => BinaryEncoding::Sse {
+                prefix: 0xF2,
+                opcode: 0x5F,
+            },
+            _ => BinaryEncoding::Sse {
+                prefix: 0xF3,
+                opcode: 0x5F,
+            },
+        }, // --------------------------------------------------
+           // SSE scalar single
+           // --------------------------------------------------
     }
 }

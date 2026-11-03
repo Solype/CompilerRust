@@ -1,5 +1,8 @@
 use super::{
-    enums::*, modrm::mod_rm_encode, register::*, struct_encode_information::*,
+    enums::*,
+    modrm::mod_rm_encode,
+    register::*,
+    struct_encode_information::*,
     utils::{emit_rex, emit_size_prefix, is_rex_byte_register},
 };
 
@@ -62,7 +65,8 @@ pub(super) fn encode_extend(
     // spl / bpl / sil / dil source (the destination is never 8 bits)
     let before = v.len();
     emit_rex(&mut v, size, Some(*dst), src);
-    let byte_src = matches!(src, Operand::Reg(r) if src_size == Size::U8 && is_rex_byte_register(*r));
+    let byte_src =
+        matches!(src, Operand::Reg(r) if src_size == Size::U8 && is_rex_byte_register(*r));
     if v.len() == before && byte_src {
         v.push(0x40);
     }

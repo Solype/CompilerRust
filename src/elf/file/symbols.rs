@@ -1,19 +1,13 @@
-
 use std::fmt::Debug;
 
 use super::super::{
     elfsym,
+    elfsym::{ElfSym, SHN_UNDEF, make_st_info},
+    instructions::enums::*,
     traits::{ElfWritable, UsizeCompatible},
-    elfsym::{ElfSym, SHN_UNDEF, make_st_info,},
-    instructions::{enums::*},
 };
 
-
-use super::{
-    ElfFile,
-    SymbolType,
-    packing::align_up,
-};
+use super::{ElfFile, SymbolType, packing::align_up};
 
 use super::super::shdr::ShFlags;
 
@@ -24,14 +18,22 @@ pub fn natural_alignment(size: usize) -> usize {
     size.max(1).next_power_of_two().min(16)
 }
 
-impl <T> ElfFile <T>
-where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
+impl<T> ElfFile<T>
+where
+    T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
 {
     /// Adds `data` as a symbol placed at an offset multiple of `align` (a power
     /// of two), padding the section before it. The section alignment is raised
     /// to `align` so the final address is aligned too.
-    pub fn add_symbol_to_section_raw(&mut self, section_ndx: usize, name: String, data: &Vec<u8>, info: u8, other: u8, align: usize)
-    {
+    pub fn add_symbol_to_section_raw(
+        &mut self,
+        section_ndx: usize,
+        name: String,
+        data: &Vec<u8>,
+        info: u8,
+        other: u8,
+        align: usize,
+    ) {
         self.add_symbol_to_section_relocated(section_ndx, name, (data, &[]), info, other, align);
     }
 
@@ -64,8 +66,7 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         self.add_bytes_with_relocations(section_ndx, data.to_vec(), relocations);
     }
 
-    fn align_section(&mut self, section_ndx: usize, align: usize)
-    {
+    fn align_section(&mut self, section_ndx: usize, align: usize) {
         if !align.is_power_of_two() {
             panic!("alignment {} is not a power of two", align);
         }
@@ -84,12 +85,11 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         self.sections[section_ndx].add_data(&vec![fill; padding]);
     }
 
-    pub fn declare_non_defined_sym(&mut self, name: &String, ty: SymbolType)
-    {
+    pub fn declare_non_defined_sym(&mut self, name: &String, ty: SymbolType) {
         let name_offset = self.strtab.name(&name);
         let info = match ty {
             SymbolType::Function => make_st_info(elfsym::StBind::Global, elfsym::StType::Func),
-            SymbolType::Object   => make_st_info(elfsym::StBind::Global, elfsym::StType::Object),
+            SymbolType::Object => make_st_info(elfsym::StBind::Global, elfsym::StType::Object),
         };
 
         self.symtab.add(ElfSym {
@@ -102,10 +102,20 @@ where T: Copy + ElfWritable + Debug + Default + UsizeCompatible,
         });
     }
 
-    pub fn add_symbol_to_section(&mut self, section_ndx: usize, name: String, data: &Vec<Instruction>, info: u8, other: u8)
-    {
+    pub fn add_symbol_to_section(
+        &mut self,
+        section_ndx: usize,
+        name: String,
+        data: &Vec<Instruction>,
+        info: u8,
+        other: u8,
+    ) {
         if self.sections.len() <= section_ndx {
-            panic!("Section n{} needed but it only has {} secitons", section_ndx, self.sections.len());
+            panic!(
+                "Section n{} needed but it only has {} secitons",
+                section_ndx,
+                self.sections.len()
+            );
         }
 
         let name_ndx = self.strtab.name(&name);

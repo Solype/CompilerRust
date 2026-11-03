@@ -73,7 +73,10 @@ pub(super) fn encode_conversion(
                 panic!("{:?}: destination must be a GPR", op);
             }
             if !(src_is_xmm || src_is_mem) {
-                panic!("{:?}: source must be an XMM register or a memory address", op);
+                panic!(
+                    "{:?}: source must be an XMM register or a memory address",
+                    op
+                );
             }
             check_int_size(op, size, "destination");
             size
@@ -83,7 +86,10 @@ pub(super) fn encode_conversion(
                 panic!("{:?}: destination must be an XMM register", op);
             }
             if !(src_is_xmm || src_is_mem) {
-                panic!("{:?}: source must be an XMM register or a memory address", op);
+                panic!(
+                    "{:?}: source must be an XMM register or a memory address",
+                    op
+                );
             }
             Size::U32
         }
@@ -105,7 +111,11 @@ pub(super) fn encode_conversion(
 /// movd / movq: the bits are copied as is. The opcode depends on the
 /// direction and the size comes from the instruction (`size` is ignored).
 fn encode_bit_move(op: ConvOp, dst: &Register, src: &Operand) -> EncodeInformation {
-    let rex_size = if let ConvOp::Movq = op { Size::U64 } else { Size::U32 };
+    let rex_size = if let ConvOp::Movq = op {
+        Size::U64
+    } else {
+        Size::U32
+    };
 
     let src_is_gpr = matches!(src, Operand::Reg(r) if r.is_gpr());
     let src_is_xmm = matches!(src, Operand::Reg(r) if r.is_xmm());

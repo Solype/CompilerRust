@@ -80,7 +80,11 @@ pub(super) fn encode_reg_mem(
             v.push(opcode);
         }
 
-        BinaryEncoding::SseMov { prefix, opcode_r_rm, opcode_rm_r } => {
+        BinaryEncoding::SseMov {
+            prefix,
+            opcode_r_rm,
+            opcode_rm_r,
+        } => {
             if prefix != 0 {
                 v.push(prefix);
             }

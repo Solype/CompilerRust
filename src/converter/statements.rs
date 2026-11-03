@@ -1,6 +1,6 @@
-use crate::converter::expressions::Callee;
-use crate::converter::ir;
-use crate::converter::scope::LoopLabels;
+use super::expressions::Callee;
+use super::ir;
+use super::scope::LoopLabels;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
     Argument, Assign, BinaryOp, Declare, Expr, ExprKind, For, Function, If, Init, Statement,
@@ -65,7 +65,7 @@ impl<'a> Converter<'a> {
         ir_func: &mut ir::structs::Function,
         instrs: &mut Vec<ir::structs::Instr>,
     ) -> ir::structs::Operand {
-        return match (op, expected) {
+        match (op, expected) {
             (ir::structs::Operand::Float(id), Type::Float { short }) => {
                 let value = self.ir.floats[id].0;
                 ir::structs::Operand::Float(self.ir.float_id(value, *short))
@@ -85,7 +85,7 @@ impl<'a> Converter<'a> {
                 ir::structs::Operand::Var(dest)
             }
             (op, _) => op,
-        };
+        }
     }
 
     /// The arguments of a call to `func`, each fitted to its parameter; after the parameters of a
@@ -103,7 +103,7 @@ impl<'a> Converter<'a> {
             let expected = func.params.get(i).map_or(&double, |param| &param.ty);
             args.push(self.fit_operand(op, expected, ir_func, instrs));
         }
-        return args;
+        args
     }
 
     /// `left op right` (`expr`, an ExprKind::Binary) into a new variable of type `ty`
@@ -168,7 +168,7 @@ impl<'a> Converter<'a> {
             left,
             right,
         });
-        return Ok(ir::structs::Operand::Var(dest.clone()));
+        Ok(ir::structs::Operand::Var(dest.clone()))
     }
 
     /// `op operand` into a new variable of type `ty`
@@ -188,7 +188,7 @@ impl<'a> Converter<'a> {
             op,
             src,
         });
-        return Ok(ir::structs::Operand::Var(dest));
+        Ok(ir::structs::Operand::Var(dest))
     }
 
     /// A call whose result is used: a Call, or a Cast for 바꾸다, into a new variable of type `ty`
@@ -221,7 +221,7 @@ impl<'a> Converter<'a> {
                 src: operands.remove(0),
             }),
         }
-        return Ok(ir::structs::Operand::Var(dest));
+        Ok(ir::structs::Operand::Var(dest))
     }
 
     /// The operands of the values given to a call; `정수로` (the target type) gives none
@@ -241,7 +241,7 @@ impl<'a> Converter<'a> {
                 Argument::ToType(_) => {}
             }
         }
-        return Ok(operands);
+        Ok(operands)
     }
 
     /// `수를 1부터 끝까지 세면서 { … }`: the variable and the bounds are the same 정수 type, `끝`
@@ -333,7 +333,7 @@ impl<'a> Converter<'a> {
         instrs.append(&mut self.convert_block(&for_loop.body, &scope, ir_func)?);
         instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&label_start)));
         instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_end)));
-        return Ok(instrs);
+        Ok(instrs)
     }
 
     /// TODO !!!
@@ -365,7 +365,7 @@ impl<'a> Converter<'a> {
         cond_instrs.append(&mut block_instrs);
         cond_instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&label_start)));
         cond_instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_end)));
-        return Ok(cond_instrs);
+        Ok(cond_instrs)
     }
 
     /// `수는 정수예요.`: adds the variable to `scope`
@@ -386,7 +386,7 @@ impl<'a> Converter<'a> {
             span,
         )?;
         let inst: Vec<ir::structs::Instr> = vec![];
-        return Ok(inst);
+        Ok(inst)
     }
 
     /// `결과는 0이에요.`: adds the variable to `scope`
@@ -414,7 +414,7 @@ impl<'a> Converter<'a> {
         };
         scope.declare(&init.name, variable, span)?;
         instrs.push(ir::structs::Instr::Copy { dest: var, src });
-        return Ok(instrs);
+        Ok(instrs)
     }
 
     /// `… 결과에 넣어요.`
@@ -456,7 +456,7 @@ impl<'a> Converter<'a> {
             dest: var.var_id.clone(),
             src,
         });
-        return Ok(instrs);
+        Ok(instrs)
     }
 
     /// `… 반환해요.`
@@ -492,7 +492,7 @@ impl<'a> Converter<'a> {
         let value = self.convert_expr(value, scope, ir_func, &mut instrs)?;
         let value = self.fit_operand(value, decl_ret_ty, ir_func, &mut instrs);
         instrs.push(ir::structs::Instr::Return(value));
-        return Ok(instrs);
+        Ok(instrs)
     }
 
     /// `… printf해요.`: a call whose result is unused
@@ -548,7 +548,7 @@ impl<'a> Converter<'a> {
 
         cond_instrs.push(ir::structs::Instr::JumpIfNot {
             cond,
-            target: ir_func.label_id(&if_not_label),
+            target: ir_func.label_id(if_not_label),
         });
         // convert the block
         let mut block_instr = self.convert_block(&if_statement.then, parent, ir_func)?;
@@ -558,12 +558,12 @@ impl<'a> Converter<'a> {
             block_instr.push(ir::structs::Instr::Label(
                 ir_func.label_id(&otherwise_label),
             ));
-            let mut instr = self.convert_block(&otherwise_block, parent, ir_func)?;
+            let mut instr = self.convert_block(otherwise_block, parent, ir_func)?;
             block_instr.append(&mut instr);
         }
         block_instr.push(ir::structs::Instr::Label(ir_func.label_id(&end_label)));
         cond_instrs.append(&mut block_instr);
-        return Ok(cond_instrs);
+        Ok(cond_instrs)
     }
 
     /// `그만해요`
@@ -578,7 +578,7 @@ impl<'a> Converter<'a> {
             let end = ir_func.label_id(&loop_labels.label_end);
             return Ok(vec![ir::structs::Instr::Jump(end)]);
         }
-        return Err(ConvertError::new(ConvertErrorKind::BreakOutOfLoop, span));
+        Err(ConvertError::new(ConvertErrorKind::BreakOutOfLoop, span))
     }
 
     /// `넘어가요`
@@ -594,7 +594,7 @@ impl<'a> Converter<'a> {
             let start = ir_func.label_id(&loop_labels.label_start);
             return Ok(vec![ir::structs::Instr::Jump(start)]);
         }
-        return Err(ConvertError::new(ConvertErrorKind::ContinueOutOfLoop, span));
+        Err(ConvertError::new(ConvertErrorKind::ContinueOutOfLoop, span))
     }
 
     /// Checks `block` in its own scope, which starts with the variables of `scope` (the
@@ -647,7 +647,7 @@ impl<'a> Converter<'a> {
 /// The first line of `statement` as the AST shows it, without its blocks: the comment above
 /// its instructions
 fn source_line(statement: &Statement) -> String {
-    return match &statement.kind {
+    match &statement.kind {
         StatementKind::Declare(Declare { name, ty }) => format!("let {name}: {ty}"),
         StatementKind::Init(Init {
             name,
@@ -670,5 +670,5 @@ fn source_line(statement: &Statement) -> String {
         }) => format!("for {variable} in {from}..{until}"),
         StatementKind::Break => "break".to_string(),
         StatementKind::Continue => "continue".to_string(),
-    };
+    }
 }

@@ -36,13 +36,13 @@ impl<'a> Converter<'a> {
     ) -> Result<Option<Type>, ConvertError> {
         let left_ty = self.get_type(left, scope)?;
         let right_ty = self.get_type(right, scope)?;
-        return Ok(if fits(right, &right_ty, &left_ty) {
+        Ok(if fits(right, &right_ty, &left_ty) {
             Some(left_ty)
         } else if fits(left, &left_ty, &right_ty) {
             Some(right_ty)
         } else {
             None
-        });
+        })
     }
 
     /// The type of `expr`, once its names and its calls are checked
@@ -224,11 +224,11 @@ impl<'a> Converter<'a> {
             (0..=types.len()).rev().find_map(|count| {
                 self.functions
                     .get(&(verb.to_string() + &suffixes[..count].concat() + "$..."))
-                    .filter(&mangled)
+                    .filter(mangled)
             })
         };
         by_name
-            .or_else(|| self.functions.get(&fullname).filter(&mangled))
+            .or_else(|| self.functions.get(&fullname).filter(mangled))
             .or_else(variadic)
             .map(|index| &functions[*index])
     }
@@ -273,37 +273,38 @@ fn cast_type(
         .iter()
         .zip(types)
         .find_map(|(value, ty)| value.map(|_| ty));
-    if let Some(from) = from {
-        if !can_cast(from, to) {
-            let kind = ConvertErrorKind::InvalidCast {
-                from: type_name(from),
-                to: type_name(to),
-            };
-            return Err(ConvertError::new(kind, span));
-        }
+    if let Some(from) = from
+        && !can_cast(from, to)
+    {
+        let kind = ConvertErrorKind::InvalidCast {
+            from: type_name(from),
+            to: type_name(to),
+        };
+        return Err(ConvertError::new(kind, span));
     }
-    return Ok(Some(to.clone()));
+    Ok(Some(to.clone()))
 }
 
 /// Whether `func` takes `count` arguments: as many as its parameters, or more when variadic
 fn takes_count(func: &Function, count: usize) -> bool {
-    return func.params.len() == count || (func.variadic && count > func.params.len());
+    func.params.len() == count || (func.variadic && count > func.params.len())
 }
 
 /// Whether the arguments of `types` go in the parameters of `func`, their literals with the type
 /// of the parameter; the arguments after the parameters of a variadic are not checked
 fn takes_args(func: &Function, types: &[Type], values: &[Option<&Expr>]) -> bool {
-    return func.params.iter().zip(values.iter().zip(types)).all(
-        |(param, (value, ty))| match value {
+    func.params
+        .iter()
+        .zip(values.iter().zip(types))
+        .all(|(param, (value, ty))| match value {
             Some(value) => fits(value, ty, &param.ty),
             None => *ty == param.ty,
-        },
-    );
+        })
 }
 
 /// Whether the symbol of `func` has the types of its parameters: neither `외부` nor `main`
 fn is_mangled(func: &Function) -> bool {
-    return func.body.is_some() && func.name != "main";
+    func.body.is_some() && func.name != "main"
 }
 
 /// `op` cannot take operands of `types`
@@ -314,30 +315,30 @@ fn operands_error(op: String, types: &[&Type], span: Span) -> ConvertError {
         .collect::<Vec<_>>()
         .join(", ");
     let kind = ConvertErrorKind::WrongOperands { op, types };
-    return ConvertError::new(kind, span);
+    ConvertError::new(kind, span)
 }
 
 /// `op` as the source writes it: `아닌` for the negation of a condition
 fn unary_name(op: &UnaryOp) -> String {
-    return match op {
+    match op {
         UnaryOp::Not => "아닌".to_string(),
         _ => op.to_string(),
-    };
+    }
 }
 
 /// `op` as the source writes it: `또는` and `그리고` for the conditions
 fn binary_name(op: &BinaryOp) -> String {
-    return match op {
+    match op {
         BinaryOp::Or => "또는".to_string(),
         BinaryOp::And => "그리고".to_string(),
         _ => op.to_string(),
-    };
+    }
 }
 
 /// The operand of `expr` when it needs no instruction: a literal or a variable; `None` otherwise
 // shortcut: Str, SizeOf, Unary, Binary and Call give None, until convert_expr lowers them
 pub(super) fn operand(expr: &Expr, scope: &Scope, ir: &mut Program) -> Option<Operand> {
-    return match &expr.kind {
+    match &expr.kind {
         ExprKind::Int(value, is_short, is_unsigned) => {
             Some(Operand::Int(*value, *is_short, *is_unsigned))
         }
@@ -348,5 +349,5 @@ pub(super) fn operand(expr: &Expr, scope: &Scope, ir: &mut Program) -> Option<Op
             .find_variable(name)
             .map(|var| Operand::Var(var.var_id.clone())),
         _ => None,
-    };
+    }
 }

@@ -34,7 +34,7 @@ pub fn write_demo(path: &str) -> std::io::Result<()> {
     add_function(&mut elf_file, text, "_start", start());
 
     elf_file.write(&mut File::create(path)?)?;
-    return Ok(());
+    Ok(())
 }
 
 /// Adds an allocated PROGBITS section, with one extra flag (Write, ExecInstr, ...)
@@ -55,7 +55,7 @@ fn add_object(elf_file: &mut ElfFile64, section: usize, name: &str, bytes: &[u8]
     elf_file.add_symbol_to_section_raw(
         section,
         name.to_string(),
-        &bytes.to_vec(),
+        bytes,
         make_st_info(StBind::Global, StType::Object),
         StVis::Default as u8,
         natural_alignment(bytes.len()),

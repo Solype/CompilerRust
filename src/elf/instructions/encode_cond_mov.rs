@@ -1,4 +1,4 @@
-use crate::elf::instructions::{
+use super::{
     ConditionCode, EncodeInformation, Operand, Size,
     modrm::mod_rm_encode,
     register::*,

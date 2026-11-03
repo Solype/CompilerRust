@@ -1,10 +1,10 @@
-use crate::hangeul::conjugaison::get_verb_form;
-use crate::parser::parser_token::{
+use super::super::parser_token::{
     Ending,
     Keyword::{self, *},
     Particle::{self, *},
     Type,
 };
+use crate::hangeul::conjugaison::get_verb_form;
 
 /// Every one-word keyword; `부호 없는` (Unsigned) is two lexer tokens, merged by the pre-parser
 pub(super) const KEYWORDS: &[(&str, Keyword)] = &[

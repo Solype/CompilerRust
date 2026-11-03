@@ -32,7 +32,7 @@ pub(super) fn encode_bit(op: BitOp, dst: &Operand, src: &Operand, size: Size) ->
             let modrm = mod_rm_encode(dst, src);
 
             v.append(modrm);
-            return v;
+            v
         }
 
         // =====================================================
@@ -56,7 +56,7 @@ pub(super) fn encode_bit(op: BitOp, dst: &Operand, src: &Operand, size: Size) ->
 
             v.push(*bit as u8);
 
-            return v;
+            v
         }
 
         _ => unimplemented!("invalid BT source {:?}", src),

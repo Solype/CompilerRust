@@ -256,7 +256,7 @@ fn encode_memory(mem: &MemAddress, data: &mut Vec<u8>, relocs: &mut Vec<Relocati
 
 ///////////////////////////////////////////////////////////////////
 
-fn encode_reg(data: &mut Vec<u8>, rm: Register) {
+fn encode_reg(data: &mut [u8], rm: Register) {
     data[0] = (REG << 6) | rm.low3();
 }
 

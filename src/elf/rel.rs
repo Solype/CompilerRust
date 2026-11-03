@@ -83,7 +83,7 @@ impl<T> ElfRel<T>
 where
     T: Copy + ElfWritable,
 {
-    pub fn to_bytes(&self) -> std::io::Result<Vec<u8>> {
+    pub fn to_bytes(self) -> std::io::Result<Vec<u8>> {
         let mut buffer = Vec::new();
         self.write(&mut buffer)?;
         Ok(buffer)
@@ -94,7 +94,7 @@ impl<T> ElfRela<T>
 where
     T: Copy + ElfWritable,
 {
-    pub fn to_bytes(&self) -> std::io::Result<Vec<u8>> {
+    pub fn to_bytes(self) -> std::io::Result<Vec<u8>> {
         let mut buffer = Vec::new();
         self.write(&mut buffer)?;
         Ok(buffer)

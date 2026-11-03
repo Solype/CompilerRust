@@ -1,6 +1,6 @@
 use super::generation::Context;
 use super::instructions::{convert_operand, operand_kind};
-use crate::codegen::utils::{load_operand, var_size};
+use super::utils::{load_operand, var_size};
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
 use crate::elf::instructions::register::{RAX, RCX, RDX, Register, XMM0, XMM1};
 use crate::elf::instructions::{
@@ -33,7 +33,7 @@ fn simple_operation(
             size: var_size(dest),
         },
     ];
-    return instrs;
+    instrs
 }
 
 /// `dest = left op right` on 소수 (addsd, subsd, mulsd, divsd; the ss forms on 4 bytes):
@@ -45,7 +45,7 @@ fn float_operation(
     ctx: &Context,
     bin_op: BinOp,
 ) -> Vec<Instruction> {
-    return vec![
+    vec![
         load_operand(XMM0, left, ctx, var_size(dest)),
         Instruction::Binary {
             op: bin_op,
@@ -59,7 +59,7 @@ fn float_operation(
             src: ElfOper::Reg(XMM0),
             size: var_size(dest),
         },
-    ];
+    ]
 }
 
 /// `dest = left / right` (result rax) or `left % right` (result rdx), signed: `mov rax, left ;
@@ -72,7 +72,7 @@ fn division(
     ctx: &Context,
     result: Register,
 ) -> Vec<Instruction> {
-    return vec![
+    vec![
         load_operand(RAX, left, ctx, var_size(dest)),
         load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::Unary {
@@ -97,14 +97,14 @@ fn division(
             src: ElfOper::Reg(result),
             size: var_size(dest),
         },
-    ];
+    ]
 }
 
 /// `dest = left * right`: `mov rax, left ; mov rcx, right ; imul rax, rcx ; mov [dest], rax`.
 /// right goes through rcx, as `imul r, r/m` takes no immediate; the low bits are the same signed
 /// or not
 fn multiplication(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec<Instruction> {
-    return vec![
+    vec![
         load_operand(RAX, left, ctx, var_size(dest)),
         load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::ComplexBinary {
@@ -120,7 +120,7 @@ fn multiplication(dest: &VarId, left: &IrOp, right: &IrOp, ctx: &Context) -> Vec
             src: ElfOper::Reg(RAX),
             size: var_size(dest),
         },
-    ];
+    ]
 }
 
 /// The count of a shift is an imm8 or cl: it goes through rcx
@@ -131,7 +131,7 @@ fn shift(
     ctx: &Context,
     shift_op: ShiftOp,
 ) -> Vec<Instruction> {
-    return vec![
+    vec![
         load_operand(RAX, left, ctx, var_size(dest)),
         load_operand(RCX, right, ctx, var_size(dest)),
         Instruction::Shift {
@@ -146,7 +146,7 @@ fn shift(
             src: ElfOper::Reg(RAX),
             size: var_size(dest),
         },
-    ];
+    ]
 }
 
 /// `dest = left cc right`, dest a 논리 (0 or 1), both sides of the same type: `mov rax, left ;
@@ -174,7 +174,7 @@ fn comparison(
         (true, _, ConditionCode::GE) => (left, right, ConditionCode::AE, XMM0, XMM1),
         (true, _, cc) => (left, right, cc, XMM0, XMM1),
     };
-    return vec![
+    vec![
         load_operand(a, left, ctx, size),
         load_operand(b, right, ctx, size),
         Instruction::Binary {
@@ -193,7 +193,7 @@ fn comparison(
             src: ElfOper::Reg(RAX),
             size: var_size(dest),
         },
-    ];
+    ]
 }
 
 /// The instructions of `dest = left op right`, sized by `dest`
@@ -215,7 +215,7 @@ pub fn generate_binary(
         };
     }
     // x86 has no memory to memory operation: the computation goes through rax
-    return match op {
+    match op {
         BinaryOp::Add => simple_operation(dest, left, right, ctx, BinOp::Add),
         BinaryOp::Sub => simple_operation(dest, left, right, ctx, BinOp::Sub),
         BinaryOp::BitOr => simple_operation(dest, left, right, ctx, BinOp::Or),
@@ -235,7 +235,7 @@ pub fn generate_binary(
         BinaryOp::Le => comparison(dest, left, right, ctx, ConditionCode::LE),
         BinaryOp::Gt => comparison(dest, left, right, ctx, ConditionCode::G),
         BinaryOp::Ge => comparison(dest, left, right, ctx, ConditionCode::GE),
-    };
+    }
 }
 
 /// `dest = op src`: `mov rax, src ; neg rax` (-x), `not rax` (~x) or `xor al, 1` (logical not:
@@ -287,5 +287,5 @@ pub fn generate_unary(dest: &VarId, op: &UnaryOp, src: &IrOp, ctx: &Context) -> 
         src: ElfOper::Reg(RAX),
         size: var_size(dest),
     });
-    return instrs;
+    instrs
 }

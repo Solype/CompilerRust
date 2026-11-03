@@ -18,46 +18,46 @@ use super::structs::{
 /// `반환해요` with two values…) is an error at the first such place; a tree that does not follow
 /// the rules panics
 pub fn convert_to_ast_tree(tree: &TreeNode) -> Result<Program, PostParseError> {
-    let mut prog = Program::default();
-    prog.functions = items(tree)?;
-    return Ok(prog);
+    Ok(Program {
+        functions: items(tree)?,
+    })
 }
 
 /// The left side of the rule of a branch, and its children
 fn branch<'t, 'a>(node: &'t TreeNode<'a>) -> (NTerm, &'t [TreeNode<'a>]) {
-    return match node {
+    match node {
         TreeNode::Branch { rule, children } => (RULES[*rule].left, children),
         TreeNode::Leaf(token) => panic!("a rule was expected, found the token {:?}", token.kind),
-    };
+    }
 }
 
 /// The token of a leaf
 fn token<'a>(node: &TreeNode<'a>) -> &'a ParserTokenKind {
-    return match node {
+    match node {
         TreeNode::Leaf(token) => &token.kind,
         TreeNode::Branch { rule, .. } => {
             panic!("a token was expected, found {:?}", RULES[*rule].left)
         }
-    };
+    }
 }
 
 /// The source of a node that is not empty
 fn span(node: &TreeNode) -> Span {
-    return node.span().expect("an empty rule has no span");
+    node.span().expect("an empty rule has no span")
 }
 
 fn name(node: &TreeNode) -> String {
-    return match token(node) {
+    match token(node) {
         ParserTokenKind::Name(name) => name.clone(),
         kind => panic!("a name was expected, found {kind:?}"),
-    };
+    }
 }
 
 fn verb(node: &TreeNode) -> String {
-    return match token(node) {
+    match token(node) {
         ParserTokenKind::Verb { infinitive, .. } => infinitive.clone(),
         kind => panic!("a verb was expected, found {kind:?}"),
-    };
+    }
 }
 
 ////////////////////////////////
@@ -66,7 +66,7 @@ fn verb(node: &TreeNode) -> String {
 
 /// Items → Items Item | ε
 fn items(node: &TreeNode) -> Result<Vec<Function>, PostParseError> {
-    return match branch(node).1 {
+    match branch(node).1 {
         [] => Ok(Vec::new()),
         [before, item] => {
             let mut functions = items(before)?;
@@ -74,10 +74,10 @@ fn items(node: &TreeNode) -> Result<Vec<Function>, PostParseError> {
             Ok(functions)
         }
         _ => unreachable!(),
-    };
+    }
 }
 
-fn mangle_name(name: String, params: &Vec<Param>, is_variadic: bool, is_libc: bool) -> String {
+fn mangle_name(name: String, params: &[Param], is_variadic: bool, is_libc: bool) -> String {
     if is_libc {
         return name;
     }
@@ -91,7 +91,7 @@ fn mangle_name(name: String, params: &Vec<Param>, is_variadic: bool, is_libc: bo
     if is_variadic {
         fullname += "$...";
     }
-    return fullname;
+    fullname
 }
 
 /// Item → Function | ExternFunction
@@ -104,7 +104,7 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
         (NTerm::Function, [name @ TreeNode::Leaf(_), return_type, _, _, body]) => {
             return Ok(Function {
                 name: verb(name),
-                mangled_name: mangle_name(verb(name), &vec![], false, true),
+                mangled_name: mangle_name(verb(name), &[], false, true),
                 span: span(name),
                 return_type: Some(type_spec(return_type)?),
                 params: Vec::new(),
@@ -116,7 +116,7 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
         (NTerm::Function, [name, body]) => {
             return Ok(Function {
                 name: verb(name),
-                mangled_name: mangle_name(verb(name), &vec![], false, false),
+                mangled_name: mangle_name(verb(name), &[], false, false),
                 span: span(name),
                 return_type: None,
                 params: Vec::new(),
@@ -147,7 +147,7 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
     let (params, variadic) = parameters(params)?;
     // `외부` and `main`: the libc symbols, their name as is for the linker
     let is_libc = body.is_none() || name == "main";
-    return Ok(Function {
+    Ok(Function {
         name: name.clone(),
         mangled_name: mangle_name(name, &params, variadic, is_libc),
         span: name_span,
@@ -155,7 +155,7 @@ fn function(node: &TreeNode) -> Result<Function, PostParseError> {
         params,
         variadic,
         body,
-    });
+    })
 }
 
 /// FunctionHead → ReturnType FunctionName | FunctionName
@@ -176,19 +176,19 @@ fn function_head(node: &TreeNode) -> Result<(String, Span, Option<Type>), PostPa
         ParserTokenKind::Verb { infinitive, .. } => infinitive.clone(),
         _ => name(leaf),
     };
-    return Ok((name, span(leaf), return_type));
+    Ok((name, span(leaf), return_type))
 }
 
 /// Parameters → ε | ParameterList | ParameterList , …
 /// ParameterList → Parameter | ParameterList , Parameter
 /// Parameter → TypeSpec Name
 fn parameters(node: &TreeNode) -> Result<(Vec<Param>, bool), PostParseError> {
-    return match branch(node).1 {
+    match branch(node).1 {
         [] => Ok((Vec::new(), false)),
         [list] => Ok((parameter_list(list)?, false)),
         [list, _, _] => Ok((parameter_list(list)?, true)),
         _ => unreachable!(),
-    };
+    }
 }
 
 fn parameter_list(node: &TreeNode) -> Result<Vec<Param>, PostParseError> {
@@ -198,7 +198,7 @@ fn parameter_list(node: &TreeNode) -> Result<Vec<Param>, PostParseError> {
         _ => unreachable!(),
     };
     params.push(parameter(last)?);
-    return Ok(params);
+    Ok(params)
 }
 
 /// Parameter → TypeSpec Name
@@ -206,11 +206,11 @@ fn parameter(node: &TreeNode) -> Result<Param, PostParseError> {
     let [ty, param_name] = branch(node).1 else {
         unreachable!()
     };
-    return Ok(Param {
+    Ok(Param {
         ty: type_spec(ty)?,
         name: name(param_name),
         span: span(param_name),
-    });
+    })
 }
 
 /// SentenceParameters → SentenceList 를
@@ -273,7 +273,7 @@ fn sentence_parameters(node: &TreeNode) -> Result<Vec<Param>, PostParseError> {
     if let Some(group) = group {
         group.check()?;
     }
-    return Ok(params);
+    Ok(params)
 }
 
 /// SentenceList → SentenceGroup | SentenceList 와 SentenceItem
@@ -295,10 +295,10 @@ fn sentence_list<'t, 'a>(node: &'t TreeNode<'a>, items: &mut Vec<&'t TreeNode<'a
 
 /// The left side and the children of a branch, `None` for a leaf
 fn branch_or_leaf<'t, 'a>(node: &'t TreeNode<'a>) -> Option<(NTerm, &'t [TreeNode<'a>])> {
-    return match node {
+    match node {
         TreeNode::Branch { .. } => Some(branch(node)),
         TreeNode::Leaf(_) => None,
-    };
+    }
 }
 
 /// The parameters that share one type in a sentence declaration: `두 정수 가와 나`
@@ -315,7 +315,7 @@ struct Group<'t, 'a> {
 impl Group<'_, '_> {
     /// The counter announces as many names as the group has
     fn check(&self) -> Result<(), PostParseError> {
-        return match self.counter {
+        match self.counter {
             Some(expected) if expected != self.names => Err(PostParseError::new(
                 PostParseErrorKind::CounterMismatch {
                     expected,
@@ -324,7 +324,7 @@ impl Group<'_, '_> {
                 self.span,
             )),
             _ => Ok(()),
-        };
+        }
     }
 }
 
@@ -334,7 +334,7 @@ impl Group<'_, '_> {
 
 /// TypeSpec → BaseType | 짧은 BaseType | 부호 없는 BaseType | TypeSpec & | TypeSpec N 개
 fn type_spec(node: &TreeNode) -> Result<Type, PostParseError> {
-    return match branch(node).1 {
+    match branch(node).1 {
         [base] => base_type(base, None, span(node)),
         [TreeNode::Leaf(modifier), base] => base_type(base, Some(&modifier.kind), span(node)),
         [inner, _] => Ok(Type::Address(Box::new(type_spec(inner)?))),
@@ -345,7 +345,7 @@ fn type_spec(node: &TreeNode) -> Result<Type, PostParseError> {
             kind => panic!("a count was expected, found {kind:?}"),
         },
         _ => unreachable!(),
-    };
+    }
 }
 
 /// BaseType → 정수 | 소수 | 논리 | 문자 | 바이트, with its `짧은` or `부호 없는`; `type_span` is the
@@ -361,7 +361,7 @@ fn base_type(
     let short = matches!(modifier, Some(ParserTokenKind::Keyword(Keyword::Short)));
     let unsigned = matches!(modifier, Some(ParserTokenKind::Keyword(Keyword::Unsigned)));
     let error = |kind| Err(PostParseError::new(kind, type_span));
-    return match (token(leaf), short, unsigned) {
+    match (token(leaf), short, unsigned) {
         (ParserTokenKind::Type(TokenType::Int), _, _) => Ok(Type::Int { short, unsigned }),
         (ParserTokenKind::Type(TokenType::Float), _, false) => Ok(Type::Float { short }),
         (ParserTokenKind::Type(TokenType::Bool), false, false) => Ok(Type::Bool),
@@ -370,7 +370,7 @@ fn base_type(
         (ParserTokenKind::Type(_), true, _) => error(PostParseErrorKind::ShortType),
         (ParserTokenKind::Type(_), _, true) => error(PostParseErrorKind::UnsignedType),
         (kind, _, _) => panic!("a base type was expected, found {kind:?}"),
-    };
+    }
 }
 
 ////////////////////////////////
@@ -383,11 +383,11 @@ fn block(node: &TreeNode) -> Result<Vec<Statement>, PostParseError> {
     let [_, statements, _] = branch(node).1 else {
         unreachable!()
     };
-    return statement_list(statements);
+    statement_list(statements)
 }
 
 fn statement_list(node: &TreeNode) -> Result<Vec<Statement>, PostParseError> {
-    return match branch(node).1 {
+    match branch(node).1 {
         [] => Ok(Vec::new()),
         [before, last] => {
             let mut statements = statement_list(before)?;
@@ -395,7 +395,7 @@ fn statement_list(node: &TreeNode) -> Result<Vec<Statement>, PostParseError> {
             Ok(statements)
         }
         _ => unreachable!(),
-    };
+    }
 }
 
 /// Statement → VariableDeclaration | Chain OptionalDot | IfStatement | WhileLoop | ForLoop
@@ -417,10 +417,10 @@ fn statement(node: &TreeNode) -> Result<Statement, PostParseError> {
         },
         _ => unreachable!(),
     };
-    return Ok(Statement {
+    Ok(Statement {
         kind,
         span: span(node),
-    });
+    })
 }
 
 /// VariableDeclaration → [고정된] Name 는 DeclarationValue 이에요 OptionalDot
@@ -465,11 +465,11 @@ fn variable_declaration(node: &TreeNode) -> Result<StatementKind, PostParseError
         },
         _ => unreachable!(),
     };
-    return Ok(StatementKind::Init(Init {
+    Ok(StatementKind::Init(Init {
         name,
         value,
         constant,
-    }));
+    }))
 }
 
 /// IfStatement → 만약 Condition Block | 만약 Condition Block 아니면 Block
@@ -496,11 +496,11 @@ fn if_statement(node: &TreeNode) -> Result<StatementKind, PostParseError> {
             }],
         }),
     };
-    return Ok(StatementKind::If(If {
+    Ok(StatementKind::If(If {
         condition,
         then: block(then)?,
         otherwise,
-    }));
+    }))
 }
 
 /// WhileLoop → Expression 인 동안 Block | Expression 이 아닌 동안 Block
@@ -510,10 +510,10 @@ fn while_loop(node: &TreeNode) -> Result<StatementKind, PostParseError> {
         [expr, _, _, _, body] => (not(expression(expr)?), body),
         _ => unreachable!(),
     };
-    return Ok(StatementKind::While(While {
+    Ok(StatementKind::While(While {
         condition,
         body: block(body)?,
-    }));
+    }))
 }
 
 /// ForLoop → Arguments 세면서 Block: `수를 1부터 끝까지`, or `정수 수를 …` to declare 수
@@ -545,13 +545,13 @@ fn for_loop(node: &TreeNode) -> Result<StatementKind, PostParseError> {
     let (Some((variable, ty)), Some(from), Some(until)) = (variable, from, until) else {
         return Err(error(span(args)));
     };
-    return Ok(StatementKind::For(For {
+    Ok(StatementKind::For(For {
         variable,
         ty,
         from,
         until,
         body: block(body)?,
-    }));
+    }))
 }
 
 ////////////////////////////////
@@ -567,14 +567,14 @@ enum Arg {
 }
 
 fn to_argument((arg, arg_span): (Arg, Span)) -> Result<Argument, PostParseError> {
-    return match arg {
+    match arg {
         Arg::Value(value, particle) => Ok(Argument::Value { value, particle }),
         Arg::ToType(ty) => Ok(Argument::ToType(ty)),
         Arg::Declared(_, name) => Err(PostParseError::new(
             PostParseErrorKind::DeclaredOutOfCount(name),
             arg_span,
         )),
-    };
+    }
 }
 
 /// Chain → Steps EndStep | EndStep
@@ -593,7 +593,7 @@ fn chain(node: &TreeNode) -> Result<StatementKind, PostParseError> {
         previous = Some(call(verb.unwrap(), previous, args, step_span)?);
     }
     let (args, end_verb, end_span) = step(end)?;
-    return match end_verb.as_deref() {
+    match end_verb.as_deref() {
         None => give(previous, args, span(node)),
         Some("넣다") => put(previous, args, span(node)),
         Some(_) => Ok(StatementKind::Call(call(
@@ -602,7 +602,7 @@ fn chain(node: &TreeNode) -> Result<StatementKind, PostParseError> {
             args,
             end_span,
         )?)),
-    };
+    }
 }
 
 /// The arguments, the verb and the source of each step
@@ -615,7 +615,7 @@ fn step_list(node: &TreeNode) -> Result<Vec<Step>, PostParseError> {
         _ => unreachable!(),
     };
     steps.push(step(last)?);
-    return Ok(steps);
+    Ok(steps)
 }
 
 /// The arguments, the verb and the source of a step; the verb is `None` for 반환해요
@@ -632,7 +632,7 @@ fn step(node: &TreeNode) -> Result<Step, PostParseError> {
         [function_name, _] => Some(name(function_name)),
         _ => unreachable!(),
     };
-    return Ok((args, verb_name, span(node)));
+    Ok((args, verb_name, span(node)))
 }
 
 /// The call of a step: its source starts with the step before, if any (`수를 제곱해서 결과를
@@ -653,10 +653,10 @@ fn call(
     for arg in args {
         all.push(to_argument(arg)?);
     }
-    return Ok(Expr {
+    Ok(Expr {
         kind: ExprKind::Call { verb, args: all },
         span: Span::new(start, step_span.end),
-    });
+    })
 }
 
 /// `X를 반환해요`, or `… 해서 반환해요` that gives the result of the chain. The error is on the argument
@@ -679,7 +679,7 @@ fn give(
     if let Some((_, arg_span)) = args.next() {
         return Err(error(arg_span));
     }
-    return Ok(StatementKind::Return(value));
+    Ok(StatementKind::Return(value))
 }
 
 /// `X를 Y에 넣어요`, or `… 해서 Y에 넣어요` that puts the result of the chain. The error is on
@@ -709,7 +709,7 @@ fn put(
     let (Some(target), Some(value)) = (target, value) else {
         return Err(error(chain_span));
     };
-    return Ok(StatementKind::Assign(Assign { target, value }));
+    Ok(StatementKind::Assign(Assign { target, value }))
 }
 
 /// Arguments → Argument | Arguments Argument
@@ -735,7 +735,7 @@ fn arguments(node: &TreeNode) -> Result<Vec<(Arg, Span)>, PostParseError> {
         _ => unreachable!(),
     };
     args.push((arg, span(last)));
-    return Ok(args);
+    Ok(args)
 }
 
 ////////////////////////////////
@@ -767,16 +767,16 @@ fn expression(node: &TreeNode) -> Result<Expr, PostParseError> {
         },
         _ => unreachable!(),
     };
-    return Ok(Expr {
+    Ok(Expr {
         kind,
         span: span(node),
-    });
+    })
 }
 
 /// Primary → Int | Float | Str | Bool | Name | 빈 주소 | TypeSpec 의 크기 | ( Expression )
 /// `( Expression )` gives the expression, its span set to the parentheses by `expression`
 fn primary(children: &[TreeNode]) -> Result<ExprKind, PostParseError> {
-    return Ok(match children {
+    Ok(match children {
         [leaf] => match token(leaf) {
             ParserTokenKind::Int(number) => ExprKind::Int(*number, false, false),
             ParserTokenKind::Float(number) => ExprKind::Float(*number, false),
@@ -789,31 +789,31 @@ fn primary(children: &[TreeNode]) -> Result<ExprKind, PostParseError> {
         [TreeNode::Leaf(_), inner, _] => expression(inner)?.kind,
         [ty, _, _] => ExprKind::SizeOf(type_spec(ty)?),
         _ => unreachable!(),
-    });
+    })
 }
 
 /// `Not` has no token of its own (`아니면`, `아닌 동안`): its span is the one of its operand
 fn not(expr: Expr) -> Expr {
     let span = expr.span;
-    return Expr {
+    Expr {
         kind: ExprKind::Unary {
             op: UnaryOp::Not,
             operand: Box::new(expr),
         },
         span,
-    };
+    }
 }
 
 fn unary_op(kind: &ParserTokenKind) -> UnaryOp {
-    return match kind {
+    match kind {
         ParserTokenKind::Operator(Operator::Minus) => UnaryOp::Neg,
         ParserTokenKind::Operator(Operator::Tilde) => UnaryOp::BitNot,
         kind => panic!("a unary operator was expected, found {kind:?}"),
-    };
+    }
 }
 
 fn binary_op(kind: &ParserTokenKind) -> BinaryOp {
-    return match kind {
+    match kind {
         ParserTokenKind::Keyword(Keyword::Or) => BinaryOp::Or,
         ParserTokenKind::Keyword(Keyword::And) => BinaryOp::And,
         ParserTokenKind::Operator(op) => match op {
@@ -836,5 +836,5 @@ fn binary_op(kind: &ParserTokenKind) -> BinaryOp {
             Operator::Tilde => panic!("~ is no binary operator"),
         },
         kind => panic!("a binary operator was expected, found {kind:?}"),
-    };
+    }
 }

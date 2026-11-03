@@ -1,5 +1,5 @@
+use super::super::parser_token::{Ending, Keyword, ParserTokenKind, Particle, Type};
 use crate::lexer::lexer_token::{Operator, Punctuation};
-use crate::parser::parser_token::{Ending, Keyword, ParserTokenKind, Particle, Type};
 
 use super::structs::NTerm::*;
 use super::structs::ParserNode::{NTerm, Term};

@@ -95,7 +95,7 @@ fn encode_mem_imm(dst: &Operand, val: i64, size: Size, enc: &BinaryEncoding) -> 
         }
     };
 
-    let fits_i8 = (val as i64) >= -128 && (val as i64) <= 127;
+    let fits_i8 = (-128..=127).contains(&val);
     let use_imm8 = fits_i8 && opcode_imm8.is_some() && size != Size::U8;
     let opcode = if use_imm8 {
         opcode_imm8.unwrap()
@@ -106,7 +106,7 @@ fn encode_mem_imm(dst: &Operand, val: i64, size: Size, enc: &BinaryEncoding) -> 
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, &dst);
+    emit_rex(&mut v, size, None, dst);
 
     v.push(opcode);
 

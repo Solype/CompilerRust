@@ -23,23 +23,23 @@ impl<'a> TreeNode<'a> {
     pub fn span(&self) -> Option<Span> {
         let first = self.first_token()?;
         let last = self.last_token()?;
-        return Some(Span::new(first.span.start, last.span.end));
+        Some(Span::new(first.span.start, last.span.end))
     }
 
     fn first_token(&self) -> Option<&'a ParserToken> {
-        return match self {
+        match self {
             TreeNode::Leaf(token) => Some(token),
             TreeNode::Branch { children, .. } => children.iter().find_map(TreeNode::first_token),
-        };
+        }
     }
 
     fn last_token(&self) -> Option<&'a ParserToken> {
-        return match self {
+        match self {
             TreeNode::Leaf(token) => Some(token),
             TreeNode::Branch { children, .. } => {
                 children.iter().rev().find_map(TreeNode::last_token)
             }
-        };
+        }
     }
 
     /// One line per node, indented by its depth: the left side of the rule for a branch, the
@@ -47,7 +47,7 @@ impl<'a> TreeNode<'a> {
     pub fn show(&self, rules: &[ParserProduction]) -> String {
         let mut lines = Vec::new();
         self.show_lines(rules, 0, &mut lines);
-        return lines.join("\n");
+        lines.join("\n")
     }
 
     fn show_lines(&self, rules: &[ParserProduction], depth: usize, lines: &mut Vec<String>) {

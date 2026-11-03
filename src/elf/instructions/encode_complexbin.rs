@@ -98,7 +98,7 @@ fn encode_group_f6_f7(op: &ComplexBinOp, src: &Operand, size: Size) -> EncodeInf
         }),
     );
     v.append(modrm);
-    return v;
+    v
 }
 
 fn encode_imul_two_operands(dst: &Operand, src: &Operand, size: Size) -> EncodeInformation {
@@ -137,7 +137,7 @@ fn encode_imul_three_operands(
         _ => panic!("imul extra must be immediate"),
     };
 
-    let fits_i8 = (imm) >= -128 && (imm) <= 127;
+    let fits_i8 = (-128..=127).contains(&(imm));
 
     let opcode = if fits_i8 { 0x6B } else { 0x69 };
 

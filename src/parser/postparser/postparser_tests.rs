@@ -1,8 +1,8 @@
 use std::sync::OnceLock;
 
+use super::super::pre_parse;
 use crate::lexer::span::Span;
 use crate::lexer::tokenize;
-use crate::parser::pre_parse;
 
 use super::super::cfg::parser::Parser;
 use super::super::cfg::rules::RULES;

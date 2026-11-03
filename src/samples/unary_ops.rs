@@ -14,5 +14,5 @@ pub fn unary_ops() -> Vec<Instruction> {
         code.push(unary(op, mem(at(RBX).disp(4 * i as i32)), DWORD));
     }
     code.push(ret());
-    return code;
+    code
 }

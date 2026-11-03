@@ -1,8 +1,8 @@
+use super::super::parser_token::ParserTokenKind::{self, *};
+use super::super::parser_token::{Ending, Keyword, Particle, Type};
 use crate::lexer::lexer_token::{Operator, Punctuation};
 use crate::lexer::span::Span;
 use crate::lexer::tokenize;
-use crate::parser::parser_token::ParserTokenKind::{self, *};
-use crate::parser::parser_token::{Ending, Keyword, Particle, Type};
 
 use super::pre_parse;
 use super::pre_parse_error::{PreParseError, PreParseErrorKind};

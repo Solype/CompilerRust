@@ -3,7 +3,7 @@ use crate::elf::instructions::{register::*, *};
 
 /// xchg, xadd, cmpxchg, and a `lock cmpxchg` that succeeds then fails
 pub fn atomics() -> Vec<Instruction> {
-    return vec![
+    vec![
         // eax = 123, ebx = 456 -> after xchg: eax = 456, ebx = 123
         bin(BinOp::Mov, reg(RAX), imm(123), DWORD),
         bin(BinOp::Mov, reg(RBX), imm(456), DWORD),
@@ -38,5 +38,5 @@ pub fn atomics() -> Vec<Instruction> {
             complex(ComplexBinOp::Cmpxchg, var("my_lock"), reg(RDX), None, DWORD),
         ),
         ret(),
-    ];
+    ]
 }

@@ -16,7 +16,7 @@ impl fmt::Display for Program {
             writeln!(f)?;
             write!(f, "{function}")?;
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -47,7 +47,7 @@ impl fmt::Display for Function {
                 _ => writeln!(f, "    {instr}")?,
             }
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -66,7 +66,7 @@ impl fmt::Display for Label {
 /// `v0`, `42`, `1.5`, `true`, `s0` (the index in the strings), `null`
 impl fmt::Display for Operand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return match self {
+        match self {
             Operand::Var(var) => write!(f, "{var}"),
             Operand::Int(value, short, unsigned) => {
                 write!(
@@ -81,13 +81,13 @@ impl fmt::Display for Operand {
             Operand::DataAddress(index) => write!(f, "s{index}"),
             Operand::Address(var) => write!(f, "&{var}"),
             Operand::Null => write!(f, "null"),
-        };
+        }
     }
 }
 
 impl fmt::Display for Instr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return match self {
+        match self {
             Instr::Copy { dest, src } => write!(f, "{dest} = {src}"),
             Instr::Unary { dest, op, src } => write!(f, "{dest} = {op}{src}"),
             Instr::Binary {
@@ -109,6 +109,6 @@ impl fmt::Display for Instr {
             Instr::JumpIfNot { cond, target } => write!(f, "jump_if_not {cond}, {target}"),
             Instr::Return(value) => write!(f, "return {value}"),
             Instr::Comment(text) => write!(f, "// {text}"),
-        };
+        }
     }
 }

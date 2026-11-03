@@ -8,10 +8,7 @@ pub struct Section {
 
 impl Section {
     pub fn new(data: Vec<u8>) -> Self {
-        Self {
-            data: data,
-            padding: 0,
-        }
+        Self { data, padding: 0 }
     }
 
     pub fn set_padding(&mut self, padding: usize) -> &mut Self {
@@ -40,7 +37,7 @@ impl Section {
 
 impl ElfWritable for Section {
     fn write<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        writer.write_all(&vec![0u8; self.padding as usize])?;
+        writer.write_all(&vec![0u8; self.padding])?;
         writer.write_all(&self.data)?;
         Ok(())
     }

@@ -1,6 +1,6 @@
 use elf_derive::BinaryLogicSize;
 
-use crate::elf::traits::UsizeCompatible;
+use super::traits::UsizeCompatible;
 
 use super::traits::ElfWritable;
 use std::fmt::Debug;
@@ -108,7 +108,7 @@ pub enum ShFlags {
     LinkOrder = 0x80,
     OsNonConforming = 0x100,
     Group = 0x200,
-    TLS = 0x400,
+    Tls = 0x400,
 }
 
 /// Known section names

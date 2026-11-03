@@ -1,17 +1,9 @@
 use std::collections::HashMap;
 
+#[derive(Default)]
 pub struct Strtab {
     size: usize,
     map_of_names: HashMap<String, usize>,
-}
-
-impl Default for Strtab {
-    fn default() -> Self {
-        Self {
-            size: 0,
-            map_of_names: HashMap::<String, usize>::default(),
-        }
-    }
 }
 
 impl Strtab {
@@ -26,7 +18,7 @@ impl Strtab {
         }
     }
 
-    pub fn from_usize(&self, name_ndx: usize) -> Option<String> {
+    pub fn name_at(&self, name_ndx: usize) -> Option<String> {
         for (name, &offset) in &self.map_of_names {
             if offset == name_ndx {
                 return Some(name.clone());

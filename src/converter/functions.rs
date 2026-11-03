@@ -1,4 +1,4 @@
-use crate::converter::ir;
+use super::ir;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{Function, If, Statement, StatementKind, Type};
 
@@ -99,7 +99,7 @@ impl<'a> Converter<'a> {
 /// Whether every path through `block` ends with `반환해요`: a loop may run zero times, so only a
 /// `만약` whose two branches return counts
 fn always_returns(block: &[Statement]) -> bool {
-    return block.iter().any(|statement| match &statement.kind {
+    block.iter().any(|statement| match &statement.kind {
         StatementKind::Return(_) => true,
         StatementKind::If(If {
             then,
@@ -107,5 +107,5 @@ fn always_returns(block: &[Statement]) -> bool {
             ..
         }) => always_returns(then) && always_returns(otherwise),
         _ => false,
-    });
+    })
 }

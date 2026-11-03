@@ -30,7 +30,7 @@ use crate::elf::instructions::Operand as ElfOper;
 /// The x86 instructions of one IR instruction; panics on one not done yet (Unary, Cast, Label,
 /// Jump, JumpIfNot)
 fn generate_instruction(instr: &Instr, ctx: &Context) -> Vec<Instruction> {
-    return match instr {
+    match instr {
         Instr::Return(op) => generate_return(op, ctx),
         Instr::Comment(_) => vec![],
         Instr::Call { dest, symbol, args } => generate_call(dest, symbol, args, ctx),
@@ -53,19 +53,18 @@ fn generate_instruction(instr: &Instr, ctx: &Context) -> Vec<Instruction> {
         //     println!("{:?}", instr);
         //     unimplemented!()
         // }
-    };
+    }
 }
 
 /// The offset under rbp of each variable: the sizes of the variables up to it, its own included
 fn var_offsets(func: &Function) -> Vec<i32> {
-    return func
-        .vars
+    func.vars
         .iter()
         .scan(0, |end, ty| {
             *end += ty.size() as i32;
             Some(*end)
         })
-        .collect();
+        .collect()
 }
 
 /// `push rbp ; mov rbp, rsp ; sub rsp, frame`, the frame being the sizes of the variables rounded
@@ -121,12 +120,12 @@ fn func_prologue(func: &Function, ctx: &Context) -> Vec<Instruction> {
             size: var_size(var),
         });
     }
-    return prologue;
+    prologue
 }
 
 /// True unless the code already ends with `ret`: a function without 반환하는 falls off its end
 fn need_epilogue(bin_instr: &[Instruction]) -> bool {
-    return !bin_instr.last().is_some_and(|last| {
+    !bin_instr.last().is_some_and(|last| {
         matches!(
             last,
             Instruction::Ctrl {
@@ -134,12 +133,12 @@ fn need_epilogue(bin_instr: &[Instruction]) -> bool {
                 target: ElfOper::NoOperand,
             }
         )
-    });
+    })
 }
 
 /// What the code of a function needs to know besides its instructions
 pub struct Context<'a> {
-    ///
+    /// The type the function returns, None without 반환하는
     pub return_type: Option<Type>,
     /// The offset under rbp of each variable, see var_offsets
     pub offsets: Vec<i32>,
@@ -206,20 +205,20 @@ pub fn generate(prog: &Program) -> ElfFile64 {
         }
         add_function(&mut elf_file, text, &func.symbol, bin_instr);
     }
-    return elf_file;
+    elf_file
 }
 
 fn add_data_to_roddata(
     elf_file: &mut ElfFile64,
     rodata: usize,
-    name: &String,
-    bytes: &Vec<u8>,
+    name: &str,
+    bytes: &[u8],
     align: usize,
 ) {
     elf_file.add_symbol_to_section_raw(
         rodata,
-        name.clone(),
-        &bytes,
+        name.to_string(),
+        bytes,
         make_st_info(StBind::Local, StType::Object),
         StVis::Default as u8,
         align,

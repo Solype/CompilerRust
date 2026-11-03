@@ -59,19 +59,19 @@ pub enum Type {
 
 impl Type {
     pub fn is_float(&self) -> bool {
-        return matches!(self, Type::Float { .. });
+        matches!(self, Type::Float { .. })
     }
 
     pub fn is_unsigned(&self) -> bool {
-        return match self {
+        match self {
             Type::Int { unsigned, .. } => *unsigned,
             Type::Float { .. } => false,
             _ => true,
-        };
+        }
     }
 
     pub fn size(&self) -> usize {
-        return match self {
+        match self {
             Type::Int { short: true, .. } => 4,
             Type::Int { short: false, .. } => 8,
             Type::Float { short: true } => 4,
@@ -82,7 +82,7 @@ impl Type {
             Type::Byte => 1,
             Type::Bool => 1,
             _ => unimplemented!(),
-        };
+        }
     }
 }
 

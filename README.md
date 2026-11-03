@@ -130,3 +130,7 @@ what the compiler does not need.
 
 ## Context
 This project was built during my second semester studying in Korea, as part of the Compiler class at CAU, with the goal of exploring how a compiler translates source-level instructions down into machine code and executable binaries.
+
+## Contributing and license
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) to take part. The project is under the MIT license, see
+[`LICENSE.md`](LICENSE.md).

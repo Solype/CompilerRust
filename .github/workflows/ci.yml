@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Build
+        run: cargo build
+
+      # shortcut: warnings do not fail the job yet (201 today), add -- -D warnings once they are fixed
+      - name: Clippy
+        run: cargo clippy --all-targets
+
+      - name: Unit tests
+        run: cargo test
+
+      # compiles, links with gcc and runs every sample/*.kr, and checks that sample/errors/*.kr are refused
+      - name: Samples
+        run: scripts/run_samples.sh

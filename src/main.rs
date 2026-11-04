@@ -24,7 +24,7 @@ fn main() -> ExitCode {
         eprintln!("{err}");
         return ExitCode::FAILURE;
     }
-    return ExitCode::SUCCESS;
+    ExitCode::SUCCESS
 }
 
 /// The whole run; an error is its message, already formatted
@@ -101,7 +101,7 @@ fn link(mut file_names: Vec<String>) -> std::io::Result<()> {
     if !status.success() {
         return Err(std::io::Error::other(format!("gcc: {status}")));
     }
-    return Ok(());
+    Ok(())
 }
 
 enum Command {
@@ -135,7 +135,7 @@ fn parse_args() -> Result<Command, String> {
             _ => paths.push(arg),
         }
     }
-    return match (demo, paths.is_empty()) {
+    match (demo, paths.is_empty()) {
         (true, true) if !tree && !executable => Ok(Command::Demo),
         (false, false) => Ok(Command::Compile(Args {
             program,
@@ -146,7 +146,7 @@ fn parse_args() -> Result<Command, String> {
         _ => Err(format!(
             "usage: {program} [--tree] [-x] <file.kr>...\n       {program} --demo"
         )),
-    };
+    }
 }
 
 /// Reads the source file (UTF-8)

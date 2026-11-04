@@ -43,7 +43,7 @@ pub(super) fn encode_reg_int(
             modrm_ext,
             ..
         } => {
-            let fits_i8 = -128 <= (val as i64) && (val as i64) <= 127;
+            let fits_i8 = (-128..=127).contains(&val);
 
             let use_imm8 = fits_i8 && opcode_imm8.is_some() && size != Size::U8;
 

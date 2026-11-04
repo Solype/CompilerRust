@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::parser::parser_token::ParserTokenKind;
+use super::super::parser_token::ParserTokenKind;
 
 use super::structs::{NTerm, ParserNode, ParserProduction};
 

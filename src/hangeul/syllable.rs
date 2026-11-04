@@ -1,4 +1,4 @@
-use crate::hangeul::jamo::{batchim, initial, vowel};
+use super::jamo::{batchim, initial, vowel};
 
 /// Code of 가, the first syllable: syllables are numbered from there
 const FIRST: u32 = '가' as u32;
@@ -35,10 +35,10 @@ impl Syllable {
     }
 
     pub fn da() -> Syllable {
-        return Syllable {
+        Syllable {
             initial: initial::DIGEUT,
             vowel: vowel::A,
             batchim: batchim::NONE,
-        };
+        }
     }
 }

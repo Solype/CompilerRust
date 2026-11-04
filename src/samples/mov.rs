@@ -3,7 +3,7 @@ use crate::elf::instructions::{register::*, *};
 
 /// mov (every size and addressing mode), movzx, movsx
 pub fn mov() -> Vec<Instruction> {
-    return vec![
+    vec![
         bin(BinOp::Mov, reg(R8), imm(0x12), BYTE),
         bin(BinOp::Mov, reg(R9), imm(0x1234), WORD),
         bin(BinOp::Mov, reg(R10), imm(0x12345678), DWORD),
@@ -42,5 +42,5 @@ pub fn mov() -> Vec<Instruction> {
         extend(ExtendOp::Movsxd, R15, mem(at(RBX).index_scale(R8, Scale::Two)), None, None),
         extend(ExtendOp::Movsxd, RCX, var("my_data"), None, None),
         ret(),
-    ];
+    ]
 }

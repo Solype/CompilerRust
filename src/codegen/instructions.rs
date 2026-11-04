@@ -1,5 +1,5 @@
 use super::generation::Context;
-use crate::codegen::utils::{load_operand, var_size};
+use super::utils::{load_operand, var_size};
 use crate::elf::instructions::CtrlOp::JmpCC;
 use crate::elf::instructions::Operand::Sym;
 use crate::elf::instructions::register::{
@@ -13,7 +13,7 @@ use crate::parser::postparser::structs::Type;
 
 /// `ctx.offsets`: the offset under rbp of each variable, see var_offsets
 pub fn convert_operand(op: &IrOp, ctx: &Context) -> ElfOper {
-    return match op {
+    match op {
         IrOp::Var(var) => {
             ElfOper::MemoryAddress(MemAddress::new().base(RBP).disp(-ctx.offsets[var.id]))
         }
@@ -25,7 +25,7 @@ pub fn convert_operand(op: &IrOp, ctx: &Context) -> ElfOper {
             ElfOper::MemoryAddress(MemAddress::symbol(&ctx.float_names[*f]).rip_relative())
         }
         _ => unimplemented!(),
-    };
+    }
 }
 
 /// `mov rsp, rbp ; pop rbp ; ret`: undoes the prologue and returns
@@ -57,7 +57,7 @@ pub fn generate_return(op: &IrOp, ctx: &Context) -> Vec<Instruction> {
     } else {
         epi.insert(0, load_operand(RAX, op, ctx, None));
     }
-    return epi;
+    epi
 }
 
 pub const PARAM_FREGS: [Register; 8] = [XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7];
@@ -68,7 +68,7 @@ pub fn float_parameter(op: &IrOp, i_f: &mut i32, ctx: &Context) -> Instruction {
         unimplemented!()
     };
     *i_f += 1;
-    return load_operand(*reg, op, ctx, None);
+    load_operand(*reg, op, ctx, None)
 }
 
 /// Registers of the integer arguments, in order (System V)
@@ -81,25 +81,25 @@ pub fn normal_param(op: &IrOp, i: &mut i32, ctx: &Context) -> Instruction {
         unimplemented!()
     };
     *i += 1;
-    return load_operand(*reg, op, ctx, None);
+    load_operand(*reg, op, ctx, None)
 }
 
 /// The size in bytes of the value of `op`, and true for a 소수
 pub fn operand_kind(op: &IrOp, ctx: &Context) -> (usize, bool, bool) {
-    return match op {
+    match op {
         IrOp::Var(var) => (var.ty.size(), var.ty.is_float(), var.ty.is_unsigned()),
         IrOp::Int(_, short, unsigned) => (if *short { 4 } else { 8 }, false, *unsigned),
         IrOp::Float(f) => (if ctx.floats[*f].1 { 4 } else { 8 }, true, false),
         IrOp::Bool(_) => (1, false, true),
         // an address
         _ => (8, false, true),
-    };
+    }
 }
 
 /// `dest = 바꾸다(src)`: cvtss2sd / cvtsd2ss between two 소수, cvtsi2sd from a 정수, cvttsd2si
 /// to a 정수 (truncated toward 0, as in C), movsxd / movzx to a wider 정수; else a copy
 pub fn generate_cast(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction> {
-    let (src_size, src_float, src_unsigned) = operand_kind(src, ctx);
+    let (src_size, src_float, _src_unsigned) = operand_kind(src, ctx);
     let (dest_size, dest_float) = (dest.ty.size(), dest.ty.is_float());
     let same_kind = src_float == dest_float && (src_size == dest_size || !dest_float);
     // to a smaller 정수, an address or the same type: the low bytes, as a copy sized by dest
@@ -171,14 +171,14 @@ pub fn generate_cast(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction
         src: ElfOper::Reg(reg),
         size: var_size(dest),
     });
-    return instrs;
+    instrs
 }
 
 /// `dest = src`, sized by `dest`: `mov rax, src ; mov [dest], rax`
 pub fn generate_copy(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction> {
     let var = convert_operand(&IrOp::Var(dest.clone()), ctx);
     // x86 has no memory to memory mov: the value goes through rax
-    return vec![
+    vec![
         load_operand(RAX, src, ctx, var_size(dest)),
         Instruction::Binary {
             op: BinOp::Mov,
@@ -186,7 +186,7 @@ pub fn generate_copy(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction
             src: ElfOper::Reg(RAX),
             size: var_size(dest),
         },
-    ];
+    ]
 }
 
 /// `call symbol` (System V): the arguments in rdi, rsi, rdx, rcx, r8, r9, al = the number of
@@ -232,7 +232,7 @@ pub fn generate_call(
             size: var_size(var),
         });
     }
-    return instr;
+    instr
 }
 
 pub fn generate_jmp_if_not(cond: &IrOp, target: &Label, ctx: &Context) -> Vec<Instruction> {
@@ -250,5 +250,5 @@ pub fn generate_jmp_if_not(cond: &IrOp, target: &Label, ctx: &Context) -> Vec<In
         },
     ];
 
-    return instrs;
+    instrs
 }

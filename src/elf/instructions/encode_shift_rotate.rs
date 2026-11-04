@@ -42,7 +42,7 @@ pub fn encode_shift_rotate(
         class: RegisterClass::Gpr,
         index: ext,
     });
-    emit_rex(&mut v, size, None, &dst);
+    emit_rex(&mut v, size, None, dst);
 
     // ================================
     // Opcode selection
@@ -68,10 +68,10 @@ pub fn encode_shift_rotate(
     // ================================
     // Immediate (If necessary)
     // ================================
-    if let Operand::Imm(n) = src {
-        if *n != 1 {
-            v.push(*n as u8);
-        }
+    if let Operand::Imm(n) = src
+        && *n != 1
+    {
+        v.push(*n as u8);
     }
     v
 }

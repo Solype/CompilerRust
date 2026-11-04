@@ -1,7 +1,7 @@
 //! Conversion tests (`ConvOp` family): reference bytes produced by GNU as.
 
+use super::super::encode_conversion::encode_conversion;
 use super::*;
-use crate::elf::instructions::encode_conversion::encode_conversion;
 
 fn encode(dst: Register, src: Operand, size: Size) -> Vec<u8> {
     encode_conversion(ConvOp::Cvtsi2sd, &dst, &src, size).data

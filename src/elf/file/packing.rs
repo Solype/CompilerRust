@@ -30,7 +30,7 @@ where
         self.sections.push(Section::new(self.strtab.to_vec()));
         self.shdrs.push(shdr::ElfShdr::strtab(strtab_name as u32));
 
-        return strtab_ndx;
+        strtab_ndx
     }
 
     fn pack_symtab(&mut self, strtab_ndx: usize) -> usize {
@@ -75,7 +75,7 @@ where
 
             let target_name_ndx = self.shdrs[target_section_ndx].sh_name;
 
-            let rel_section_name_opt = self.shstrtab.from_usize(target_name_ndx as usize);
+            let rel_section_name_opt = self.shstrtab.name_at(target_name_ndx as usize);
 
             if let Some(section_name) = rel_section_name_opt {
                 let new_name = format!(".rel{}", section_name);
@@ -113,7 +113,7 @@ where
             }
 
             let target_name_ndx = self.shdrs[target_section_ndx].sh_name;
-            let rel_section_name_opt = self.shstrtab.from_usize(target_name_ndx as usize);
+            let rel_section_name_opt = self.shstrtab.name_at(target_name_ndx as usize);
 
             if let Some(section_name) = rel_section_name_opt {
                 let new_name = format!(".rela{}", section_name);
@@ -170,7 +170,7 @@ where
             ));
         }
 
-        if self.phdrs.len() != 0 {
+        if !self.phdrs.is_empty() {
             self.ehdr.e_phoff = T::from_usize(ehdr::ElfEhdr::<T>::mem_len());
         }
 

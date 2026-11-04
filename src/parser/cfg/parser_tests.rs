@@ -1,8 +1,8 @@
 use std::sync::OnceLock;
 
+use super::super::parser_token::{ParserToken, ParserTokenKind};
+use super::super::pre_parse;
 use crate::lexer::tokenize;
-use crate::parser::parser_token::{ParserToken, ParserTokenKind};
-use crate::parser::pre_parse;
 
 use super::parser::{Parser, TreeNode};
 use super::rules::RULES;

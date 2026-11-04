@@ -4,7 +4,7 @@
 //! for the instruction given in the comment. When several encodings are
 //! valid, they are separated by `|`.
 
-pub(super) use crate::elf::instructions::{register::*, *};
+pub(super) use super::{register::*, *};
 pub(super) use crate::samples::helpers::*;
 
 mod alu;
@@ -80,7 +80,7 @@ fn diff_lines(got: &[u8], reference: &[u8]) -> (String, String) {
 
 pub(super) fn check(ins: Instruction, expected: &[&[u8]], attrs: &[&str]) {
     let got = ins.encode(DEFAULT_SIZE).data;
-    if !expected.iter().any(|e| *e == got.as_slice()) {
+    if !expected.contains(&got.as_slice()) {
         let title = asm_from_attrs(attrs).unwrap_or_else(|| format!("{ins:?}"));
         let (got_str, marks) = diff_lines(&got, expected[0]);
         let expected: Vec<String> = expected.iter().map(|e| hex(e)).collect();

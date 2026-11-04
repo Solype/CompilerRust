@@ -29,7 +29,7 @@ where
         &mut self,
         section_ndx: usize,
         name: String,
-        data: &Vec<u8>,
+        data: &[u8],
         info: u8,
         other: u8,
         align: usize,
@@ -86,7 +86,7 @@ where
     }
 
     pub fn declare_non_defined_sym(&mut self, name: &String, ty: SymbolType) {
-        let name_offset = self.strtab.name(&name);
+        let name_offset = self.strtab.name(name);
         let info = match ty {
             SymbolType::Function => make_st_info(elfsym::StBind::Global, elfsym::StType::Func),
             SymbolType::Object => make_st_info(elfsym::StBind::Global, elfsym::StType::Object),

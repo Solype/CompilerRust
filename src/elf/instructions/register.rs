@@ -58,12 +58,12 @@ impl Register {
 
     #[inline]
     pub fn is_gpr(self) -> bool {
-        return matches!(self.class, RegisterClass::Gpr);
+        matches!(self.class, RegisterClass::Gpr)
     }
 
     #[inline]
     pub fn is_xmm(self) -> bool {
-        return matches!(self.class, RegisterClass::Xmm);
+        matches!(self.class, RegisterClass::Xmm)
     }
 }
 

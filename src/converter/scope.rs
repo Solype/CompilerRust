@@ -71,10 +71,10 @@ impl<'p> Scope<'p> {
 
     /// The labels of the innermost loop around this block; `None` outside of a loop
     pub(super) fn in_loop(&self) -> Option<&LoopLabels> {
-        return match &self.kind {
+        match &self.kind {
             BlockKind::Loop(labels) => Some(labels),
             _ => self.parent.and_then(|parent| parent.in_loop()),
-        };
+        }
     }
 
     /// The function whose body holds this block
@@ -105,7 +105,7 @@ impl<'p> Scope<'p> {
         }
         path.reverse();
         let base_name = format!("{prefix}_{}", path.join("_"));
-        return (format!("{base_name}_{first}"), format!("{base_name}_end"));
+        (format!("{base_name}_{first}"), format!("{base_name}_end"))
     }
 
     /// Adds `name` to this block, if no variable of this block or of the blocks around has it: a

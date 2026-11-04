@@ -14,7 +14,7 @@ impl fmt::Display for Program {
             }
             write!(f, "{function}")?;
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -32,14 +32,14 @@ impl fmt::Display for Function {
         if let Some(return_type) = &self.return_type {
             write!(f, " -> {return_type}")?;
         }
-        return match &self.body {
+        match &self.body {
             Some(body) => {
                 writeln!(f, " {{")?;
                 block(f, body, 1)?;
                 writeln!(f, "}}")
             }
             None => writeln!(f),
-        };
+        }
     }
 }
 
@@ -52,7 +52,7 @@ impl fmt::Display for Param {
 /// `int`, `short unsigned int`, `float&`, `int[10]`
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return match self {
+        match self {
             Type::Int { short, unsigned } => {
                 if *short {
                     write!(f, "short ")?;
@@ -71,7 +71,7 @@ impl fmt::Display for Type {
             Type::Array(ty, count) => write!(f, "{ty}[{count}]"),
             Type::Custom(name) => write!(f, "{name}"),
             Type::Null => write!(f, "null"),
-        };
+        }
     }
 }
 
@@ -81,13 +81,13 @@ fn block(f: &mut fmt::Formatter, statements: &[Statement], depth: usize) -> fmt:
         write!(f, "{}", "    ".repeat(depth))?;
         line(f, statement, depth)?;
     }
-    return Ok(());
+    Ok(())
 }
 
 /// One statement, already indented; ends with its newline
 fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Result {
     let indent = "    ".repeat(depth);
-    return match &statement.kind {
+    match &statement.kind {
         StatementKind::Declare(Declare { name, ty }) => writeln!(f, "let {name}: {ty}"),
         StatementKind::Init(Init {
             name,
@@ -144,20 +144,20 @@ fn line(f: &mut fmt::Formatter, statement: &Statement, depth: usize) -> fmt::Res
         }
         StatementKind::Break => writeln!(f, "break"),
         StatementKind::Continue => writeln!(f, "continue"),
-    };
+    }
 }
 
 /// An operand of an operator: in parentheses when it is itself an operation, `(a + b) * c`
 fn operand(expr: &Expr) -> String {
-    return match expr.kind {
+    match expr.kind {
         ExprKind::Binary { .. } => format!("({expr})"),
         _ => expr.to_string(),
-    };
+    }
 }
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return match &self.kind {
+        match &self.kind {
             ExprKind::Int(number, _, _) => write!(f, "{number}"),
             ExprKind::Float(number, _) => write!(f, "{number:?}"),
             ExprKind::Str(text) => write!(f, "{text:?}"),
@@ -173,18 +173,18 @@ impl fmt::Display for Expr {
                 let args: Vec<String> = args.iter().map(Argument::to_string).collect();
                 write!(f, "{verb}({})", args.join(", "))
             }
-        };
+        }
     }
 }
 
 /// Only the value: the particle has already given the argument its role
 impl fmt::Display for Argument {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return match self {
+        match self {
             Argument::Value { value, .. } => write!(f, "{value}"),
             Argument::Previous(value) => write!(f, "{value}"),
             Argument::ToType(ty) => write!(f, "{ty}"),
-        };
+        }
     }
 }
 
@@ -195,7 +195,7 @@ impl fmt::Display for UnaryOp {
             UnaryOp::BitNot => "~",
             UnaryOp::Not => "!",
         };
-        return write!(f, "{symbol}");
+        write!(f, "{symbol}")
     }
 }
 
@@ -221,6 +221,6 @@ impl fmt::Display for BinaryOp {
             BinaryOp::Div => "/",
             BinaryOp::Rem => "%",
         };
-        return write!(f, "{symbol}");
+        write!(f, "{symbol}")
     }
 }

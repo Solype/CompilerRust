@@ -88,6 +88,7 @@ impl From<usize> for Size {
 }
 
 #[derive(Debug, Clone)]
+#[allow(clippy::enum_variant_names)] // NoOperand: None would clash with Option::None
 pub enum Operand {
     NoOperand,
     Reg(Register),

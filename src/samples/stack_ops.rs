@@ -23,5 +23,5 @@ pub fn stack_ops() -> Vec<Instruction> {
         stack(StackOp::Leave, Operand::NoOperand, None),
         ret(),
     ]);
-    return code;
+    code
 }

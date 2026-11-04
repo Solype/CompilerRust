@@ -9,19 +9,19 @@ use std::hash::{Hash, Hasher};
 use std::mem::discriminant;
 
 fn token_matches_node(token: &ParserTokenKind, node: &ParserNode) -> bool {
-    return match node {
+    match node {
         ParserNode::Term(kind) => same_terminal(token, kind),
         ParserNode::NTerm(_) => false,
-    };
+    }
 }
 
 /// Same terminal (compared on its kind) or same non-terminal
 fn same_node(a: &ParserNode, b: &ParserNode) -> bool {
-    return match (a, b) {
+    match (a, b) {
         (ParserNode::Term(a), ParserNode::Term(b)) => same_terminal(a, b),
         (ParserNode::NTerm(a), ParserNode::NTerm(b)) => a == b,
         _ => false,
-    };
+    }
 }
 
 /// A terminal compared on its kind: `Name("main")` == `Name("")`
@@ -68,19 +68,19 @@ struct Item {
 
 impl Item {
     pub fn new(rule: usize, lookahead: usize) -> Self {
-        return Self {
-            rule: rule,
-            lookahead: lookahead,
+        Self {
+            rule,
+            lookahead,
             ..Default::default()
-        };
+        }
     }
 
     pub fn from_rule(rule_id: usize, term_id: usize) -> Self {
-        return Self {
+        Self {
             rule: rule_id,
             point: 0,
             lookahead: term_id,
-        };
+        }
     }
 
     /// The node just after the point, `None` when the point is at the end of the rule
@@ -88,16 +88,16 @@ impl Item {
         if self.point >= rules[self.rule].right.len() {
             return None;
         }
-        return Some(&rules[self.rule].right[self.point]);
+        Some(&rules[self.rule].right[self.point])
     }
 
     /// The same item with its point one node further: the node after the point has been read
     pub fn advance(&self) -> Self {
-        return Self {
+        Self {
             rule: self.rule,
             point: self.point + 1,
             lookahead: self.lookahead,
-        };
+        }
     }
 }
 
@@ -139,18 +139,17 @@ impl ParsingTable {
     /// The cell Action(state, token); `None` is a syntax error. Only the kind of the token
     /// counts: `Name("main")` finds the column `Name`
     pub fn get(&self, state: usize, tok: &ParserToken) -> Option<ParsingState> {
-        return self
-            .table
+        self.table
             .get(&ParsingEntry::Action(state, TerminalKey(&tok.kind)))
-            .copied();
+            .copied()
     }
 
     /// The cell Goto(state, non_terminal): the state to push after a reduce to `non_terminal`
     pub fn get_goto(&self, state: usize, non_terminal: NTerm) -> Option<usize> {
-        return match self.table.get(&ParsingEntry::Goto(state, non_terminal)) {
+        match self.table.get(&ParsingEntry::Goto(state, non_terminal)) {
             Some(ParsingState::Goto(n)) => Some(*n),
             _ => None,
-        };
+        }
     }
 
     pub fn new(rules: &'static [ParserProduction]) -> Self {
@@ -199,12 +198,12 @@ impl ParsingTable {
             eprintln!("{} states, {conflicts} conflicts", states.len());
         }
 
-        return Self {
+        Self {
             table,
             terms,
             term_id,
             start_rule,
-        };
+        }
     }
 
     /// The symbols just after a point in `state`, each one once
@@ -214,13 +213,13 @@ impl ParsingTable {
     ) -> Vec<&'static ParserNode> {
         let mut symbols: Vec<&'static ParserNode> = Vec::new();
         for item in state.iter() {
-            if let Some(node) = item.next_node(rules) {
-                if !symbols.iter().any(|symbol| same_node(symbol, node)) {
-                    symbols.push(node);
-                }
+            if let Some(node) = item.next_node(rules)
+                && !symbols.iter().any(|symbol| same_node(symbol, node))
+            {
+                symbols.push(node);
             }
         }
-        return symbols;
+        symbols
     }
 
     /// The number of `state`, which is added at the end of `states` if it was never seen
@@ -234,7 +233,7 @@ impl ParsingTable {
         }
         states.push(state.clone());
         state_id.insert(state, states.len() - 1);
-        return states.len() - 1;
+        states.len() - 1
     }
 
     /// The cell and the action of the transition `state --symbol--> n`
@@ -243,7 +242,7 @@ impl ParsingTable {
         symbol: &'static ParserNode,
         n: usize,
     ) -> (ParsingEntry<'static>, ParsingState) {
-        return match symbol {
+        match symbol {
             // Reading Eof after `StartSymbol → Items · Eof`: the whole program is read
             ParserNode::Term(kind) if same_terminal(kind, &ParserTokenKind::Eof) => (
                 ParsingEntry::Action(state, TerminalKey(kind)),
@@ -257,7 +256,7 @@ impl ParsingTable {
                 ParsingEntry::Goto(state, *non_terminal),
                 ParsingState::Goto(n),
             ),
-        };
+        }
     }
 
     /// Writes `action` in the cell `entry`; a cell already holding another action is a conflict:
@@ -270,11 +269,11 @@ impl ParsingTable {
         match table.get(&entry) {
             Some(old) if *old != action => {
                 eprintln!("conflict in {entry:?}: {old:?} or {action:?}");
-                return 1;
+                1
             }
             _ => {
                 table.insert(entry, action);
-                return 0;
+                0
             }
         }
     }
@@ -314,7 +313,7 @@ impl ParsingTable {
                 }
             }
         }
-        return items;
+        items
     }
 
     /// The state reached from `state` after reading `symbol`
@@ -339,7 +338,7 @@ impl ParsingTable {
         }
 
         // 3. The closure of `moved`
-        return ParsingTable::closure(rules, first, term_id, moved);
+        ParsingTable::closure(rules, first, term_id, moved)
     }
 
     /// `elem` has its point just before `non_terminal`: the items `non_terminal → · …` to add, one
@@ -376,7 +375,7 @@ impl ParsingTable {
             }
         }
 
-        return new_items;
+        new_items
     }
 
     /// The only rule `StartSymbol → … Eof`
@@ -415,6 +414,6 @@ impl ParsingTable {
                 }
             }
         }
-        return (terms, term_id);
+        (terms, term_id)
     }
 }

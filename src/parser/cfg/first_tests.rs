@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
+use super::super::parser_token::{Keyword, ParserTokenKind, Particle, Type};
 use crate::lexer::lexer_token::{Operator, Punctuation};
-use crate::parser::parser_token::{Keyword, ParserTokenKind, Particle, Type};
 
 use super::first::First;
 use super::rules::RULES;

@@ -4,7 +4,7 @@ use crate::elf::instructions::{register::*, *};
 /// div, idiv, mul, imul (1, 2 and 3 operands)
 pub fn mul_div() -> Vec<Instruction> {
     let none = || Operand::NoOperand;
-    return vec![
+    vec![
         complex(ComplexBinOp::Div, none(), reg(RCX), None, DWORD),
         complex(ComplexBinOp::Div, none(), mem(at(RBX).disp(8)), None, DWORD),
         complex(
@@ -110,5 +110,5 @@ pub fn mul_div() -> Vec<Instruction> {
             None,
         ),
         ret(),
-    ];
+    ]
 }

@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 pub mod file;
 pub mod section;
 pub mod strtab;

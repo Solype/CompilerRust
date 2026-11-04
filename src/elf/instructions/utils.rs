@@ -1,4 +1,4 @@
-use crate::elf::instructions::Operand;
+use super::Operand;
 
 use super::{
     EncodeInformation, Size,

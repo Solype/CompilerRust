@@ -39,7 +39,7 @@ pub enum StType {
     Section = 3, // Section
     File = 4,    // File name symbol
     Common = 5,  // Common data
-    TLS = 6,     // Thread-local storage
+    Tls = 6,     // Thread-local storage
                  // 7..=12 reserved
 }
 
@@ -99,7 +99,7 @@ impl<T> ElfSym<T>
 where
     T: Copy + ElfWritable + Default,
 {
-    pub fn to_bytes(&self) -> std::io::Result<Vec<u8>> {
+    pub fn to_bytes(self) -> std::io::Result<Vec<u8>> {
         let mut buffer = Vec::new();
         self.write(&mut buffer)?;
         Ok(buffer)

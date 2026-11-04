@@ -30,7 +30,7 @@ fn encode_mem_address(
     let mut v = EncodeInformation::new();
 
     emit_size_prefix(&mut v, size);
-    emit_rex(&mut v, size, None, &value);
+    emit_rex(&mut v, size, None, value);
 
     v.push(opcode);
 
@@ -80,7 +80,7 @@ pub(super) fn encode_stack(op: StackOp, value: &Operand, size: Size) -> EncodeIn
                 }
             };
 
-            if !(0x0 <= frame_size && frame_size <= 0xFFFF) {
+            if !(0x0..=0xFFFF).contains(&frame_size) {
                 panic!("ENTER frame size must fit in imm16");
             }
 
@@ -94,21 +94,19 @@ pub(super) fn encode_stack(op: StackOp, value: &Operand, size: Size) -> EncodeIn
 
             v.push(nesting_lv);
 
-            return EncodeInformation {
+            EncodeInformation {
                 data: v,
                 ..Default::default()
-            };
+            }
         }
 
         // =====================================================
         // LEAVE
         // =====================================================
-        StackOp::Leave => {
-            return EncodeInformation {
-                data: vec![0xC9],
-                ..Default::default()
-            };
-        }
+        StackOp::Leave => EncodeInformation {
+            data: vec![0xC9],
+            ..Default::default()
+        },
 
         // =====================================================
         // PUSH

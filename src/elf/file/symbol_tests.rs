@@ -121,7 +121,7 @@ where
     elf.symtab.symbols[1..]
         .iter()
         .filter(|sym| sym.st_info & 0xF != StType::Section as u8)
-        .map(|sym| elf.strtab.from_usize(sym.st_name as usize).unwrap())
+        .map(|sym| elf.strtab.name_at(sym.st_name as usize).unwrap())
         .collect()
 }
 
@@ -307,7 +307,7 @@ fn object(elf: &mut ElfFile<u64>, section: usize, name: &str, bytes: &[u8], alig
     elf.add_symbol_to_section_raw(
         section,
         name.to_string(),
-        &bytes.to_vec(),
+        bytes,
         info,
         StVis::Default as u8,
         align,

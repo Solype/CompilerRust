@@ -10,7 +10,7 @@ pub(super) fn fits(expr: &Expr, ty: &Type, expected: &Type) -> bool {
     if ty == expected {
         return true;
     }
-    return match (ty, expected) {
+    match (ty, expected) {
         (Type::Int { .. }, Type::Int { short, unsigned }) => {
             int_value(expr).is_some_and(|value| int_fits(value, *short, *unsigned))
         }
@@ -20,7 +20,7 @@ pub(super) fn fits(expr: &Expr, ty: &Type, expected: &Type) -> bool {
         (Type::Null, Type::Address(_)) => matches!(expr.kind, ExprKind::Null),
         (Type::Address(from), Type::Address(to)) => **from == Type::Null || **to == Type::Null,
         _ => false,
-    };
+    }
 }
 
 /// The error of a literal that does not fit in `expected` because of its value, not its type:
@@ -35,13 +35,13 @@ pub(super) fn range_error(expr: &Expr, ty: &Type, expected: &Type) -> Option<Con
         return None;
     }
     let kind = ConvertErrorKind::LiteralOutOfRange(type_name(expected));
-    return Some(ConvertError::new(kind, expr.span));
+    Some(ConvertError::new(kind, expr.span))
 }
 
 /// The value of an integer literal, maybe with `-` or computed from other literals: `-(1 + 2)`
 /// is -3; `None` for an expression that is no literal, or whose computation overflows
 fn int_value(expr: &Expr) -> Option<i128> {
-    return match &expr.kind {
+    match &expr.kind {
         ExprKind::Int(value, _, _) => Some(*value as i128),
         ExprKind::Unary { op, operand } => {
             let value = int_value(operand)?;
@@ -68,12 +68,12 @@ fn int_value(expr: &Expr) -> Option<i128> {
             }
         }
         _ => None,
-    };
+    }
 }
 
 /// The value of a 소수 literal, maybe with `-` or computed from other literals
 fn float_value(expr: &Expr) -> Option<f64> {
-    return match &expr.kind {
+    match &expr.kind {
         ExprKind::Float(value, _) => Some(*value),
         ExprKind::Unary {
             op: UnaryOp::Neg,
@@ -90,7 +90,7 @@ fn float_value(expr: &Expr) -> Option<f64> {
             }
         }
         _ => None,
-    };
+    }
 }
 
 /// Whether `value` fits in a 정수 of 32 bits when `short`, of 64 bits otherwise, never negative
@@ -102,12 +102,12 @@ fn int_fits(value: i128, short: bool, unsigned: bool) -> bool {
         (false, false) => (i64::MIN as i128, i64::MAX as i128),
         (false, true) => (0, u64::MAX as i128),
     };
-    return (min..=max).contains(&value);
+    (min..=max).contains(&value)
 }
 
 /// Whether `value` fits in a 소수 of 32 bits when `short`, of 64 bits otherwise
 fn float_fits(value: f64, short: bool) -> bool {
-    return value.is_finite() && (!short || value.abs() <= f32::MAX as f64);
+    value.is_finite() && (!short || value.abs() <= f32::MAX as f64)
 }
 
 /// Whether `바꾸다` converts a `from` to a `to`: between the numbers, 논리, 문자 and 바이트, between
@@ -121,19 +121,19 @@ pub(super) fn can_cast(from: &Type, to: &Type) -> bool {
     };
     let address = |ty: &Type| matches!(ty, Type::Address(_) | Type::Null);
     let long = |ty: &Type| matches!(ty, Type::Int { short: false, .. });
-    return from == to
+    from == to
         || (scalar(from) && scalar(to))
         || (address(from) && (matches!(to, Type::Address(_)) || long(to)))
-        || (long(from) && matches!(to, Type::Address(_)));
+        || (long(from) && matches!(to, Type::Address(_)))
 }
 
 pub(super) fn is_number(ty: &Type) -> bool {
-    return matches!(ty, Type::Int { .. } | Type::Float { .. });
+    matches!(ty, Type::Int { .. } | Type::Float { .. })
 }
 
 /// `ty` as the source writes it, for the messages
 pub(super) fn type_name(ty: &Type) -> String {
-    return match ty {
+    match ty {
         Type::Int { short, unsigned } => {
             let short = if *short { "짧은 " } else { "" };
             let unsigned = if *unsigned { "부호 없는 " } else { "" };
@@ -148,5 +148,5 @@ pub(super) fn type_name(ty: &Type) -> String {
         Type::Array(ty, count) => format!("{} {count}개", type_name(ty)),
         Type::Custom(name) => name.clone(),
         Type::Null => "nothing".to_string(),
-    };
+    }
 }

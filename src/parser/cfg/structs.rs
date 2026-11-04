@@ -1,7 +1,7 @@
 use std::hash::{Hash, Hasher};
 use std::mem::discriminant;
 
-use crate::parser::parser_token::ParserTokenKind;
+use super::super::parser_token::ParserTokenKind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum NTerm {
@@ -116,7 +116,7 @@ pub struct ParserProduction {
 /// Only the kind of token counts for `Name`, `Int`, `Float`, `Str`, `Bool`, `Counter` and the verb's infinitive: their
 /// value in the rules is a placeholder
 pub(super) fn same_terminal(a: &ParserTokenKind, b: &ParserTokenKind) -> bool {
-    return match (a, b) {
+    match (a, b) {
         (ParserTokenKind::Name(_), ParserTokenKind::Name(_))
         | (ParserTokenKind::Int(_), ParserTokenKind::Int(_))
         | (ParserTokenKind::Float(_), ParserTokenKind::Float(_))
@@ -134,7 +134,7 @@ pub(super) fn same_terminal(a: &ParserTokenKind, b: &ParserTokenKind) -> bool {
 
         // Keyword, Type, Particle, Punctuation, Operator, Eof: the value is the token
         (a, b) => a == b,
-    };
+    }
 }
 
 /// Same rule as `TerminalKey`: a terminal is compared on its kind

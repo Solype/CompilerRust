@@ -1,4 +1,4 @@
-# Use of AI in CompilerRust
+# Use of AI in Krc
 
 This document separates what I wrote myself from what was produced with an AI assistant (Claude,
 through Claude Code).
@@ -208,6 +208,7 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | The other operators: shifts, end of `generate_unary`, `+ - * /` and `-x` on `소수`, integer `%` | AI, at my request |
 | Sizes and types in the IR: `VarId` with its `Type`, `Type::size`, the size and the sign of the constants, `Type::is_unsigned`, `Size::from` for 1 and 2 bytes | Me; the AI adapted every use |
 | `바꾸다` (`generate_cast`) | AI, at my request, after my start |
+| Commit `d7235e8` (cast, float call results, 짧은 소수 constants, `VarId` with its `Type`) | Three hands: I added the functions and changed the return type, the AI carried the change through the project, the formatter and linter (`rustfmt`, `clippy`) changed a few lines, and the AI fixed the bugs before the commit |
 | Literals at the size of their expected type (`fit_operand`, `fit_args`), the common type of a comparison | AI; `common_type` by me, from AI code |
 | Comparisons, labels and jumps (`comparison`, `Label`, `Jump`, `generate_jmp_if_not`) | Me, AI autocomplete |
 | Control flow in the converter: `만약` / `아니면` and `동안` | Me, reviewed by AI |

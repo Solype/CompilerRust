@@ -4,7 +4,8 @@
  * The computation goes through the xmm registers, the parameters and the return through xmm0,
  * and printf gets al = number of float arguments.
  * 바 = ((1.5 + 2.25) - 0.75) * 4.5 / 0.5 = 27, 사 = -27, 자 = 2.5 as a double:
- * 27 + 2 = 29: `echo $?` prints 29 after the run.
+ * A NaN (0.0 / 0.0) is unordered, as in C: == is false (no + 2) and != is true (+ 1).
+ * 27 + 2 + 1 = 30: `echo $?` prints 30 after the run.
  */
 
 외부 정수를 반환하는 printf(문자 주소 형식, …)
@@ -36,5 +37,15 @@
     바를 정수로 바꿔서 차에 넣어요.   // 27
     카는 정수예요.
     자를 정수로 바꿔서 카에 넣어요.   // 2
-    (차 + 카)를 반환해요.
+    파는 (차 + 카)예요.
+
+    // ucomisd sets ZF on a NaN, as if equal: == and != must also read PF
+    타는 (0.0 / 0.0)이에요.
+    만약 타 == 타면 {
+        파에 (파 + 2)를 넣어요.
+    }
+    만약 타 != 타면 {
+        파에 (파 + 1)을 넣어요.
+    }
+    파를 반환해요.
 }

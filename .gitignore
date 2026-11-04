@@ -33,6 +33,7 @@ test*
 # Instagram post images
 /post.png
 /story.png
+/story/
 
 # Zed clones the .kr grammar here when installing the dev extension
 /editors/zed/grammars/

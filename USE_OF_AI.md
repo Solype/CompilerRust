@@ -211,6 +211,7 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Commit `d7235e8` (cast, float call results, 짧은 소수 constants, `VarId` with its `Type`) | Three hands: I added the functions and changed the return type, the AI carried the change through the project, the formatter and linter (`rustfmt`, `clippy`) changed a few lines, and the AI fixed the bugs before the commit |
 | Literals at the size of their expected type (`fit_operand`, `fit_args`), the common type of a comparison | AI; `common_type` by me, from AI code |
 | Comparisons, labels and jumps (`comparison`, `Label`, `Jump`, `generate_jmp_if_not`) | Me, AI autocomplete |
+| `==` / `!=` of a NaN (`comparison` reads PF, issue #3, pull request #32) | ShahadatTest: written with Cursor (AI), reviewed by them; the tests moved to `arithmetic_tests.rs`, the NaN case of `sample/15_floats.kr` and this row by AI, at my request |
 | Control flow in the converter: `만약` / `아니면` and `동안` | Me, reviewed by AI |
 | Control flow in the converter: `convert_cond`, `세면서`, end of the `그리고` / `또는` short-circuit | AI, at my request |
 | The rest of the converter: `convert_init` and `convert_assign` through `convert_expr`, the `Operand` variants for addresses | Me |

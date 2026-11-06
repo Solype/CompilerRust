@@ -1,0 +1,6 @@
+// #13: main without parameters stays valid, whatever the decision on argc / argv.
+// `echo $?` prints 3 after the run.
+
+정수를 반환하는 main() {
+    3을 반환해요.
+}

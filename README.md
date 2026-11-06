@@ -4,8 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 **Krc** is a programming language written in Korean (한국어 프로그래밍 언어), with a compiler in
-Rust that produces x86-64 Linux ELF object files. Made for the Compiler class of CAU (Chung-Ang
-University).
+Rust that produces x86-64 Linux ELF object files. Originally made for the Compiler class of CAU
+(Chung-Ang University), now continued for fun.
 
 ```
 두 정수 가와 나를 받아 나누고 정수를 반환 {
@@ -22,8 +22,8 @@ University).
 This is the greatest common divisor, from [`sample/10_gcd.kr`](sample/10_gcd.kr).
 
 ## About
-This project is a compiler written in Rust, developed as part of the Compiler course at CAU. Its
-source language is Korean: functions are verbs, arguments carry their particles
+This project is a compiler written in Rust, originally developed as part of the Compiler course at
+CAU. Its source language is Korean: functions are verbs, arguments carry their particles
 (`3과 4를 더해서 제곱해서 반환해요`), and the libc is called as latin name + `하다`
 (`"%ld\n"과 가를 printf해요`). The design of the language is in `docs/LANGUAGE_DESIGN.md`.
 The target is an x86-64 ELF object file (`.o` equivalent), linked with `ld` or `gcc`.
@@ -149,7 +149,7 @@ labelled by stage: `front-end`, `converter`, `codegen`, `backend`, `tooling`, an
 what the compiler does not need.
 
 ## Context
-This project was built during my second semester studying in Korea, as part of the Compiler class at CAU, with the goal of exploring how a compiler translates source-level instructions down into machine code and executable binaries.
+This project started during my second semester studying in Korea, as part of the Compiler class at CAU, with the goal of exploring how a compiler translates source-level instructions down into machine code and executable binaries. The class is over, and I keep working on it for fun.
 
 ## Contributing and license
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) to take part. The project is under the MIT license, see

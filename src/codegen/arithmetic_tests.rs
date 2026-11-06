@@ -3,7 +3,7 @@ use super::generation::Context;
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
 use crate::elf::instructions::register::{RAX, RCX, RDX, Register};
 use crate::elf::instructions::{
-    BinOp, ComplexBinOp, ConditionCode, Instruction, Operand as ElfOper, Size, UnaryOp,
+    BinOp, ComplexBinOp, ConditionCode, Instruction, Operand as ElfOper, ShiftOp, Size, UnaryOp,
 };
 use crate::parser::postparser::structs::{BinaryOp, Type};
 
@@ -114,7 +114,7 @@ fn integer_eq_does_not_read_parity() {
 }
 
 /// `var2 = var0 op var1`, all three 정수 of 8 bytes
-fn int_division(op: BinaryOp, unsigned: bool) -> Vec<Instruction> {
+fn int_binary(op: BinaryOp, unsigned: bool) -> Vec<Instruction> {
     let ty = Type::Int {
         short: false,
         unsigned,
@@ -156,17 +156,17 @@ fn assert_unsigned_division(instrs: &[Instruction], result: Register) {
 
 #[test]
 fn unsigned_div_stores_the_quotient_of_div() {
-    assert_unsigned_division(&int_division(BinaryOp::Div, true), RAX);
+    assert_unsigned_division(&int_binary(BinaryOp::Div, true), RAX);
 }
 
 #[test]
 fn unsigned_rem_stores_the_remainder_of_div() {
-    assert_unsigned_division(&int_division(BinaryOp::Rem, true), RDX);
+    assert_unsigned_division(&int_binary(BinaryOp::Rem, true), RDX);
 }
 
 #[test]
 fn signed_div_still_uses_cqo_and_idiv() {
-    let instrs = int_division(BinaryOp::Div, false);
+    let instrs = int_binary(BinaryOp::Div, false);
     assert!(
         instrs.iter().any(|i| matches!(
             i,
@@ -182,6 +182,36 @@ fn signed_div_still_uses_cqo_and_idiv() {
             i,
             Instruction::ComplexBinary {
                 op: ComplexBinOp::Idiv,
+                ..
+            }
+        )),
+        "{instrs:?}"
+    );
+}
+
+#[test]
+fn unsigned_shr_is_a_logical_shift() {
+    let instrs = int_binary(BinaryOp::Shr, true);
+    assert!(
+        instrs.iter().any(|i| matches!(
+            i,
+            Instruction::Shift {
+                op: ShiftOp::Shr,
+                ..
+            }
+        )),
+        "{instrs:?}"
+    );
+}
+
+#[test]
+fn signed_shr_is_an_arithmetic_shift() {
+    let instrs = int_binary(BinaryOp::Shr, false);
+    assert!(
+        instrs.iter().any(|i| matches!(
+            i,
+            Instruction::Shift {
+                op: ShiftOp::Sar,
                 ..
             }
         )),

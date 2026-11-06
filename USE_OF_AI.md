@@ -226,14 +226,8 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 
 | Element | Who |
 |---|---|
-| Unsigned `/`, `%` and `>>` in `src/codegen/arithmetic.rs` (issue #1, pull request #35, commit `dd00609`) | Me; the AI reviewed it and found two bugs in my first version (operands of `div`, missing `mov` to the destination), which I fixed. The AI made the commit |
-| The tests of these operations in `arithmetic_tests.rs`, their case in `sample/13_operators.kr`, the comment of `division` | AI, at my request |
-| Issue #33 (a declared variable is not zeroed): found while writing that sample | AI, at my request |
-| README: title, badges, opening text, code example (pull request #34), and the link to the website and to the Korean version | AI, at my request; I corrected the wording about the class |
-| `README.ko.md`, the website (`docs/index.md`, `docs/ko.md`, `docs/_config.yml`) | AI, at my request |
-| Release `v0.1.0`: the build of the binary, the release notes | AI, at my request |
-| Branch prefixes in `CONTRIBUTING.md` (pull request #36), the description and topics of the repository | AI, at my request |
-| This section | AI, at my request |
+| Unsigned `/`, `%` and `>>` (issue #1, pull request #35) | Me, reviewed by AI |
+| Documentation, tests and deployment (README, website, release `v0.1.0`) | AI, at my request |
 
 ## How I used the AI
 

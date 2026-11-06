@@ -1,0 +1,10 @@
+// #12: the local printf takes the symbol of the 외부 one.
+
+외부 정수를 반환하는 printf(문자 주소 형식, …)
+
+printf() {
+}
+
+정수를 반환하는 main() {
+    0을 반환해요.
+}

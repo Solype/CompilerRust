@@ -1,7 +1,8 @@
 /*
  * 13_operators.kr: the binary operators on integers, + - * / & | ^ << >>.
  * Each result is added to 결과: 26 + 14 + 60 + 3 + 4 + 22 + 18 + 24 + 5 = 176.
- * main returns 176: `echo $?` prints 176 after the run.
+ * On a 부호 없는 정수, / and % use div, not idiv, and >> uses shr, not sar: 2 + 5 + 15 more, 198.
+ * main returns 198: `echo $?` prints 198 after the run.
  */
 
 정수를 반환하는 main() {
@@ -28,5 +29,23 @@
     결과에 (결과 + 엑스)를 넣어요.
     결과에 (결과 + 왼쪽)을 넣어요.
     결과에 (결과 + 오른쪽)을 넣어요.
+
+    // ~0 is 2^64 - 1 here; read as signed, it would be -1
+    가득은 부호 없는 정수예요.
+    가득에 0을 넣어요.
+    가득에 (~가득)을 넣어요.
+    양몫은 (가득 / 9223372036854775807)이에요.   // 2; signed: 0
+    양나머지는 (가득 % 10)이에요.                // 5; signed: -1
+    양오른쪽은 (가득 >> 60)이에요.               // 15; signed: -1
+
+    둘은 정수예요.
+    양몫을 정수로 바꿔서 둘에 넣어요.
+    다섯은 정수예요.
+    양나머지를 정수로 바꿔서 다섯에 넣어요.
+    열다섯은 정수예요.
+    양오른쪽을 정수로 바꿔서 열다섯에 넣어요.
+    결과에 (결과 + 둘)을 넣어요.
+    결과에 (결과 + 다섯)을 넣어요.
+    결과에 (결과 + 열다섯)을 넣어요.
     결과를 반환해요.
 }

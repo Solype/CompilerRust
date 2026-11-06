@@ -1,0 +1,5 @@
+// Converter: main takes no 소수, whatever the decision on argc / argv.
+
+정수를 반환하는 main(소수 가) {
+    0을 반환해요.
+}

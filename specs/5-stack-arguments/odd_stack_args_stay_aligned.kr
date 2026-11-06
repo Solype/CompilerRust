@@ -1,0 +1,10 @@
+// #5: one argument on the stack: rsp stays aligned on 16 at the call, a float printf needs it.
+// `echo $?` prints 0 after the run.
+
+외부 정수를 반환하는 printf(문자 주소 형식, …)
+
+정수를 반환하는 main() {
+    "%ld %ld %ld %ld %ld %ld %.1f\n"과 1과 2와 3과 4와 5와 6과 1.5를 printf해요.
+    "%ld %ld %ld %ld %ld %ld %.1f\n"과 1과 2와 3과 4와 5와 6과 2.5를 printf해요.
+    0을 반환해요.
+}

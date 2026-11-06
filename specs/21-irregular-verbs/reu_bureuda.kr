@@ -1,0 +1,10 @@
+// #21: 부르다 is irregular: its -아/어서 form is 불러서.
+// `echo $?` prints 42 after the run.
+
+정수를 반환하는 부르다(정수 가) {
+    (가 + 1)을 반환해요.
+}
+
+정수를 반환하는 main() {
+    41을 불러서 반환해요.
+}

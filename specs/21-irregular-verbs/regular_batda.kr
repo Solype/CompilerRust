@@ -1,0 +1,10 @@
+// #21: 받다 looks irregular but is regular: 받아서.
+// `echo $?` prints 42 after the run.
+
+정수를 반환하는 받다(정수 가) {
+    (가 + 1)을 반환해요.
+}
+
+정수를 반환하는 main() {
+    41을 받아서 반환해요.
+}

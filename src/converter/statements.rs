@@ -1,5 +1,5 @@
 use super::expressions::Callee;
-use super::ir;
+use super::ir::structs::{Function as IrFunc, Instr as IrInstr, Operand as IrOperand};
 use super::scope::LoopLabels;
 use crate::lexer::span::Span;
 use crate::parser::postparser::structs::{
@@ -21,9 +21,9 @@ impl<'a> Converter<'a> {
         &mut self,
         condition: &Expr,
         scope: &Scope,
-        ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>,
-    ) -> Result<ir::structs::Operand, ConvertError> {
+        ir_func: &mut IrFunc,
+        instrs: &mut Vec<IrInstr>,
+    ) -> Result<IrOperand, ConvertError> {
         match self.get_type(condition, scope)? {
             Type::Bool => self.convert_expr(condition, scope, ir_func, instrs),
             _ => Err(ConvertError::new(ConvertErrorKind::NotBool, condition.span)),
@@ -35,9 +35,9 @@ impl<'a> Converter<'a> {
         &mut self,
         expr: &Expr,
         scope: &Scope,
-        ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>, // pushed into: no Vec to concatenate
-    ) -> Result<ir::structs::Operand, ConvertError> {
+        ir_func: &mut IrFunc,
+        instrs: &mut Vec<IrInstr>, // pushed into: no Vec to concatenate
+    ) -> Result<IrOperand, ConvertError> {
         if let Some(leaf) = operand(expr, scope, &mut self.ir) {
             return Ok(leaf);
         }
@@ -50,8 +50,8 @@ impl<'a> Converter<'a> {
             ExprKind::Call { verb, args } => {
                 self.convert_call_value(verb, args, expr.span, ty, scope, ir_func, instrs)
             }
-            ExprKind::Str(str) => Ok(ir::structs::Operand::DataAddress(self.ir.string_id(str))),
-            ExprKind::SizeOf(ty) => Ok(ir::structs::Operand::Int(ty.size() as i64, false, false)),
+            ExprKind::Str(str) => Ok(IrOperand::DataAddress(self.ir.string_id(str))),
+            ExprKind::SizeOf(ty) => Ok(IrOperand::Int(ty.size() as i64, false, false)),
             _ => unimplemented!(),
         }
     }
@@ -60,29 +60,29 @@ impl<'a> Converter<'a> {
     /// `expected` (2.5 on 4 bytes for a 짧은 소수), a 소수 of the other size goes through a Cast
     fn fit_operand(
         &mut self,
-        op: ir::structs::Operand,
+        op: IrOperand,
         expected: &Type,
-        ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>,
-    ) -> ir::structs::Operand {
+        ir_func: &mut IrFunc,
+        instrs: &mut Vec<IrInstr>,
+    ) -> IrOperand {
         match (op, expected) {
-            (ir::structs::Operand::Float(id), Type::Float { short }) => {
+            (IrOperand::Float(id), Type::Float { short }) => {
                 let value = self.ir.floats[id].0;
-                ir::structs::Operand::Float(self.ir.float_id(value, *short))
+                IrOperand::Float(self.ir.float_id(value, *short))
             }
-            (ir::structs::Operand::Int(value, _, _), Type::Int { short, unsigned }) => {
-                ir::structs::Operand::Int(value, *short, *unsigned)
+            (IrOperand::Int(value, _, _), Type::Int { short, unsigned }) => {
+                IrOperand::Int(value, *short, *unsigned)
             }
             // a 소수 computed from literals, (1.5 + 2.0) for a 짧은 소수
-            (ir::structs::Operand::Var(var), Type::Float { .. })
+            (IrOperand::Var(var), Type::Float { .. })
                 if var.ty.is_float() && var.ty != *expected =>
             {
                 let dest = ir_func.new_var(expected.clone());
-                instrs.push(ir::structs::Instr::Cast {
+                instrs.push(IrInstr::Cast {
                     dest: dest.clone(),
-                    src: ir::structs::Operand::Var(var),
+                    src: IrOperand::Var(var),
                 });
-                ir::structs::Operand::Var(dest)
+                IrOperand::Var(dest)
             }
             (op, _) => op,
         }
@@ -92,11 +92,11 @@ impl<'a> Converter<'a> {
     /// variadic, a 짧은 소수 goes as a 소수, as C promotes it
     fn fit_args(
         &mut self,
-        operands: Vec<ir::structs::Operand>,
+        operands: Vec<IrOperand>,
         func: &Function,
-        ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>,
-    ) -> Vec<ir::structs::Operand> {
+        ir_func: &mut IrFunc,
+        instrs: &mut Vec<IrInstr>,
+    ) -> Vec<IrOperand> {
         let double = Type::Float { short: false };
         let mut args = Vec::new();
         for (i, op) in operands.into_iter().enumerate() {
@@ -112,9 +112,9 @@ impl<'a> Converter<'a> {
         expr: &Expr,
         ty: Type,
         scope: &Scope,
-        ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>,
-    ) -> Result<ir::structs::Operand, ConvertError> {
+        ir_func: &mut IrFunc,
+        instrs: &mut Vec<IrInstr>,
+    ) -> Result<IrOperand, ConvertError> {
         let ExprKind::Binary { op, left, right } = &expr.kind else {
             unreachable!("convert_binary is only called on an ExprKind::Binary")
         };
@@ -133,27 +133,27 @@ impl<'a> Converter<'a> {
             ir_func.label_id(&end);
 
             let left = self.convert_expr(left, scope, ir_func, instrs)?;
-            instrs.push(ir::structs::Instr::Copy {
+            instrs.push(IrInstr::Copy {
                 dest: dest.clone(),
                 src: left,
             });
-            let cond = ir::structs::Operand::Var(dest.clone());
+            let cond = IrOperand::Var(dest.clone());
             if matches!(op, BinaryOp::And) {
                 let target = ir_func.label_id(&end);
-                instrs.push(ir::structs::Instr::JumpIfNot { cond, target });
+                instrs.push(IrInstr::JumpIfNot { cond, target });
             } else {
                 let target = ir_func.label_id(&rhs);
-                instrs.push(ir::structs::Instr::JumpIfNot { cond, target });
-                instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&end)));
-                instrs.push(ir::structs::Instr::Label(ir_func.label_id(&rhs)));
+                instrs.push(IrInstr::JumpIfNot { cond, target });
+                instrs.push(IrInstr::Jump(ir_func.label_id(&end)));
+                instrs.push(IrInstr::Label(ir_func.label_id(&rhs)));
             }
             let right = self.convert_expr(right, scope, ir_func, instrs)?;
-            instrs.push(ir::structs::Instr::Copy {
+            instrs.push(IrInstr::Copy {
                 dest: dest.clone(),
                 src: right,
             });
-            instrs.push(ir::structs::Instr::Label(ir_func.label_id(&end)));
-            return Ok(ir::structs::Operand::Var(dest));
+            instrs.push(IrInstr::Label(ir_func.label_id(&end)));
+            return Ok(IrOperand::Var(dest));
         }
 
         let left = self.convert_expr(left, scope, ir_func, instrs)?;
@@ -162,13 +162,13 @@ impl<'a> Converter<'a> {
         let left = self.fit_operand(left, &operand_ty, ir_func, instrs);
         let right = self.fit_operand(right, &operand_ty, ir_func, instrs);
         let dest = ir_func.new_var(ty);
-        instrs.push(ir::structs::Instr::Binary {
+        instrs.push(IrInstr::Binary {
             dest: dest.clone(),
             op,
             left,
             right,
         });
-        Ok(ir::structs::Operand::Var(dest.clone()))
+        Ok(IrOperand::Var(dest.clone()))
     }
 
     /// `op operand` into a new variable of type `ty`
@@ -178,17 +178,17 @@ impl<'a> Converter<'a> {
         operand: &Expr,
         ty: Type,
         scope: &Scope,
-        ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>,
-    ) -> Result<ir::structs::Operand, ConvertError> {
+        ir_func: &mut IrFunc,
+        instrs: &mut Vec<IrInstr>,
+    ) -> Result<IrOperand, ConvertError> {
         let src = self.convert_expr(operand, scope, ir_func, instrs)?;
         let dest = ir_func.new_var(ty);
-        instrs.push(ir::structs::Instr::Unary {
+        instrs.push(IrInstr::Unary {
             dest: dest.clone(),
             op,
             src,
         });
-        Ok(ir::structs::Operand::Var(dest))
+        Ok(IrOperand::Var(dest))
     }
 
     /// A call whose result is used: a Call, or a Cast for 바꾸다, into a new variable of type `ty`
@@ -200,28 +200,28 @@ impl<'a> Converter<'a> {
         span: Span,
         ty: Type,
         scope: &Scope,
-        ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>,
-    ) -> Result<ir::structs::Operand, ConvertError> {
+        ir_func: &mut IrFunc,
+        instrs: &mut Vec<IrInstr>,
+    ) -> Result<IrOperand, ConvertError> {
         let callee = self.resolve_call(verb, args, scope, span)?;
         let mut operands = self.convert_args(args, scope, ir_func, instrs)?;
         let dest = ir_func.new_var(ty);
         match callee {
             Callee::Function(func) => {
                 let args = self.fit_args(operands, func, ir_func, instrs);
-                instrs.push(ir::structs::Instr::Call {
+                instrs.push(IrInstr::Call {
                     dest: Some(dest.clone()),
                     symbol: func.mangled_name.clone(),
                     args,
                 })
             }
             // 바꾸다: a single value, the cast reads both types in vars
-            Callee::Cast(_) => instrs.push(ir::structs::Instr::Cast {
+            Callee::Cast(_) => instrs.push(IrInstr::Cast {
                 dest: dest.clone(),
                 src: operands.remove(0),
             }),
         }
-        Ok(ir::structs::Operand::Var(dest))
+        Ok(IrOperand::Var(dest))
     }
 
     /// The operands of the values given to a call; `정수로` (the target type) gives none
@@ -229,9 +229,9 @@ impl<'a> Converter<'a> {
         &mut self,
         args: &[Argument],
         scope: &Scope,
-        ir_func: &mut ir::structs::Function,
-        instrs: &mut Vec<ir::structs::Instr>,
-    ) -> Result<Vec<ir::structs::Operand>, ConvertError> {
+        ir_func: &mut IrFunc,
+        instrs: &mut Vec<IrInstr>,
+    ) -> Result<Vec<IrOperand>, ConvertError> {
         let mut operands = Vec::new();
         for arg in args {
             match arg {
@@ -252,8 +252,8 @@ impl<'a> Converter<'a> {
         parent: &Scope,
         for_loop: &'a For,
         span: Span,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         let (label_start, label_end) = parent.generate_labels("loop", "start");
         let mut scope = Scope::new(
             BlockKind::Loop(LoopLabels {
@@ -303,36 +303,36 @@ impl<'a> Converter<'a> {
         let mut instrs = vec![];
         let from = self.convert_expr(&for_loop.from, parent, ir_func, &mut instrs)?;
         let from = self.fit_operand(from, &ty, ir_func, &mut instrs);
-        instrs.push(ir::structs::Instr::Copy {
+        instrs.push(IrInstr::Copy {
             dest: var.clone(),
             src: from,
         });
-        instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&label_check)));
-        instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_start)));
-        instrs.push(ir::structs::Instr::Binary {
+        instrs.push(IrInstr::Jump(ir_func.label_id(&label_check)));
+        instrs.push(IrInstr::Label(ir_func.label_id(&label_start)));
+        instrs.push(IrInstr::Binary {
             dest: var.clone(),
             op: BinaryOp::Add,
-            left: ir::structs::Operand::Var(var.clone()),
-            right: ir::structs::Operand::Int(1, short, unsigned),
+            left: IrOperand::Var(var.clone()),
+            right: IrOperand::Int(1, short, unsigned),
         });
         // until is computed again at each turn, as the condition of a C for
-        instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_check)));
+        instrs.push(IrInstr::Label(ir_func.label_id(&label_check)));
         let until = self.convert_expr(&for_loop.until, parent, ir_func, &mut instrs)?;
         let until = self.fit_operand(until, &ty, ir_func, &mut instrs);
         let cond = ir_func.new_var(Type::Bool);
-        instrs.push(ir::structs::Instr::Binary {
+        instrs.push(IrInstr::Binary {
             dest: cond.clone(),
             op: BinaryOp::Lt,
-            left: ir::structs::Operand::Var(var),
+            left: IrOperand::Var(var),
             right: until,
         });
-        instrs.push(ir::structs::Instr::JumpIfNot {
-            cond: ir::structs::Operand::Var(cond),
+        instrs.push(IrInstr::JumpIfNot {
+            cond: IrOperand::Var(cond),
             target: ir_func.label_id(&label_end),
         });
         instrs.append(&mut self.convert_block(&for_loop.body, &scope, ir_func)?);
-        instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&label_start)));
-        instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_end)));
+        instrs.push(IrInstr::Jump(ir_func.label_id(&label_start)));
+        instrs.push(IrInstr::Label(ir_func.label_id(&label_end)));
         Ok(instrs)
     }
 
@@ -341,8 +341,8 @@ impl<'a> Converter<'a> {
         &mut self,
         parent: &Scope,
         while_loop: &'a While,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         let (label_start, label_end) = parent.generate_labels("loop", "start");
         let scope = Scope::new(
             BlockKind::Loop(LoopLabels {
@@ -351,20 +351,19 @@ impl<'a> Converter<'a> {
             }),
             Some(parent),
         );
-        let mut cond_instrs: Vec<ir::structs::Instr> =
-            vec![ir::structs::Instr::Label(ir_func.label_id(&label_start))];
+        let mut cond_instrs: Vec<IrInstr> = vec![IrInstr::Label(ir_func.label_id(&label_start))];
 
         let cond = self.convert_cond(&while_loop.condition, parent, ir_func, &mut cond_instrs)?;
 
-        cond_instrs.push(ir::structs::Instr::JumpIfNot {
+        cond_instrs.push(IrInstr::JumpIfNot {
             cond,
             target: ir_func.label_id(&label_end),
         });
 
         let mut block_instrs = self.convert_block(&while_loop.body, &scope, ir_func)?;
         cond_instrs.append(&mut block_instrs);
-        cond_instrs.push(ir::structs::Instr::Jump(ir_func.label_id(&label_start)));
-        cond_instrs.push(ir::structs::Instr::Label(ir_func.label_id(&label_end)));
+        cond_instrs.push(IrInstr::Jump(ir_func.label_id(&label_start)));
+        cond_instrs.push(IrInstr::Label(ir_func.label_id(&label_end)));
         Ok(cond_instrs)
     }
 
@@ -374,19 +373,53 @@ impl<'a> Converter<'a> {
         scope: &mut Scope,
         declare: &'a Declare,
         span: Span,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
+        let var = ir_func.new_var(declare.ty.clone());
+
         scope.declare(
             &declare.name,
             Variable {
                 ty: declare.ty.clone(),
                 constant: false,
-                var_id: ir_func.new_var(declare.ty.clone()),
+                var_id: var.clone(),
             },
             span,
         )?;
-        let inst: Vec<ir::structs::Instr> = vec![];
-        Ok(inst)
+
+        let mut instr: Vec<IrInstr> = vec![];
+        match declare.ty {
+            Type::Int { short, unsigned } => instr.push(IrInstr::Copy {
+                dest: var,
+                src: IrOperand::Int(0, short, unsigned),
+            }),
+            Type::Float { short } => {
+                instr.push(IrInstr::Copy {
+                    dest: var,
+                    src: IrOperand::Float(self.ir.float_id(0., short)),
+                });
+            }
+            Type::Bool | Type::Char | Type::Byte => {
+                instr.push(IrInstr::Copy {
+                    dest: var,
+                    src: IrOperand::Bool(false),
+                });
+            }
+
+            Type::Address(_) | Type::Null => {
+                instr.push(IrInstr::Copy {
+                    dest: var,
+                    src: IrOperand::Null,
+                });
+            }
+            Type::Array(_, _) => {
+                // unimplemented!()
+            }
+            Type::Custom(_) => {
+                unimplemented!()
+            }
+        }
+        Ok(instr)
     }
 
     /// `결과는 0이에요.`: adds the variable to `scope`
@@ -395,14 +428,14 @@ impl<'a> Converter<'a> {
         scope: &mut Scope,
         init: &'a Init,
         span: Span,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         let ty = match self.get_type(&init.value, scope)? {
             // `없음은 빈 주소예요.`: an address to nothing, the void* of C
             Type::Null => Type::Address(Box::new(Type::Null)),
             ty => ty,
         };
-        let mut instrs: Vec<ir::structs::Instr> = vec![];
+        let mut instrs: Vec<IrInstr> = vec![];
         let src = self.convert_expr(&init.value, scope, ir_func, &mut instrs)?;
 
         let var = ir_func.new_var(ty.clone());
@@ -413,7 +446,7 @@ impl<'a> Converter<'a> {
             constant: init.constant,
         };
         scope.declare(&init.name, variable, span)?;
-        instrs.push(ir::structs::Instr::Copy { dest: var, src });
+        instrs.push(IrInstr::Copy { dest: var, src });
         Ok(instrs)
     }
 
@@ -423,8 +456,8 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         assign: &'a Assign,
         span: Span,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         // check if the variable exists
         let Some(var) = scope.find_variable(&assign.target) else {
             let kind = ConvertErrorKind::UnknownVariable(assign.target.clone());
@@ -436,7 +469,7 @@ impl<'a> Converter<'a> {
             return Err(ConvertError::new(kind, span));
         }
 
-        let mut instrs: Vec<ir::structs::Instr> = vec![];
+        let mut instrs: Vec<IrInstr> = vec![];
         let src = self.convert_expr(&assign.value, scope, ir_func, &mut instrs)?;
         let assign_value_ty = self.get_type(&assign.value, scope)?;
 
@@ -452,7 +485,7 @@ impl<'a> Converter<'a> {
             return Err(ConvertError::new(kind, span));
         }
         let src = self.fit_operand(src, &var.ty, ir_func, &mut instrs);
-        instrs.push(ir::structs::Instr::Copy {
+        instrs.push(IrInstr::Copy {
             dest: var.var_id.clone(),
             src,
         });
@@ -465,8 +498,8 @@ impl<'a> Converter<'a> {
         scope: &Scope,
         value: &'a Expr,
         span: Span,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         let ret_ty = self.get_type(value, scope)?;
         let Some(fnc) = scope.function() else {
             return Err(ConvertError {
@@ -488,10 +521,10 @@ impl<'a> Converter<'a> {
             };
             return Err(ConvertError::new(kind, span));
         }
-        let mut instrs: Vec<ir::structs::Instr> = vec![];
+        let mut instrs: Vec<IrInstr> = vec![];
         let value = self.convert_expr(value, scope, ir_func, &mut instrs)?;
         let value = self.fit_operand(value, decl_ret_ty, ir_func, &mut instrs);
-        instrs.push(ir::structs::Instr::Return(value));
+        instrs.push(IrInstr::Return(value));
         Ok(instrs)
     }
 
@@ -500,9 +533,9 @@ impl<'a> Converter<'a> {
         &mut self,
         scope: &Scope,
         call: &'a Expr,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
-        let mut instrs: Vec<ir::structs::Instr> = vec![];
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
+        let mut instrs: Vec<IrInstr> = vec![];
 
         match &call.kind {
             // Alone, a call may return nothing
@@ -511,7 +544,7 @@ impl<'a> Converter<'a> {
                 match res {
                     Callee::Function(f) => {
                         let operands = self.convert_args(args, scope, ir_func, &mut instrs)?;
-                        let op = ir::structs::Instr::Call {
+                        let op = IrInstr::Call {
                             dest: None,
                             symbol: f.mangled_name.clone(),
                             args: self.fit_args(operands, f, ir_func, &mut instrs),
@@ -534,8 +567,8 @@ impl<'a> Converter<'a> {
         &mut self,
         parent: &Scope,
         if_statement: &'a If,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         let mut cond_instrs = Vec::new();
         let cond = self.convert_cond(&if_statement.condition, parent, ir_func, &mut cond_instrs)?;
         let (otherwise_label, end_label) = parent.generate_labels("condition", "otherwise");
@@ -546,7 +579,7 @@ impl<'a> Converter<'a> {
             &end_label
         };
 
-        cond_instrs.push(ir::structs::Instr::JumpIfNot {
+        cond_instrs.push(IrInstr::JumpIfNot {
             cond,
             target: ir_func.label_id(if_not_label),
         });
@@ -554,14 +587,12 @@ impl<'a> Converter<'a> {
         let mut block_instr = self.convert_block(&if_statement.then, parent, ir_func)?;
 
         if let Some(otherwise_block) = &if_statement.otherwise {
-            block_instr.push(ir::structs::Instr::Jump(ir_func.label_id(&end_label)));
-            block_instr.push(ir::structs::Instr::Label(
-                ir_func.label_id(&otherwise_label),
-            ));
+            block_instr.push(IrInstr::Jump(ir_func.label_id(&end_label)));
+            block_instr.push(IrInstr::Label(ir_func.label_id(&otherwise_label)));
             let mut instr = self.convert_block(otherwise_block, parent, ir_func)?;
             block_instr.append(&mut instr);
         }
-        block_instr.push(ir::structs::Instr::Label(ir_func.label_id(&end_label)));
+        block_instr.push(IrInstr::Label(ir_func.label_id(&end_label)));
         cond_instrs.append(&mut block_instr);
         Ok(cond_instrs)
     }
@@ -571,12 +602,12 @@ impl<'a> Converter<'a> {
         &self,
         scope: &Scope,
         span: Span,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         // The end of the innermost loop: the same name gives the Label its loop places
         if let Some(loop_labels) = scope.in_loop() {
             let end = ir_func.label_id(&loop_labels.label_end);
-            return Ok(vec![ir::structs::Instr::Jump(end)]);
+            return Ok(vec![IrInstr::Jump(end)]);
         }
         Err(ConvertError::new(ConvertErrorKind::BreakOutOfLoop, span))
     }
@@ -586,13 +617,13 @@ impl<'a> Converter<'a> {
         &self,
         scope: &Scope,
         span: Span,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         // The start of the innermost loop: the same name gives the Label its loop places; the
         // start of a 세면서 is its increment
         if let Some(loop_labels) = scope.in_loop() {
             let start = ir_func.label_id(&loop_labels.label_start);
-            return Ok(vec![ir::structs::Instr::Jump(start)]);
+            return Ok(vec![IrInstr::Jump(start)]);
         }
         Err(ConvertError::new(ConvertErrorKind::ContinueOutOfLoop, span))
     }
@@ -603,13 +634,13 @@ impl<'a> Converter<'a> {
         &mut self,
         block: &'a [Statement],
         scope: &Scope,
-        ir_func: &mut ir::structs::Function,
-    ) -> Result<Vec<ir::structs::Instr>, ConvertError> {
+        ir_func: &mut IrFunc,
+    ) -> Result<Vec<IrInstr>, ConvertError> {
         let mut new_scope = Scope::new(BlockKind::Block, Some(scope));
-        let mut instructions: Vec<ir::structs::Instr> = vec![];
+        let mut instructions: Vec<IrInstr> = vec![];
 
         for statement in block {
-            instructions.push(ir::structs::Instr::Comment(source_line(statement)));
+            instructions.push(IrInstr::Comment(source_line(statement)));
             let mut new_inst = match &statement.kind {
                 StatementKind::Declare(declare) => {
                     self.convert_declare(&mut new_scope, declare, statement.span, ir_func)?

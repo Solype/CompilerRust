@@ -4,16 +4,19 @@
 #   (0 without it), and the stdout in sample/NN_*.out if that file exists;
 # - sample/errors/*.kr: the compiler must refuse it with code 1 (not a panic).
 # Usage: scripts/run_samples.sh [-h|--help] [file.kr...]   (all the samples without argument)
-# No environment variable. Example: scripts/run_samples.sh sample/10_gcd.kr
+# Environment: COMPILER (optional), a compiler to use instead of building target/debug/compiler.
+# Example: scripts/run_samples.sh sample/10_gcd.kr
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
     exit 0
 fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-COMPILER="$ROOT/target/debug/compiler"
-cargo build -q --manifest-path "$ROOT/Cargo.toml" || exit 1
+if [ -z "$COMPILER" ]; then
+    COMPILER="$ROOT/target/debug/compiler"
+    cargo build -q --manifest-path "$ROOT/Cargo.toml" || exit 1
+fi
 
 # paths given by the caller, made absolute before leaving its directory
 files=()

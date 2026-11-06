@@ -1,0 +1,10 @@
+// #21: 푸다 is irregular: its -아/어서 form is 퍼서.
+// `echo $?` prints 42 after the run.
+
+정수를 반환하는 푸다(정수 가) {
+    (가 + 1)을 반환해요.
+}
+
+정수를 반환하는 main() {
+    41을 퍼서 반환해요.
+}

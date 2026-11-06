@@ -1,0 +1,14 @@
+// #2: 2^63 as a 부호 없는 정수 stays positive as a 소수 (cvtsi2sd alone reads it as signed).
+// `echo $?` prints 0 after the run.
+
+외부 정수를 반환하는 printf(문자 주소 형식, …)
+
+정수를 반환하는 main() {
+    가는 부호 없는 정수예요.
+    가에 1을 넣어요.
+    가에 (가 << 63)을 넣어요.
+    나는 소수예요.
+    가를 소수로 바꿔서 나에 넣어요.
+    "%.0f\n"과 나를 printf해요.
+    0을 반환해요.
+}

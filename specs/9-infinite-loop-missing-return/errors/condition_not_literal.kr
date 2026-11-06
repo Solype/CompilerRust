@@ -1,0 +1,11 @@
+// Converter: a loop on another condition can end, so the function can end without a return.
+
+정수를 반환하는 찾다(정수 가) {
+    가 > 0인 동안 {
+        가를 반환해요.
+    }
+}
+
+정수를 반환하는 main() {
+    7을 찾아서 반환해요.
+}

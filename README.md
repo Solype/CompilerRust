@@ -1,5 +1,7 @@
 # Krc: a Korean programming language and its compiler
 
+**English** | [한국어](README.ko.md) | [Website](https://solype.github.io/Krc/)
+
 [![CI](https://github.com/Solype/Krc/actions/workflows/ci.yml/badge.svg)](https://github.com/Solype/Krc/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
@@ -97,6 +99,9 @@ flowchart TD
 | `ElfFile64` | `src/elf/file/` |
 
 ## Usage
+A Linux x86-64 binary is on the [releases page](https://github.com/Solype/Krc/releases/latest), or
+build it yourself:
+
 ```bash
 cargo build --release
 ./target/release/compiler [--tree] [-x] <file.kr>...   # each file.kr gives file.o
@@ -139,7 +144,8 @@ symbols and the disassembly of an object file.
 | `sample/` | Programs that must run (`NN_*.kr`, expected stdout in `NN_*.out`) and programs that must be refused (`errors/`) |
 | `Proto.kr` | Reference program, expected values in its comments |
 | `scripts/` | `run_samples.sh` (sample tests), `analyze.sh` (`nm` + `objdump` of a `.o`) |
-| `docs/` | Language design (`LANGUAGE_DESIGN.md`), encoder test report, LR(1) table example |
+| `docs/` | Language design (`LANGUAGE_DESIGN.md`), encoder test report, LR(1) table example, and the [website](https://solype.github.io/Krc/) (`index.md`, `ko.md`, published by GitHub Pages) |
+| `README.ko.md` | This README in Korean, shorter |
 | `editors/` | Syntax highlighting for Zed, micro and tree-sitter |
 | `USE_OF_AI.md` | What was written with AI, and how |
 

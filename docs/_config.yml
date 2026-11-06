@@ -1,0 +1,6 @@
+title: Krc
+description: A Korean programming language (한국어 프로그래밍 언어) and its compiler, written in Rust
+theme: jekyll-theme-cayman
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap

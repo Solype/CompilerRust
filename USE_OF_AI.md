@@ -12,7 +12,8 @@ through Claude Code).
   converter.
 - **Exception**: the commits `fc1447c`, `efaad85` and `d1c847c` (October 9) were made by the AI,
   but without the `Co-Authored-By` line, at my request. Their content is detailed below. The
-  same goes for the commits of October 15 (`996c222` to `41000ea`) and October 20 (from `7c222ba`).
+  same goes for the commits of October 15 (`996c222` to `41000ea`), October 20 (from `7c222ba`)
+  and November 6 (from `f2adc0a`).
 - **Limits**:
   - the AI sessions of October 2 to 4 are no longer available: for that period, only the
     `Co-Authored-By` line counts;
@@ -220,6 +221,19 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Imports, compile errors, warnings, doc comments, refactorings (number of arguments) | AI, at my request |
 | Review of my code, explanations (stack frame, x86 constraints, division, casts, jumps) | AI, explanations only |
 | README and TODO updates, the TODO turned into GitHub issues, the repository layout (`docs/`, `scripts/`) | AI |
+
+## November 6: unsigned operations, documentation and release
+
+| Element | Who |
+|---|---|
+| Unsigned `/`, `%` and `>>` in `src/codegen/arithmetic.rs` (issue #1, pull request #35, commit `dd00609`) | Me; the AI reviewed it and found two bugs in my first version (operands of `div`, missing `mov` to the destination), which I fixed. The AI made the commit |
+| The tests of these operations in `arithmetic_tests.rs`, their case in `sample/13_operators.kr`, the comment of `division` | AI, at my request |
+| Issue #33 (a declared variable is not zeroed): found while writing that sample | AI, at my request |
+| README: title, badges, opening text, code example (pull request #34), and the link to the website and to the Korean version | AI, at my request; I corrected the wording about the class |
+| `README.ko.md`, the website (`docs/index.md`, `docs/ko.md`, `docs/_config.yml`) | AI, at my request |
+| Release `v0.1.0`: the build of the binary, the release notes | AI, at my request |
+| Branch prefixes in `CONTRIBUTING.md` (pull request #36), the description and topics of the repository | AI, at my request |
+| This section | AI, at my request |
 
 ## How I used the AI
 

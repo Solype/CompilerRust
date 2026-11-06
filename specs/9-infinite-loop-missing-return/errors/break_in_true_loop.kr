@@ -1,0 +1,11 @@
+// Converter: 그만해요 leaves the loop, so the function can end without a return.
+
+정수를 반환하는 찾다(정수 가) {
+    참인 동안 {
+        그만해요.
+    }
+}
+
+정수를 반환하는 main() {
+    7을 찾아서 반환해요.
+}

@@ -1,0 +1,6 @@
+// #10: the statement on line 5 never runs.
+
+정수를 반환하는 main() {
+    1을 반환해요.
+    2를 반환해요.
+}

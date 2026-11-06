@@ -12,7 +12,8 @@ through Claude Code).
   converter.
 - **Exception**: the commits `fc1447c`, `efaad85` and `d1c847c` (October 9) were made by the AI,
   but without the `Co-Authored-By` line, at my request. Their content is detailed below. The
-  same goes for the commits of October 15 (`996c222` to `41000ea`) and October 20 (from `7c222ba`).
+  same goes for the commits of October 15 (`996c222` to `41000ea`), October 20 (from `7c222ba`)
+  and November 6 (from `f2adc0a`).
 - **Limits**:
   - the AI sessions of October 2 to 4 are no longer available: for that period, only the
     `Co-Authored-By` line counts;
@@ -220,6 +221,13 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Imports, compile errors, warnings, doc comments, refactorings (number of arguments) | AI, at my request |
 | Review of my code, explanations (stack frame, x86 constraints, division, casts, jumps) | AI, explanations only |
 | README and TODO updates, the TODO turned into GitHub issues, the repository layout (`docs/`, `scripts/`) | AI |
+
+## November 6: unsigned operations, documentation and release
+
+| Element | Who |
+|---|---|
+| Unsigned `/`, `%` and `>>` (issue #1, pull request #35) | Me, reviewed by AI |
+| Documentation, tests and deployment (README, website, release `v0.1.0`) | AI, at my request |
 
 ## How I used the AI
 

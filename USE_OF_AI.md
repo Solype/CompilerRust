@@ -27,9 +27,9 @@ through Claude Code).
 | Part | Who |
 |---|---|
 | ELF backend and x86-64 encoder (`src/elf`), March to September | Me; once the complex functions were in place, the AI completed it instruction by instruction (opcodes), then added the PLT32/32S relocations, the SSE instructions and the ELF labels (October 2) |
-| Design of the Korean language, TODO, translation to English | AI and me |
-| Lexer, hangeul conjugation, pre-parser (October 3 to 5) | AI, at my request; me for 20-30 % of the pre-parser |
-| Grammar, FIRST, LR(1) table, parser, tree, AST (October 5 to 9) | Shared: the grammar and FIRST by the AI, on my `ParserProduction` struct; detail below |
+| Design of the Korean language, TODO, translation to English | Me and AI |
+| Lexer, hangeul conjugation, pre-parser (October 3 to 5) | Me for 20-30 % of the pre-parser, AI for the rest |
+| Grammar, FIRST, LR(1) table, parser, tree, AST (October 5 to 9) | Me and AI: the grammar and FIRST by the AI, on my `ParserProduction` struct; detail below |
 | Converter, the semantic analysis (`src/converter`, October 12 to 15) | Shared: detail below |
 | IR and code generation (`src/converter/ir`, `src/codegen`, October 16 to 31) | Mostly me; the AI helped complete the structs of the IR: detail below |
 | Sample programs (`src/samples`), README | Me |
@@ -106,7 +106,7 @@ except for the documentation, written together.
   - the lexer (`src/lexer`): `Span`, `LexError`, the tokens;
   - Hangul syllables and regular conjugation (`src/hangeul`);
   - the pre-parser (`src/parser/preparser`): keywords, types, particles, verbs, declared names,
-    errors on the identifiers left. 70-80 % of it was written by the AI, the rest by me.
+    errors on the identifiers left. I wrote 20-30 % of it, the AI 70-80 %.
 - **Grammar** (`src/parser/cfg`):
   - the `ParserProduction` struct is mine (I asked to keep it as I wrote it);
   - the rules of `rules.rs`, the `rule!` and `term!` macros, and the computation of the nullable
@@ -125,12 +125,12 @@ On this part, I wrote some of the code myself, guided by the explanations of the
 | `TerminalKey` and its `Hash`, `ParsingEntry` | AI |
 | Errors on the `StartSymbol` rule (`get_first_rule`) | AI, at my request |
 | Closure loop (`closure`) | Me, debugged with the AI |
-| `get_new_items` | AI: signature and steps as comments; me: the body |
-| `goto` | AI: signature and steps; me: the body |
-| Loop over the states | AI, from my draft |
-| Filling the table (S, R, Goto, Accept) and detecting conflicts (`fill`) | AI, from my first `R` line |
+| `get_new_items` | Me (the body), AI (signature and steps as comments) |
+| `goto` | Me (the body), AI (signature and steps) |
+| Loop over the states | Me (draft), finished by AI |
+| Filling the table (S, R, Goto, Accept) and detecting conflicts (`fill`) | Me (first `R` line), finished by AI |
 | Reorganizing `new()`, comments of `Item` and `First` | AI |
-| `get` and `get_goto` | AI, from my start of `get` |
+| `get` and `get_goto` | Me (start of `get`), finished by AI |
 | Step-by-step debug mode (`LR_DEBUG`) | AI, removed since |
 
 ### Parser (`parser.rs`)
@@ -149,7 +149,7 @@ On this part, I wrote some of the code myself, guided by the explanations of the
 | Element | Who |
 |---|---|
 | Start of `Type` and `Function`, signature of `convert_to_ast_tree` | Me |
-| The AST structs (`structs.rs`) | I started, AI completed |
+| The AST structs (`structs.rs`) | Me (start), completed by AI |
 | The body of `convert_to_ast_tree` (`postparser.rs`) | AI |
 
 ## October 12 to 15: the converter (`src/converter`)
@@ -171,8 +171,8 @@ I chose the points and asked for them. On that day, the AI wrote most of the cod
 
 | Element | Who |
 |---|---|
-| `PartialEq` of `BlockKind` | AI: my `derive` did not compile, it wrote the impl by hand |
-| The integer check of the `세면서` bounds | I started it, the AI completed it |
+| `PartialEq` of `BlockKind` | Me (a `derive` that did not compile), AI wrote the impl by hand |
+| The integer check of the `세면서` bounds | Me (start), completed by AI |
 | Fix of `convert_break` (`BreakOutOfLoop` instead of `ContinueOutOfLoop`) | Me |
 | `WrongAssignType`, in the place I had left for it in `convert_assign` | AI |
 | Variable of `세면서` (declared by the loop or existing, not `고정된`), `Scope::in_loop`, removing the `loops` field and the unused imports | AI |
@@ -202,9 +202,9 @@ instructions. The AI helped me complete the IR structs; I wrote the rest by hand
 | Integer operators: `simple_operation`, `multiplication`, `division` | Me, from the instructions the AI gave me |
 | The other operators: shifts, end of `generate_unary`, `+ - * /` and `-x` on `소수`, integer `%` | AI, at my request |
 | Sizes and types in the IR: `VarId` with its `Type`, `Type::size`, the size and the sign of the constants, `Type::is_unsigned`, `Size::from` for 1 and 2 bytes | Me; the AI adapted every use |
-| `바꾸다` (`generate_cast`) | AI, at my request, after my start |
+| `바꾸다` (`generate_cast`) | Me (start), finished by AI |
 | Commit `d7235e8` (cast, float call results, 짧은 소수 constants, `VarId` with its `Type`) | Three hands: I added the functions and changed the return type, the AI carried the change through the project, the formatter and linter (`rustfmt`, `clippy`) changed a few lines, and the AI fixed the bugs before the commit |
-| Literals at the size of their expected type (`fit_operand`, `fit_args`), the common type of a comparison | AI; `common_type` by me, from AI code |
+| Literals at the size of their expected type (`fit_operand`, `fit_args`), the common type of a comparison | Me for `common_type`, from AI code; AI for the rest |
 | Comparisons, labels and jumps (`comparison`, `Label`, `Jump`, `generate_jmp_if_not`) | Me, AI autocomplete |
 | `==` / `!=` of a NaN (`comparison` reads PF, issue #3, pull request #32) | ShahadatTest: written with Cursor (AI), reviewed by them; the tests moved to `arithmetic_tests.rs`, the NaN case of `sample/15_floats.kr` and this row by AI, at my request |
 | Control flow in the converter: `만약` / `아니면` and `동안` | Me, reviewed by AI |

@@ -26,20 +26,14 @@ through Claude Code).
 
 | Part | Who |
 |---|---|
-| ELF backend and x86-64 encoder (`src/elf`), March to September | Me; once the complex functions were in place, the AI completed it instruction by instruction (opcodes) |
-| Every macro of the project (`elf_derive`, `rule!` and `term!` of the grammar) | AI |
-| Sample programs (`src/samples`), README | Me |
-| Every unit test of the project, and the encoding edge cases they revealed (October 1 and 2) | AI |
-| PLT32/32S relocations, SSE instructions, ELF labels (October 2) | AI, at my request |
+| ELF backend and x86-64 encoder (`src/elf`), March to September | Me; once the complex functions were in place, the AI completed it instruction by instruction (opcodes), then added the PLT32/32S relocations, the SSE instructions and the ELF labels (October 2) |
 | Design of the Korean language, TODO, translation to English | AI and me |
-| Lexer, hangeul conjugation (October 3) | AI, at my request |
-| Pre-parser (October 4 and 5) | AI for 70-80 %, me for the rest |
-| Grammar and FIRST (October 5) | AI, on my `ParserProduction` struct |
-| LR(1) table, parser, tree, AST (October 9) | Shared: detail below |
+| Lexer, hangeul conjugation, pre-parser (October 3 to 5) | AI, at my request; me for 20-30 % of the pre-parser |
+| Grammar, FIRST, LR(1) table, parser, tree, AST (October 5 to 9) | Shared: the grammar and FIRST by the AI, on my `ParserProduction` struct; detail below |
 | Converter, the semantic analysis (`src/converter`, October 12 to 15) | Shared: detail below |
-| IR, the output of the converter (`src/converter/ir`, October 16 to 19) | Me; the AI helped complete the structs |
-| Code generation (`src/codegen`, October 20 to 31) | Mostly me: detail below |
-| Command line: `-x`, several files, errors (October 20) | AI, at my request |
+| IR and code generation (`src/converter/ir`, `src/codegen`, October 16 to 31) | Mostly me; the AI helped complete the structs of the IR: detail below |
+| Sample programs (`src/samples`), README | Me |
+| Tooling around the compiler: every unit test and the encoding edge cases they revealed, every macro (`elf_derive`, `rule!` and `term!`), the command line (`-x`, several files, errors) | AI, at my request |
 
 ## Overall share (estimate, October 20)
 

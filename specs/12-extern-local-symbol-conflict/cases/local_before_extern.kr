@@ -1,0 +1,10 @@
+// #12: the same conflict, the other way around.
+
+printf() {
+}
+
+외부 정수를 반환하는 printf(문자 주소 형식, …)
+
+정수를 반환하는 main() {
+    0을 반환해요.
+}

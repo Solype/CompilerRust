@@ -1,0 +1,11 @@
+// #18: two functions are two scopes: 사 and 사과 do not conflict.
+// `echo $?` prints 2 after the run.
+
+정수를 반환하는 고치다(정수 사) {
+    사를 반환해요.
+}
+
+정수를 반환하는 main() {
+    사과는 2예요.
+    사과를 고쳐서 반환해요.
+}

@@ -1,0 +1,5 @@
+// Converter: the second parameter of main can only be argv.
+
+정수를 반환하는 main(정수 가, 정수 나) {
+    0을 반환해요.
+}

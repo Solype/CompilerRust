@@ -33,7 +33,7 @@ through Claude Code).
 | Converter, the semantic analysis (`src/converter`, October 12 to 15) | Shared: detail below |
 | IR and code generation (`src/converter/ir`, `src/codegen`, October 16 to 31) | Mostly me; the AI helped complete the structs of the IR: detail below |
 | Sample programs (`src/samples`), README | Me |
-| Tooling around the compiler: every unit test and the encoding edge cases they revealed, every macro (`elf_derive`, `rule!` and `term!`), the command line (`-x`, several files, errors) | AI, at my request |
+| Every unit test and the encoding edge cases they revealed, every macro (`elf_derive`, `rule!` and `term!`), the command line (`-x`, several files, errors) | AI |
 
 ## Overall share (estimate, October 20)
 

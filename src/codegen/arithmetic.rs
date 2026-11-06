@@ -63,9 +63,10 @@ fn float_operation(
     ]
 }
 
-/// `dest = left / right` (result rax) or `left % right` (result rdx), signed: `mov rax, left ;
-/// mov rcx, right ; cqo (cdq on 4 bytes) ; idiv rcx ; mov [dest], result`. idiv divides rdx:rax:
-/// quotient in rax, remainder in rdx
+/// `dest = left / right` (result rax) or `left % right` (result rdx): `mov rax, left ;
+/// mov rcx, right ; cqo (cdq on 4 bytes) ; idiv rcx ; mov [dest], result`, or `xor rdx, rdx ;
+/// div rcx` in place of cqo and idiv on a 부호 없는 value. Both divide rdx:rax: quotient in rax,
+/// remainder in rdx
 fn division(
     dest: &VarId,
     left: &IrOp,
@@ -284,7 +285,6 @@ pub fn generate_binary(
         BinaryOp::Div => division(dest, left, right, ctx, RAX),
         BinaryOp::Rem => division(dest, left, right, ctx, RDX),
         BinaryOp::Shl => shift(dest, left, right, ctx, ShiftOp::Shl),
-        // shortcut: arithmetic shift as for a signed value, Shr for 양수 once Binary carries the sign
         BinaryOp::Shr => {
             if dest.ty.is_unsigned() {
                 shift(dest, left, right, ctx, ShiftOp::Shr)

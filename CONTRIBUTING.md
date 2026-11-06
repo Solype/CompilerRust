@@ -37,6 +37,16 @@ scripts/analyze.sh sample/10_gcd.o        # symbols and disassembly of an object
 
 Both `cargo test` and `scripts/run_samples.sh` must pass before a pull request.
 
+## See what an issue is missing
+
+`scripts/missing.sh` runs the specs of the open issues and lists what does not pass yet. On a
+branch `<prefix>/<issue>-<slug>` it shows that issue; on any other branch, every issue. `--help`
+gives the options. `MISS` is a failing check, `ASK` a decision or a task no test can see.
+
+The specs live in `specs/<issue>-<slug>/` and in `src/issue_specs.rs`. CI does not run them, since
+they fail until their issue is done. In the pull request that closes an issue, move its programs
+to `sample/`, its Rust tests next to the code without `#[ignore]`, and delete its spec.
+
 ## Samples
 
 - `sample/NN_name.kr` must compile and run. Its header comment gives the expected exit code with

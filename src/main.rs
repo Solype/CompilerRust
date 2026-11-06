@@ -2,6 +2,8 @@ mod codegen;
 mod converter;
 mod elf;
 mod hangeul;
+#[cfg(test)]
+mod issue_specs;
 mod lexer;
 mod parser;
 mod samples;

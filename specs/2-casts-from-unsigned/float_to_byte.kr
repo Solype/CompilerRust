@@ -1,0 +1,9 @@
+// #2: 소수 to a 1-byte 바이트: cvttsd2si writes 4 or 8 bytes, the destination has 1.
+// `echo $?` prints 7 after the run.
+
+정수를 반환하는 main() {
+    가는 7.5예요.
+    나는 바이트예요.
+    가를 바이트로 바꿔서 나에 넣어요.
+    나를 정수로 바꿔서 반환해요.
+}

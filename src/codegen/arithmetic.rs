@@ -2,6 +2,7 @@ use super::generation::Context;
 use super::instructions::{convert_operand, operand_kind};
 use super::utils::{load_operand, var_size};
 use crate::converter::ir::structs::{Operand as IrOp, VarId};
+use crate::elf::instructions::Operand::Reg;
 use crate::elf::instructions::register::{RAX, RCX, RDX, Register, XMM0, XMM1};
 use crate::elf::instructions::{
     BinOp, ComplexBinOp, ConditionCode, Instruction, Operand as ElfOper, ShiftOp, Size,
@@ -72,6 +73,33 @@ fn division(
     ctx: &Context,
     result: Register,
 ) -> Vec<Instruction> {
+    let size = var_size(dest);
+
+    if dest.ty.is_unsigned() {
+        return vec![
+            load_operand(RAX, left, ctx, size),
+            load_operand(RCX, right, ctx, size),
+            Instruction::Binary {
+                op: BinOp::Xor,
+                dst: Reg(RDX),
+                src: Reg(RDX),
+                size,
+            },
+            Instruction::ComplexBinary {
+                op: ComplexBinOp::Div,
+                dst: ElfOper::NoOperand,
+                src: Reg(RCX),
+                extra: None,
+                size,
+            },
+            Instruction::Binary {
+                op: BinOp::Mov,
+                dst: convert_operand(&IrOp::Var(dest.clone()), ctx),
+                src: Reg(result),
+                size,
+            },
+        ];
+    }
     vec![
         load_operand(RAX, left, ctx, var_size(dest)),
         load_operand(RCX, right, ctx, var_size(dest)),
@@ -257,7 +285,13 @@ pub fn generate_binary(
         BinaryOp::Rem => division(dest, left, right, ctx, RDX),
         BinaryOp::Shl => shift(dest, left, right, ctx, ShiftOp::Shl),
         // shortcut: arithmetic shift as for a signed value, Shr for 양수 once Binary carries the sign
-        BinaryOp::Shr => shift(dest, left, right, ctx, ShiftOp::Sar),
+        BinaryOp::Shr => {
+            if dest.ty.is_unsigned() {
+                shift(dest, left, right, ctx, ShiftOp::Shr)
+            } else {
+                shift(dest, left, right, ctx, ShiftOp::Sar)
+            }
+        }
         // the converter turns them into jumps, to compute right only when needed
         BinaryOp::And | BinaryOp::Or => unreachable!("그리고 / 또는 never reach the codegen"),
         BinaryOp::Eq => comparison(dest, left, right, ctx, ConditionCode::E),

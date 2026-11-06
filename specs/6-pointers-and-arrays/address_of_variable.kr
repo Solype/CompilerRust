@@ -1,0 +1,10 @@
+// #6: `&` gives the address of a variable; sscanf writes through it.
+// `echo $?` prints 42 after the run.
+
+외부 정수를 반환하는 sscanf(문자 주소 입력, 문자 주소 형식, …)
+
+정수를 반환하는 main() {
+    수는 0이에요.
+    "42"와 "%ld"와 (&수)를 sscanf해요.
+    수를 반환해요.
+}

@@ -1,0 +1,6 @@
+// #20: 짧은 부호 없는 정수 takes 4 bytes.
+// `echo $?` prints 4 after the run.
+
+정수를 반환하는 main() {
+    짧은 부호 없는 정수의 크기를 반환해요.
+}

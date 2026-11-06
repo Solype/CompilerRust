@@ -1,0 +1,10 @@
+// #21: 입다 looks irregular but is regular: 입어서.
+// `echo $?` prints 42 after the run.
+
+정수를 반환하는 입다(정수 가) {
+    (가 + 1)을 반환해요.
+}
+
+정수를 반환하는 main() {
+    41을 입어서 반환해요.
+}

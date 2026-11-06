@@ -1,5 +1,25 @@
-# Krc
-Compiler made in Rust for the Compiler class of CAU (Chung-Ang University).
+# Krc: a Korean programming language and its compiler
+
+[![CI](https://github.com/Solype/Krc/actions/workflows/ci.yml/badge.svg)](https://github.com/Solype/Krc/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+
+**Krc** is a programming language written in Korean (한국어 프로그래밍 언어), with a compiler in
+Rust that produces x86-64 Linux ELF object files. Made for the Compiler class of CAU (Chung-Ang
+University).
+
+```
+두 정수 가와 나를 받아 나누고 정수를 반환 {
+    나머지는 정수예요.
+    (나 == 0)이 아닌 동안 {
+        나머지에 (가 % 나)를 넣어요.
+        가에 나를 넣어요.
+        나에 나머지를 넣어요.
+    }
+    가를 반환해요.
+}
+```
+
+This is the greatest common divisor, from [`sample/10_gcd.kr`](sample/10_gcd.kr).
 
 ## About
 This project is a compiler written in Rust, developed as part of the Compiler course at CAU. Its

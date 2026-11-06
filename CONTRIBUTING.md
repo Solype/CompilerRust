@@ -69,7 +69,9 @@ refactor(ir): Operand::Float holds only its index
 docs: repository layout in the README
 ```
 
-1. Fork the repository and create a branch from `main`.
+1. Fork the repository and create a branch from `main`. Branch names always start with a
+   standard prefix matching the Conventional Commits type: `feat/`, `fix/`, `docs/`, `refactor/`,
+   `test/`, `chore/`, for example `feat/1-unsigned-division`.
 2. Keep one subject per pull request, and link its issue (`Closes #12`).
 3. Describe what changed and how you tested it.
 4. If you used an AI tool to write part of the change, say so in the pull request: the project

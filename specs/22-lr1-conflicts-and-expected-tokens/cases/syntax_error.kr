@@ -1,0 +1,9 @@
+// #22: a syntax error lists the tokens this state accepts.
+
+정수를 반환하는 main() {
+    가는 0이에요.
+    만약 가 > 0 {
+        1을 반환해요.
+    }
+    가를 반환해요.
+}

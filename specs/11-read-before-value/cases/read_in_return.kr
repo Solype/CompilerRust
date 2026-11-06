@@ -1,0 +1,6 @@
+// #11: 나 has no value yet when it is returned.
+
+정수를 반환하는 main() {
+    나는 정수예요.
+    나를 반환해요.
+}

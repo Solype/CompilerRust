@@ -1,0 +1,8 @@
+// Converter: a whole array cannot be assigned.
+
+정수를 반환하는 main() {
+    가는 정수 3개예요.
+    나는 정수 3개예요.
+    나에 가를 넣어요.
+    0을 반환해요.
+}

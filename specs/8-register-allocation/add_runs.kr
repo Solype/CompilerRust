@@ -1,0 +1,10 @@
+// #8: the same program still gives the right result.
+// `echo $?` prints 7 after the run.
+
+정수를 반환하는 더하다(정수 가, 정수 나) {
+    (가 + 나)를 반환해요.
+}
+
+정수를 반환하는 main() {
+    3과 4를 더해서 반환해요.
+}

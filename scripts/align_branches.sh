@@ -42,6 +42,7 @@ git worktree add -q --detach "$WORK/wt" origin/main || exit 1
 failed=0
 update_local() { # update_local <branch>: fast-forward the local branch to origin, if there is one
     [ $dry -eq 0 ] && git show-ref -q --verify "refs/heads/$1" || return 0
+    [ "$(git rev-parse "refs/heads/$1")" = "$(git rev-parse "refs/remotes/origin/$1")" ] && return 0
     git fetch -q . "refs/remotes/origin/$1:refs/heads/$1" 2> /dev/null ||
         echo "      local $1 not updated: checked out or has its own commits, run git pull on it"
 }

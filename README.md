@@ -143,7 +143,7 @@ symbols and the disassembly of an object file.
 | `elf_derive/` | Derive macro that writes the ELF structures |
 | `sample/` | Programs that must run (`NN_*.kr`, expected stdout in `NN_*.out`) and programs that must be refused (`errors/`) |
 | `Proto.kr` | Reference program, expected values in its comments |
-| `scripts/` | `run_samples.sh` (sample tests), `analyze.sh` (`nm` + `objdump` of a `.o`) |
+| `scripts/` | `run_samples.sh` (sample tests), `analyze.sh` (`nm` + `objdump` of a `.o`), `align_branches.sh` (merges `main` into every branch of origin) |
 | `docs/` | Language design (`LANGUAGE_DESIGN.md`), encoder test report, LR(1) table example, and the [website](https://solype.github.io/Krc/) (`index.md`, `ko.md`, published by GitHub Pages) |
 | `README.ko.md` | This README in Korean, shorter |
 | `editors/` | Syntax highlighting for Zed, micro and tree-sitter |

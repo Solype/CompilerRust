@@ -1,0 +1,44 @@
+/*
+ * 16_zero.kr: a variable declared with a type alone holds the zero of its type (issue #33),
+ * even when a previous call has left other values in the same stack slots.
+ * 채우다 and 읽다 have the same parameter and locals, so their variables share the slots:
+ * 채우다 writes 42, 2.5, 참 and an address there, then 읽다 declares the same types alone.
+ * 읽다 returns one bit per variable that is not zero: `echo $?` prints 0 after the run
+ * (15 without the zeroing). An array is not checked here: no syntax reads one element yet.
+ */
+
+정수를 반환하는 채우다(정수 가) {
+    수는 42예요.                    // a literal: (가 + 1) would add a temporary and shift the slots
+    소는 2.5예요.
+    논은 참이에요.
+    이름은 "abc"예요.
+    수를 반환해요.
+}
+
+정수를 반환하는 읽다(정수 가) {
+    수는 정수예요.
+    소는 소수예요.
+    논은 논리예요.
+    이름은 문자 주소예요.
+    결과는 0이에요.
+    만약 수 != 0이면 {
+        결과에 (결과 + 1)을 넣어요.
+    }
+    만약 소 != 0.0이면 {
+        결과에 (결과 + 2)를 넣어요.
+    }
+    만약 논이면 {
+        결과에 (결과 + 4)를 넣어요.
+    }
+    만약 이름 != 빈 주소면 {
+        결과에 (결과 + 8)을 넣어요.
+    }
+    결과를 반환해요.
+}
+
+정수를 반환하는 main() {
+    결과는 정수예요.
+    0을 채워서 결과에 넣어요.          // no call between: printf would write over the slots
+    0을 읽어서 결과에 넣어요.
+    결과를 반환해요.
+}

@@ -112,7 +112,7 @@ cargo build --release
 - `-x` links all the `.o` with `gcc` into `a.out`.
 - `--tree` also prints the parse tree, before the AST.
 - Any error (source, unreadable file, usage, `gcc`) exits with code 1.
-- Sample programs are in `sample/` (`01_return.kr` to `15_floats.kr`), programs that must be
+- Sample programs are in `sample/` (`01_return.kr` to `16_zero.kr`), programs that must be
   refused in `sample/errors/`, and the reference program is `Proto.kr`.
 
 The demo calls an external `my_exit`, to provide at link time, for example with NASM:

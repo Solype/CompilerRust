@@ -8,7 +8,9 @@ use crate::elf::instructions::register::{
 use crate::elf::instructions::{BinOp, ConvOp, CtrlOp, ExtendOp, Instruction, Size, register::RAX};
 
 use crate::converter::ir::structs::{Label, Operand as IrOp, VarId};
-use crate::elf::instructions::{ConditionCode, MemAddress, Operand as ElfOper, StackOp};
+use crate::elf::instructions::{
+    ConditionCode, MemAddress, Operand as ElfOper, Prefix, StackOp, StringOp,
+};
 use crate::parser::postparser::structs::Type;
 
 /// `ctx.offsets`: the offset under rbp of each variable, see var_offsets
@@ -185,6 +187,27 @@ pub fn generate_copy(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction
             dst: var,
             src: ElfOper::Reg(RAX),
             size: var_size(dest),
+        },
+    ]
+}
+
+/// Every byte of `dest` to 0: `lea rdi, [dest] ; mov rcx, size ; mov rax, 0 ; rep stosb`
+pub fn generate_zero(dest: &VarId, ctx: &Context) -> Vec<Instruction> {
+    let size = IrOp::Int(dest.ty.size() as i64, false, false);
+    vec![
+        Instruction::Lea {
+            dst: RDI,
+            src: convert_operand(&IrOp::Var(dest.clone()), ctx),
+            size: None,
+        },
+        load_operand(RCX, &size, ctx, Some(Size::U64)),
+        load_operand(RAX, &IrOp::Int(0, false, false), ctx, Some(Size::U64)),
+        Instruction::Prefix {
+            prefix: vec![Prefix::Rep],
+            ins: Box::new(Instruction::String {
+                op: StringOp::Stos,
+                size: Some(Size::U8),
+            }),
         },
     ]
 }

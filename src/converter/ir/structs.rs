@@ -101,6 +101,8 @@ pub enum Instr {
         dest: VarId,
         src: Operand,
     }, // types read in vars
+    /// Every byte of a variable to 0: an array, wider than any mov
+    Zero(VarId),
     Call {
         dest: Option<VarId>,
         symbol: String,

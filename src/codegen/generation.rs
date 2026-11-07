@@ -3,7 +3,7 @@ use crate::{
         arithmetic::{generate_binary, generate_unary},
         instructions::{
             PARAM_FREGS, PARAM_REGS, convert_operand, func_epilogue, generate_call, generate_cast,
-            generate_copy, generate_jmp_if_not, generate_return,
+            generate_copy, generate_jmp_if_not, generate_return, generate_zero,
         },
         utils::var_size,
     },
@@ -43,6 +43,7 @@ fn generate_instruction(instr: &Instr, ctx: &Context) -> Vec<Instruction> {
         Instr::Unary { dest, op, src } => generate_unary(dest, op, src, ctx),
         Instr::Copy { dest, src } => generate_copy(dest, src, ctx),
         Instr::Cast { dest, src } => generate_cast(dest, src, ctx),
+        Instr::Zero(dest) => generate_zero(dest, ctx),
         Instr::Label(lab) => vec![Instruction::Label(ctx.labels[lab.0])],
         Instr::Jump(lab) => vec![Instruction::Ctrl {
             op: CtrlOp::Jmp,

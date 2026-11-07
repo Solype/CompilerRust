@@ -97,6 +97,7 @@ impl fmt::Display for Instr {
                 right,
             } => write!(f, "{dest} = {left} {op} {right}"),
             Instr::Cast { dest, src } => write!(f, "{dest} = cast {src}"),
+            Instr::Zero(dest) => write!(f, "{dest} = zero"),
             Instr::Call { dest, symbol, args } => {
                 let args: Vec<String> = args.iter().map(Operand::to_string).collect();
                 if let Some(dest) = dest {

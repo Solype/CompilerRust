@@ -412,9 +412,7 @@ impl<'a> Converter<'a> {
                     src: IrOperand::Null,
                 });
             }
-            Type::Array(_, _) => {
-                // unimplemented!()
-            }
+            Type::Array(_, _) => instr.push(IrInstr::Zero(var)),
             Type::Custom(_) => {
                 unimplemented!()
             }

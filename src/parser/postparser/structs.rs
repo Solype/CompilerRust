@@ -1,4 +1,4 @@
-use crate::lexer::span::Span;
+use crate::{elf::instructions::Size, lexer::span::Span};
 
 use super::super::parser_token::Particle;
 
@@ -82,6 +82,21 @@ impl Type {
             Type::Byte => 1,
             Type::Bool => 1,
             _ => unimplemented!(),
+        }
+    }
+
+    pub fn to_elf_size(&self) -> Option<Size> {
+        match self {
+            Type::Int { short: true, .. } => Some(Size::U32),
+            Type::Int { short: false, .. } => Some(Size::U64),
+            Type::Float { short: true } => Some(Size::U32),
+            Type::Float { short: false } => Some(Size::U64),
+            Type::Address(_) => Some(Size::U64),
+            Type::Array(_, _) => Some(Size::U64),
+            Type::Char => Some(Size::U8),
+            Type::Byte => Some(Size::U8),
+            Type::Bool => Some(Size::U8),
+            _ => None,
         }
     }
 }

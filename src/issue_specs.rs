@@ -75,21 +75,21 @@ mod i4 {
     use crate::codegen::instructions::{generate_return, normal_param};
 
     #[test]
-    #[ignore = "issue #4"]
+    // #[ignore = "issue #4"]
     fn return_of_short_int_reads_4_bytes() {
         let instrs = generate_return(&var(0, SHORT_INT), &context(Some(SHORT_INT)));
         assert!(reads_on(&instrs, Size::U32), "{instrs:?}");
     }
 
     #[test]
-    #[ignore = "issue #4"]
+    // #[ignore = "issue #4"]
     fn return_of_bool_reads_1_byte() {
         let instrs = generate_return(&var(0, Type::Bool), &context(Some(Type::Bool)));
         assert!(reads_on(&instrs, Size::U8), "{instrs:?}");
     }
 
     #[test]
-    #[ignore = "issue #4"]
+    // #[ignore = "issue #4"]
     fn return_of_short_float_reads_4_bytes() {
         let ty = Type::Float { short: true };
         let instrs = generate_return(&var(0, ty.clone()), &context(Some(ty)));
@@ -97,7 +97,7 @@ mod i4 {
     }
 
     #[test]
-    #[ignore = "issue #4"]
+    // #[ignore = "issue #4"]
     fn argument_short_int_reads_4_bytes() {
         let instr = normal_param(&var(0, SHORT_INT), &mut 0, &context(None));
         assert!(

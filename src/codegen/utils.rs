@@ -15,6 +15,8 @@ pub fn var_size(var: &VarId) -> Option<Size> {
 /// `reg = op`: a string is an address, computed by lea, not a value read by mov; an xmm register
 /// is loaded by movsd (movss on 4 bytes). A float goes into a general register by mov, bit for bit
 pub fn load_operand(reg: Register, op: &IrOp, ctx: &Context, size: Option<Size>) -> Instruction {
+    let real_size = size.or(op.size());
+
     match op {
         IrOp::DataAddress(id) => Instruction::Lea {
             dst: reg,
@@ -30,7 +32,7 @@ pub fn load_operand(reg: Register, op: &IrOp, ctx: &Context, size: Option<Size>)
             },
             dst: ElfOper::Reg(reg),
             src: convert_operand(op, ctx),
-            size,
+            size: real_size,
         },
     }
 }

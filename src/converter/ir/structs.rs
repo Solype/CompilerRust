@@ -1,7 +1,14 @@
 // The IR is built step by step and the codegen does not read it yet
 #![allow(dead_code)]
 
-use crate::parser::postparser::structs::{BinaryOp, Type, UnaryOp};
+use crate::{
+    elf::instructions::Size::{self},
+    parser::postparser::structs::{
+        BinaryOp,
+        Type::{self},
+        UnaryOp,
+    },
+};
 
 pub struct Function {
     pub symbol: String, // already mangled: "더하다$int$int", "printf", "main"
@@ -78,6 +85,25 @@ pub enum Operand {
     Address(VarId),
     DataAddress(usize),
     Null,
+}
+
+impl Operand {
+    pub fn size(&self) -> Option<Size> {
+        match self {
+            Operand::Var(id) => id.ty.to_elf_size(),
+            Operand::Int(_, short, _) => {
+                if *short {
+                    Some(Size::U32)
+                } else {
+                    Some(Size::U64)
+                }
+            }
+            Operand::Float(_) => Some(Size::U64),
+            Operand::Bool(_) => Some(Size::U8),
+            Operand::Address(_) | Operand::DataAddress(_) => Some(Size::U64),
+            Operand::Null => None,
+        }
+    }
 }
 
 #[derive(Debug)]

@@ -111,9 +111,14 @@ pub fn generate_cast(dest: &VarId, src: &IrOp, ctx: &Context) -> Vec<Instruction
     let mut instrs = vec![];
     // cvt and movsx take no immediate: a 정수 or 논리 constant goes through rax, on 8 bytes
     let (mut src_op, mut src_size) = match src {
-        IrOp::Int(..) | IrOp::Bool(_) => {
-            instrs.push(load_operand(RAX, src, ctx, None));
-            (ElfOper::Reg(RAX), 8)
+        IrOp::Int(_, short, _) => {
+            let size = if *short { Size::U32 } else { Size::U64 };
+            instrs.push(load_operand(RAX, src, ctx, Some(size)));
+            (ElfOper::Reg(RAX), size as usize)
+        }
+        IrOp::Bool(_) => {
+            instrs.push(load_operand(RAX, src, ctx, Some(Size::U8)));
+            (ElfOper::Reg(RAX), 1)
         }
         _ => (convert_operand(src, ctx), src_size),
     };

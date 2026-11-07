@@ -48,6 +48,7 @@ pub fn load_operand(reg: Register, op: &IrOp, ctx: &Context, size: Option<Size>)
     };
 
     Instruction::Binary {
+        // not MovF: movapd reads 16 bytes and wants them 16-byte aligned
         op: if reg.is_xmm() {
             BinOp::LoadF
         } else {
